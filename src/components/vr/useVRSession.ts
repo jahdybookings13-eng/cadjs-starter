@@ -1,11 +1,20 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import * as THREE from "three";
 import { useCadVisualizer, useCadCore } from "@vitekk02/cadjs/react";
-import { SceneMode, createSketchPlane } from "@vitekk02/cadjs";
+import {
+  SceneMode,
+  createSketchPlane,
+  createSketchPlaneFromNormal,
+  debugLog,
+} from "@vitekk02/cadjs";
 import { buildVRRoom, disposeVRRoom } from "./buildVRRoom";
 import { buildVRControls } from "./buildVRControls";
 import { createVRGrabSystem, type VRGrabSystem } from "./vrGrabSystem";
-import { createVRSketchSystem, type VRSketchSystem, DESK_HEIGHT } from "./vrSketchSystem";
+import {
+  createVRSketchSystem,
+  type VRSketchSystem,
+  DESK_HEIGHT,
+} from "./vrSketchSystem";
 
 const MOVE_SPEED = 2.0;
 
@@ -25,22 +34,35 @@ const DESK_BLOCK_Z = 0.8 / 2 + DESK_BUFFER;
 // Map carousel action names to SceneMode values
 function getSceneModeFromAction(actionName: string): SceneMode | null {
   const actionMap: Record<string, SceneMode> = {
-    "Sketch": "sketch",
-    "Extrude": "extrude", 
-    "Loft": "loft",
-    "Sweep": "sweep",
-    "Revolve": "revolve",
-    "Fillet": "fillet",
-    "Shell": "combine", // Shell maps to combine mode
-    "Measure": "measure"
+    Sketch: "sketch",
+    Extrude: "extrude",
+    Loft: "loft",
+    Sweep: "sweep",
+    Revolve: "revolve",
+    Fillet: "fillet",
+    Shell: "combine", // Shell maps to combine mode
+    Measure: "measure",
   };
-  
+
   return actionMap[actionName] || null;
 }
 
 export function useVRSession() {
   const { renderer, scene, setContinuousRender } = useCadVisualizer();
-  const { setMode, selectElement, deselectElement, addPrimitive, addConstraintAndSolve, solveSketch, pushSketchUndo, activeSketch, startSketch, finishSketch, cancelSketch, selectPlaneAndStartSketch, mode: currentMode } = useCadCore();
+  const {
+    setMode,
+    selectElement,
+    deselectElement,
+    addPrimitive,
+    addConstraintAndSolve,
+    solveSketch,
+    pushSketchUndo,
+    activeSketch,
+    startSketch,
+    finishSketch,
+    cancelSketch,
+    mode: currentMode,
+  } = useCadCore();
 
   // Refs for cadCore functions so the animation loop always gets fresh references
   const setModeRef = useRef(setMode);
@@ -106,7 +128,7 @@ export function useVRSession() {
     });
   }, []);
 
-const enterVR = useCallback(async () => {
+  const enterVR = useCallback(async () => {
     if (!renderer || !scene || !navigator.xr) return;
 
     try {
@@ -123,7 +145,7 @@ const enterVR = useCallback(async () => {
       await renderer.xr.setSession(session);
       setContinuousRender(true);
 
-// Room
+      // Room
       const room = buildVRRoom();
       roomRef.current = room;
       scene.add(room);
@@ -137,12 +159,16 @@ const enterVR = useCallback(async () => {
       const grabSystem = createVRGrabSystem();
       grabSystemRef.current = grabSystem;
 
-      // Sketch system
-      const activeSketchRef = { get current() { return activeSketch; } };
+      // Sketch system — use the render-refreshed ref so point snapping sees live data
+      const activeSketchRef = activeSketchRef2;
       const sketchSystem = createVRSketchSystem(
         (prim) => addPrimitiveRef.current(prim as any),
-        (constraint) => addConstraintAndSolveRef.current(constraint as any),
-        () => solveSketchRef.current(),
+        (constraint) => {
+          void addConstraintAndSolveRef.current(constraint as any);
+        },
+        async () => {
+          await solveSketchRef.current();
+        },
         () => pushSketchUndoRef.current(),
         activeSketchRef,
       );
@@ -219,7 +245,11 @@ const enterVR = useCallback(async () => {
         const refSpace = renderer.xr.getReferenceSpace();
 
         // === VR SKETCH MODE ===
-        if (sketchSystemRef.current && sketchSystemRef.current.state.phase !== "idle" && refSpace) {
+        if (
+          sketchSystemRef.current &&
+          sketchSystemRef.current.state.phase !== "idle" &&
+          refSpace
+        ) {
           const sketch = sketchSystemRef.current;
 
           if (sketch.state.phase === "selecting-plane") {
@@ -227,38 +257,78 @@ const enterVR = useCallback(async () => {
             let rightHandQuat: THREE.Quaternion | null = null;
 
             for (const source of session.inputSources) {
-              if (!source.targetRaySpace || source.handedness !== "right") continue;
+              if (!source.targetRaySpace || source.handedness !== "right")
+                continue;
               const pose = xrFrame.getPose(source.targetRaySpace, refSpace);
               if (!pose) continue;
-              rightHandPos = new THREE.Vector3(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
-              rightHandQuat = new THREE.Quaternion(pose.transform.orientation.x, pose.transform.orientation.y, pose.transform.orientation.z, pose.transform.orientation.w);
+              rightHandPos = new THREE.Vector3(
+                pose.transform.position.x,
+                pose.transform.position.y,
+                pose.transform.position.z,
+              );
+              rightHandQuat = new THREE.Quaternion(
+                pose.transform.orientation.x,
+                pose.transform.orientation.y,
+                pose.transform.orientation.z,
+                pose.transform.orientation.w,
+              );
               break;
             }
 
             if (rightHandPos && rightHandQuat) {
               const triggerPressed = (() => {
                 for (const source of session.inputSources) {
-                  if (source.handedness === "right" && source.gamepad) return source.gamepad.buttons[0]?.pressed ?? false;
+                  if (source.handedness === "right" && source.gamepad)
+                    return source.gamepad.buttons[0]?.pressed ?? false;
                 }
                 return false;
               })();
 
+              const handDir = new THREE.Vector3(0, 0, -1).applyQuaternion(
+                rightHandQuat,
+              );
+              const target = sketch.classifyRayTarget(
+                rightHandPos,
+                handDir,
+                scene,
+              );
+
+              // Live hover feedback of the classified ray target
+              sketch.updateTargetMarker(target);
+              if (
+                sketch.state.targetMarker &&
+                !sketch.state.targetMarker.parent
+              ) {
+                scene.add(sketch.state.targetMarker);
+              }
+
               if (triggerPressed && !sketchTriggerWasPressed.current) {
-                const handDir = new THREE.Vector3(0, 0, -1).applyQuaternion(rightHandQuat);
-
-                const deskPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -DESK_HEIGHT);
-                const deskHit = new THREE.Vector3();
-                const ray = new THREE.Ray(rightHandPos, handDir);
-                const hitsDesk = ray.intersectPlane(deskPlane, deskHit) !== null && deskHit.distanceTo(rightHandPos) < 1.5;
-
-                if (hitsDesk) {
-                  const plane = createSketchPlane("xz");
+                sketch.clearTargetMarker();
+                if (target.kind === "body-face") {
+                  startSketchRef.current(target.plane);
+                  sketch.beginSketchOnPlane(target.plane, "face");
+                } else if (target.kind === "desk") {
+                  const plane = createSketchPlane(
+                    "XZ",
+                    new THREE.Vector3(0, DESK_HEIGHT, 0),
+                  );
                   startSketchRef.current(plane);
-                  sketch.startSketchOnDesk();
+                  sketch.beginSketchOnPlane(plane, "desk");
+                } else if (target.kind === "origin-plane") {
+                  const plane = createSketchPlane(target.planeType);
+                  startSketchRef.current(plane);
+                  sketch.beginSketchOnPlane(plane, "origin");
                 } else {
-                  const plane = createSketchPlane("xy");
+                  // 3D freehand: plane facing the hand, 0.4m ahead
+                  const planeOrigin = rightHandPos
+                    .clone()
+                    .addScaledVector(handDir, 0.4);
+                  const plane = createSketchPlaneFromNormal(
+                    handDir.clone().negate(),
+                    planeOrigin,
+                  );
                   startSketchRef.current(plane);
-                  sketch.startSketchOnPlane("xy");
+                  sketch.beginSketchOnPlane(plane, "freehand");
                 }
               }
               sketchTriggerWasPressed.current = triggerPressed;
@@ -273,7 +343,8 @@ const enterVR = useCallback(async () => {
 
             for (const source of session.inputSources) {
               if (!source.gripSpace || !source.gamepad) continue;
-              const gripVal = source.gamepad.buttons[GRIP_BUTTON_INDEX]?.pressed ?? false;
+              const gripVal =
+                source.gamepad.buttons[GRIP_BUTTON_INDEX]?.pressed ?? false;
               if (source.handedness === "left") leftGrip = gripVal;
               if (source.handedness === "right") {
                 rightGrip = gripVal;
@@ -286,7 +357,10 @@ const enterVR = useCallback(async () => {
                   );
                 }
                 if (source.targetRaySpace) {
-                  const rayPose = xrFrame.getPose(source.targetRaySpace, refSpace);
+                  const rayPose = xrFrame.getPose(
+                    source.targetRaySpace,
+                    refSpace,
+                  );
                   if (rayPose) {
                     rightPointQuat = new THREE.Quaternion(
                       rayPose.transform.orientation.x,
@@ -303,9 +377,18 @@ const enterVR = useCallback(async () => {
             if (leftGrip && rightGrip) {
               if (!sketch.state.axisSnapAxis) {
                 if (rightHandPos) {
-                  const dy = Math.abs(rightHandPos.y - (sketch.state.lastPointWorld?.y ?? rightHandPos.y));
-                  const dx = Math.abs(rightHandPos.x - (sketch.state.lastPointWorld?.x ?? rightHandPos.x));
-                  const dz = Math.abs(rightHandPos.z - (sketch.state.lastPointWorld?.z ?? rightHandPos.z));
+                  const dy = Math.abs(
+                    rightHandPos.y -
+                      (sketch.state.lastPointWorld?.y ?? rightHandPos.y),
+                  );
+                  const dx = Math.abs(
+                    rightHandPos.x -
+                      (sketch.state.lastPointWorld?.x ?? rightHandPos.x),
+                  );
+                  const dz = Math.abs(
+                    rightHandPos.z -
+                      (sketch.state.lastPointWorld?.z ?? rightHandPos.z),
+                  );
                   if (dy > dx && dy > dz) sketch.setAxisSnap("y");
                   else if (dx > dz) sketch.setAxisSnap("x");
                   else sketch.setAxisSnap("z");
@@ -326,51 +409,93 @@ const enterVR = useCallback(async () => {
                 return false;
               })();
 
-              const handDir = new THREE.Vector3(0, 0, -1).applyQuaternion(rightPointQuat);
+              const handDir = new THREE.Vector3(0, 0, -1).applyQuaternion(
+                rightPointQuat,
+              );
+              const context = sketch.state.sketchingContext;
 
-              const deskPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -DESK_HEIGHT);
-              const deskHit = new THREE.Vector3();
-              const ray = new THREE.Ray(rightHandPos, handDir);
-              const hitsDesk = ray.intersectPlane(deskPlane, deskHit);
-              const isDeskSketching = hitsDesk !== null && deskHit.distanceTo(rightHandPos) < 1.5;
-
-              // DESK: trigger to place points
-              if (isDeskSketching) {
-                if (triggerPressed && !sketchTriggerWasPressed.current) {
-                  const pointResult = sketch.placePoint(deskHit);
-                  if (sketch.state.isChaining && sketch.state.lastPointId) {
-                    sketch.connectLine(sketch.state.lastPointId, pointResult.pointId);
+              // Plane-locked contexts (desk/face/origin): trigger places points at ray landing
+              if (
+                context === "desk" ||
+                context === "face" ||
+                context === "origin"
+              ) {
+                const rawPoint = sketch.rayToSketchPoint(rightHandPos, handDir);
+                if (rawPoint) {
+                  if (triggerPressed && !sketchTriggerWasPressed.current) {
+                    const placePos =
+                      sketch.state.axisSnapAxis && sketch.state.lastPointWorld
+                        ? sketch.projectWithAxisSnap(
+                            rawPoint,
+                            sketch.state.lastPointWorld,
+                          )
+                        : rawPoint;
+                    const pointResult = sketch.placePoint(placePos);
+                    if (sketch.state.isChaining && sketch.state.lastPointId) {
+                      sketch.connectLine(
+                        sketch.state.lastPointId,
+                        pointResult.pointId,
+                      );
+                    }
+                    sketch.state.isChaining = true;
+                    sketch.state.lastPointId = pointResult.pointId;
+                    sketch.state.lastPointWorld = placePos.clone();
                   }
-                  sketch.state.isChaining = true;
-                  sketch.state.lastPointId = pointResult.pointId;
-                  sketch.state.lastPointWorld = deskHit.clone();
+                  if (sketch.state.isChaining) {
+                    const previewTarget =
+                      sketch.state.axisSnapAxis && sketch.state.lastPointWorld
+                        ? sketch.projectWithAxisSnap(
+                            rawPoint,
+                            sketch.state.lastPointWorld,
+                          )
+                        : rawPoint;
+                    sketch.updatePreview(previewTarget);
+                    if (
+                      sketch.state.previewLine &&
+                      !sketch.state.previewLine.parent
+                    ) {
+                      scene.add(sketch.state.previewLine);
+                    }
+                  }
                 }
               }
 
-              // 3D FREEHAND: grip to place points
-              if (!isDeskSketching) {
+              // 3D FREEHAND: grip places points at hand position
+              if (context === "freehand") {
                 if (rightGrip && !sketchGripWasPressed.current) {
-                  const placePos = sketch.state.axisSnapAxis && sketch.state.lastPointWorld
-                    ? sketch.projectWithAxisSnap(rightHandPos, sketch.state.lastPointWorld)
-                    : sketch.projectToSketchPlane(rightHandPos);
+                  const placePos =
+                    sketch.state.axisSnapAxis && sketch.state.lastPointWorld
+                      ? sketch.projectWithAxisSnap(
+                          rightHandPos,
+                          sketch.state.lastPointWorld,
+                        )
+                      : sketch.projectToSketchPlane(rightHandPos);
                   const pointResult = sketch.placePoint(placePos);
                   if (sketch.state.isChaining && sketch.state.lastPointId) {
-                    sketch.connectLine(sketch.state.lastPointId, pointResult.pointId);
+                    sketch.connectLine(
+                      sketch.state.lastPointId,
+                      pointResult.pointId,
+                    );
                   }
                   sketch.state.isChaining = true;
                   sketch.state.lastPointId = pointResult.pointId;
                   sketch.state.lastPointWorld = placePos.clone();
                 }
-              }
-
-              // Update preview line
-              if (sketch.state.isChaining) {
-                const previewTarget = sketch.state.axisSnapAxis && sketch.state.lastPointWorld
-                  ? sketch.projectWithAxisSnap(rightHandPos, sketch.state.lastPointWorld)
-                  : isDeskSketching ? deskHit : sketch.projectToSketchPlane(rightHandPos);
-                sketch.updatePreview(previewTarget);
-                if (sketch.state.previewLine && !sketch.state.previewLine.parent) {
-                  scene.add(sketch.state.previewLine);
+                if (sketch.state.isChaining) {
+                  const previewTarget =
+                    sketch.state.axisSnapAxis && sketch.state.lastPointWorld
+                      ? sketch.projectWithAxisSnap(
+                          rightHandPos,
+                          sketch.state.lastPointWorld,
+                        )
+                      : sketch.projectToSketchPlane(rightHandPos);
+                  sketch.updatePreview(previewTarget);
+                  if (
+                    sketch.state.previewLine &&
+                    !sketch.state.previewLine.parent
+                  ) {
+                    scene.add(sketch.state.previewLine);
+                  }
                 }
               }
 
@@ -389,10 +514,12 @@ const enterVR = useCallback(async () => {
             }
             if (leftGrip && rightGrip && leftTrigger && rightTrigger) {
               sketch.finishChain();
-              sketch.clearPreview();
               if (sketch.state.previewLine?.parent) {
                 scene.remove(sketch.state.previewLine);
               }
+              sketch.clearPreview();
+              sketch.clearTargetMarker();
+              sketch.setPhase("idle");
               finishSketchRef.current();
               setModeRef.current("move");
             }
@@ -401,10 +528,10 @@ const enterVR = useCallback(async () => {
             if (leftGrip && !leftGripWasPressed.current) {
               const now2 = Date.now();
               if (now2 - lastBackButtonPress.current < 300) {
-                sketch.cancelSketch();
                 if (sketch.state.previewLine?.parent) {
                   scene.remove(sketch.state.previewLine);
                 }
+                sketch.cancelSketch();
                 cancelSketchRef.current();
                 setModeRef.current("move");
               }
@@ -413,7 +540,10 @@ const enterVR = useCallback(async () => {
             leftGripWasPressed.current = leftGrip;
             rightGripWasPressed.current = rightGrip;
           }
-        } else if (sketchSystemRef.current && sketchSystemRef.current.state.phase !== "idle") {
+        } else if (
+          sketchSystemRef.current &&
+          sketchSystemRef.current.state.phase !== "idle"
+        ) {
           if (sketchSystemRef.current.state.previewLine?.parent) {
             scene.remove(sketchSystemRef.current.state.previewLine);
           }
@@ -442,7 +572,10 @@ const enterVR = useCallback(async () => {
             stickX = x;
             stickY = y;
           }
-          if (source.handedness === "left" && (Math.abs(x) > 0 || Math.abs(y) > 0)) {
+          if (
+            source.handedness === "left" &&
+            (Math.abs(x) > 0 || Math.abs(y) > 0)
+          ) {
             stickX = x;
             stickY = y;
             break;
@@ -460,8 +593,13 @@ const enterVR = useCallback(async () => {
 
           // Head-relative movement: flatten camera basis onto the XZ plane
           const yaw = Math.atan2(
-            2 * (cam.quaternion.w * cam.quaternion.y + cam.quaternion.x * cam.quaternion.z),
-            1 - 2 * (cam.quaternion.y * cam.quaternion.y + cam.quaternion.x * cam.quaternion.x),
+            2 *
+              (cam.quaternion.w * cam.quaternion.y +
+                cam.quaternion.x * cam.quaternion.z),
+            1 -
+              2 *
+                (cam.quaternion.y * cam.quaternion.y +
+                  cam.quaternion.x * cam.quaternion.x),
           );
           const sin = Math.sin(yaw);
           const cos = Math.cos(yaw);
@@ -519,16 +657,23 @@ const enterVR = useCallback(async () => {
           }
 
           ctrl.carousel.visible = lookingDown;
-          console.log(`BELT VISIBLE: ${lookingDown}, lookingDown`);
+          debugLog(`BELT VISIBLE: ${lookingDown}`);
           if (lookingDown) {
-            ctrl.updateCarousel(cam.quaternion, cam.position, playerOffset.current, carouselRotation.current, carouselIndex.current);
+            ctrl.updateCarousel(
+              cam.quaternion,
+              cam.position,
+              playerOffset.current,
+              carouselRotation.current,
+              carouselIndex.current,
+            );
 
             const refSpace2 = renderer.xr.getReferenceSpace();
 
             // Grip-based belt scrolling: grip the belt, turn your hand to scroll it
             for (const source of session.inputSources) {
               if (!source.gripSpace || !source.gamepad || !refSpace2) continue;
-              const gripPressed = source.gamepad.buttons[GRIP_BUTTON_INDEX]?.pressed ?? false;
+              const gripPressed =
+                source.gamepad.buttons[GRIP_BUTTON_INDEX]?.pressed ?? false;
               const pose = xrFrame.getPose(source.gripSpace, refSpace2);
               if (!pose) continue;
 
@@ -541,11 +686,15 @@ const enterVR = useCallback(async () => {
               const WAIST_HEIGHT = 0.8;
               const distToWaist = Math.abs(handPos.y - WAIST_HEIGHT);
               const horizontalDist = Math.sqrt(
-                (handPos.x - cam.position.x) ** 2 + (handPos.z - cam.position.z) ** 2
+                (handPos.x - cam.position.x) ** 2 +
+                  (handPos.z - cam.position.z) ** 2,
               );
 
               if (distToWaist < 0.25 && horizontalDist < 0.35) {
-                const handAngle = Math.atan2(handPos.z - cam.position.z, handPos.x - cam.position.x);
+                const handAngle = Math.atan2(
+                  handPos.z - cam.position.z,
+                  handPos.x - cam.position.x,
+                );
 
                 if (gripPressed && !beltGripActive.current) {
                   beltGripActive.current = true;
@@ -561,8 +710,11 @@ const enterVR = useCallback(async () => {
 
                   const totalItems = ctrl.carousel.children.length;
                   const anglePerItem = (Math.PI * 2) / totalItems;
-                  const currentAngle = (carouselRotation.current % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
-                  carouselIndex.current = Math.round(currentAngle / anglePerItem) % totalItems;
+                  const currentAngle =
+                    ((carouselRotation.current % (Math.PI * 2)) + Math.PI * 2) %
+                    (Math.PI * 2);
+                  carouselIndex.current =
+                    Math.round(currentAngle / anglePerItem) % totalItems;
                 }
 
                 if (!gripPressed && beltGripActive.current) {
@@ -581,7 +733,12 @@ const enterVR = useCallback(async () => {
             let l3Pressed = false;
 
             for (const source of session.inputSources) {
-              if (source.handedness !== "left" || !source.gripSpace) continue;
+              if (
+                source.handedness !== "left" ||
+                !source.gripSpace ||
+                !refSpace2
+              )
+                continue;
               const pose = xrFrame.getPose(source.gripSpace, refSpace2);
               if (!pose) continue;
               leftHandWorld = new THREE.Vector3(
@@ -592,17 +749,21 @@ const enterVR = useCallback(async () => {
               if (source.gamepad) {
                 // Quest 2 (oculus-touch profile): buttons[2] = thumbstick click = L3
                 // buttons[3] = X button — fallback in case runtime shifts indices
-                l3Pressed = (source.gamepad.buttons[2]?.pressed ?? false) ||
-                            (source.gamepad.buttons[3]?.pressed ?? false);
+                l3Pressed =
+                  (source.gamepad.buttons[2]?.pressed ?? false) ||
+                  (source.gamepad.buttons[3]?.pressed ?? false);
               }
               break;
             }
 
             if (leftHandWorld) {
-              console.log(`BELT DEBUG: leftHandWorld=${leftHandWorld.x.toFixed(2)},${leftHandWorld.y.toFixed(2)},${leftHandWorld.z.toFixed(2)} l3Pressed=${l3Pressed}`);
-              console.log(`BELT DEBUG: hoveredButtonIndex=${hoveredButtonIndex}`);
+              debugLog(
+                `BELT DEBUG: leftHandWorld=${leftHandWorld.x.toFixed(2)},${leftHandWorld.y.toFixed(2)},${leftHandWorld.z.toFixed(2)} l3Pressed=${l3Pressed} hoveredButtonIndex=${hoveredButtonIndex}`,
+              );
               // Belt world center = controls group pos + carousel local pos
-              const beltCenter = playerOffset.current.clone().add(ctrl.carousel.position);
+              const beltCenter = playerOffset.current
+                .clone()
+                .add(ctrl.carousel.position);
               const theta = carouselRotation.current; // carousel.rotation.y
               const cosT = Math.cos(theta);
               const sinT = Math.sin(theta);
@@ -634,11 +795,19 @@ const enterVR = useCallback(async () => {
               // L3 selects the hovered segment
               if (hoveredButtonIndex >= 0 && l3Pressed) {
                 const currentTime = Date.now();
-                if (currentTime - lastButtonPressTime.current >= BUTTON_PRESS_COOLDOWN) {
-                  const selectedButton = ctrl.carousel.children[hoveredButtonIndex];
+                if (
+                  currentTime - lastButtonPressTime.current >=
+                  BUTTON_PRESS_COOLDOWN
+                ) {
+                  const selectedButton =
+                    ctrl.carousel.children[hoveredButtonIndex];
                   if (selectedButton) {
-                    const actionName = selectedButton.userData.actionName as string | undefined;
-                    const newMode = actionName ? getSceneModeFromAction(actionName) : null;
+                    const actionName = selectedButton.userData.actionName as
+                      | string
+                      | undefined;
+                    const newMode = actionName
+                      ? getSceneModeFromAction(actionName)
+                      : null;
                     if (newMode) {
                       if (newMode === "sketch") {
                         // VR SKETCH MODE - don't touch global system
@@ -668,7 +837,9 @@ const enterVR = useCallback(async () => {
               grip.transform.position.y,
               grip.transform.position.z,
             );
-            if (ctrl.isReachingBehindEar(handPos, cam.position, cam.quaternion)) {
+            if (
+              ctrl.isReachingBehindEar(handPos, cam.position, cam.quaternion)
+            ) {
               pencilVisible = true;
               const rightEar = new THREE.Vector3(0.1, 0.1, -0.05)
                 .applyQuaternion(cam.quaternion)
@@ -707,7 +878,8 @@ const enterVR = useCallback(async () => {
               // Convert world position to controls group local space
               const localHandPos = handPos.clone().sub(playerOffset.current);
 
-              const ray = source.handedness === "left" ? ctrl.leftRay : ctrl.rightRay;
+              const ray =
+                source.handedness === "left" ? ctrl.leftRay : ctrl.rightRay;
               ray.position.copy(localHandPos);
               ray.quaternion.copy(handQuat);
             }
@@ -726,14 +898,19 @@ const enterVR = useCallback(async () => {
               if (!source.gripSpace || !source.gamepad) continue;
               const pose = xrFrame.getPose(source.gripSpace, refSpace);
               if (!pose) continue;
-              if (source.handedness === "right" || (!grabSource && source.handedness === "left")) {
+              if (
+                source.handedness === "right" ||
+                (!grabSource && source.handedness === "left")
+              ) {
                 grabSource = source;
                 grabPose = pose;
               }
             }
 
             if (grabSource && grabPose && scene) {
-              const gripPressed = grabSource.gamepad.buttons[GRIP_BUTTON_INDEX]?.pressed ?? false;
+              const gripPressed =
+                grabSource.gamepad?.buttons[GRIP_BUTTON_INDEX]?.pressed ??
+                false;
 
               const handPos = new THREE.Vector3(
                 grabPose.transform.position.x,
@@ -748,8 +925,14 @@ const enterVR = useCallback(async () => {
               );
 
               // Grab on press
-              if (gripPressed && !gripWasPressed.current && !grab.state.heldObjectId) {
-                const handDir = new THREE.Vector3(0, 0, -1).applyQuaternion(handQuat);
+              if (
+                gripPressed &&
+                !gripWasPressed.current &&
+                !grab.state.heldObjectId
+              ) {
+                const handDir = new THREE.Vector3(0, 0, -1).applyQuaternion(
+                  handQuat,
+                );
                 const grabbedId = grab.tryGrab(handPos, handDir, scene);
                 if (grabbedId) {
                   selectElementRef.current(grabbedId);
@@ -757,7 +940,11 @@ const enterVR = useCallback(async () => {
               }
 
               // Release on release
-              if (!gripPressed && gripWasPressed.current && grab.state.heldObjectId) {
+              if (
+                !gripPressed &&
+                gripWasPressed.current &&
+                grab.state.heldObjectId
+              ) {
                 const heldId = grab.state.heldObjectId;
                 grab.release();
                 if (heldId) {
