@@ -294,26 +294,28 @@ const SketchToolbar: FC<SketchToolbarProps> = ({
 
       {/* Actions on the right */}
       <button
-        className={`flex-none px-3 py-1 text-sm rounded ${
+        className={`flex-none px-3 py-1 text-sm rounded font-semibold ${
           isOperationPending
             ? "bg-gray-600 text-gray-400 cursor-wait"
             : "bg-green-600 hover:bg-green-500 text-white"
         }`}
         disabled={isOperationPending}
         onClick={onFinishSketch}
+        title="Finish sketch and create 3D body (Esc / Enter)"
       >
-        {isOperationPending ? "Finishing..." : "Finish"}
+        {isOperationPending ? "Finishing..." : "Finish ✓"}
       </button>
       <button
-        className={`flex-none px-3 py-1 text-sm rounded ${
+        className={`flex-none px-2 py-1 text-xs rounded ${
           isOperationPending
             ? "bg-gray-800 text-gray-500 cursor-not-allowed"
-            : "bg-red-600 hover:bg-red-500 text-white"
+            : "bg-red-700 hover:bg-red-500 text-gray-300"
         }`}
         disabled={isOperationPending}
         onClick={onCancelSketch}
+        title="Discard sketch"
       >
-        Cancel
+        ✕
       </button>
 
       {/* Value input dropdown for dimensional constraints */}

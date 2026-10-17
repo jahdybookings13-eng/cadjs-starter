@@ -33,6 +33,8 @@ const SketchModeContent: FC<ModeContentProps> = ({
     addConstraintAndSolve,
     removeConstraint: removeSketchConstraint,
     pushSketchUndo,
+    mode,
+    setMode,
   } = useCadCore();
   const {
     camera,
@@ -144,6 +146,54 @@ const SketchModeContent: FC<ModeContentProps> = ({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
+
+  // Two-level Escape in sketch mode:
+  //   Level 1: sketch's handleKeyDown fires first. If mid-drawing, it cancels the
+  //            in-progress operation and calls preventDefault(). We check
+  //            defaultPrevented to know it handled it.
+  //   Level 2: If sketch was idle (defaultPrevented = false), we finish the
+  //            sketch and exit to move mode.
+  //   Enter: Always finishes the sketch (explicit commit).
+  useEffect(() => {
+    const handleSketchModeExit = async (event: KeyboardEvent) => {
+      if (mode !== "sketch") return;
+      if (!activeSketch) return;
+      if (isSelectingPlane) return;
+      if (
+        event.target instanceof HTMLInputElement ||
+        event.target instanceof HTMLTextAreaElement
+      )
+        return;
+
+      if (event.key === "Escape") {
+        // Use a microtask to let the sketch's handleKeyDown fire first.
+        // If it handled the Escape (cancelled a drawing), defaultPrevented will be true.
+        await Promise.resolve();
+        if (event.defaultPrevented) return;
+
+        event.preventDefault();
+        const success = await finishSketch();
+        if (!success) {
+          showToast("Sketch may have open profiles — try closing them first", "warning");
+          return;
+        }
+        setMode("move");
+      } else if (event.key === "Enter") {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        const success = await finishSketch();
+        if (!success) {
+          showToast("Sketch may have open profiles — try closing them first", "warning");
+          return;
+        }
+        setMode("move");
+      }
+    };
+    // Capture phase: fires AFTER bubble, so sketch's handleKeyDown (bubble) has
+    // already run and potentially called preventDefault.
+    window.addEventListener("keydown", handleSketchModeExit, true);
+    return () => window.removeEventListener("keydown", handleSketchModeExit, true);
+  }, [mode, activeSketch, isSelectingPlane, isChaining, finishSketch, setMode, showToast]);
 
   // Prevent the browser's right-click menu on the canvas.
   useEffect(() => {

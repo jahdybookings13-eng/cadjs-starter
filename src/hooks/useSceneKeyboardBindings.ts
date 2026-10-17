@@ -1,5 +1,7 @@
 import { useEffect } from "react";
-import { NamedView, SceneMode } from "@vitekk02/cadjs";
+import { SceneMode } from "@vitekk02/cadjs";
+
+type NamedView = "front" | "back" | "left" | "right" | "top" | "bottom" | "isometric";
 
 /**
  * Centralizes scene-level keyboard listeners. Each `useEffect` here listens
@@ -16,6 +18,7 @@ import { NamedView, SceneMode } from "@vitekk02/cadjs";
  */
 export interface SceneKeyboardBindingsParams {
   mode: SceneMode;
+  setMode: (m: SceneMode) => void;
 
   // Undo/redo (Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z)
   activeSketch: boolean;
@@ -40,6 +43,7 @@ export function useSceneKeyboardBindings(
 ): void {
   const {
     mode,
+    setMode,
     activeSketch,
     undo,
     redo,
@@ -84,6 +88,23 @@ export function useSceneKeyboardBindings(
     window.addEventListener("keydown", handleUndoRedoKeys);
     return () => window.removeEventListener("keydown", handleUndoRedoKeys);
   }, [mode, activeSketch, undo, redo, undoSketch, redoSketch]);
+
+  // Global Escape key — exits non-sketch modes back to "move".
+  // Sketch mode handles its own Esc via useSketchInputHandlers:
+  //   1st Esc: cancels in-progress drawing (line following cursor, etc.)
+  //   2nd Esc: finishes sketch and exits (handled in SketchModeContent)
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      if (mode === "move") return;
+      if (mode === "sketch") return;
+
+      event.preventDefault();
+      setMode("move");
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [mode, setMode]);
 
   // Global keyboard listener for Ctrl+D (duplicate)
   useEffect(() => {

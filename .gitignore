@@ -30,3 +30,6 @@ yarn-error.log*
 
 # Tarballs from npm pack
 *.tgz
+
+# mkcert TLS keys for WebXR HTTPS dev server (never commit)
+*.pem

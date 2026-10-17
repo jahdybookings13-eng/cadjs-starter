@@ -23,6 +23,8 @@ import { PrimaryToolbar } from "../components/PrimaryToolbar";
 import { SceneOverlays } from "../components/SceneOverlays";
 import { useSceneKeyboardBindings } from "../hooks/useSceneKeyboardBindings";
 import { MODE_COMPONENTS } from "./modes";
+import { useVRSession } from "../components/vr/useVRSession";
+import { VRButton } from "../components/vr/VRButton";
 interface SimpleCadSceneProps {
   initialMode?: SceneMode;
 }
@@ -128,6 +130,8 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
     };
   }, [elements, mode, featureTree, camera]);
 
+  const { inVR, vrSupported, enterVR, exitVR } = useVRSession();
+
   const {
     api: selectOtherApi,
     menu: selectOtherMenu,
@@ -161,7 +165,7 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
     string[]
   >([]);
   const originGroupRef = useOriginHelpers(scene, originVisibility);
-  const ModeContent = MODE_COMPONENTS[mode];
+  const ModeContent = inVR && mode === "sketch" ? undefined : MODE_COMPONENTS[mode];
 
   const [undoDropdownOpen, setUndoDropdownOpen] = useState(false);
   const [redoDropdownOpen, setRedoDropdownOpen] = useState(false);
@@ -270,6 +274,7 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
 
   useSceneKeyboardBindings({
     mode,
+    setMode,
     activeSketch: !!activeSketch,
     undo,
     redo,
@@ -382,6 +387,13 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
           setRedoDropdownOpen={setRedoDropdownOpen}
           undoDropdownRef={undoDropdownRef}
           redoDropdownRef={redoDropdownRef}
+        />
+
+        <VRButton
+          vrSupported={vrSupported}
+          inVR={inVR}
+          onEnterVR={enterVR}
+          onExitVR={exitVR}
         />
 
         {/* Secondary Action Bar */}

@@ -21,6 +21,7 @@
     "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
+    "@dimforge/rapier3d-compat": "^0.20.0",
     "@salusoft89/planegcs": "^1.1.7",
     "@tailwindcss/vite": "^4.0.9",
     "@vitekk02/cadjs": "^0.1.1",
