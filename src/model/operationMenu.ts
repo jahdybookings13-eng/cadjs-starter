@@ -83,7 +83,7 @@ const P_SHELL = op(
   "Shell",
   "ready",
   "shell",
-  "opShell via wire-offset prism recipe (planar caps); MakeThickSolid binding pending for curved caps",
+  "opShell via wire-offset prism recipe (planar caps); MakeThickSolid verified bound but hangs/slow in wasm — curved caps deferred",
 );
 const P_THICKEN = op(
   "thicken",
@@ -104,7 +104,7 @@ const P_DELETEFACE = op(
   "Delete Face",
   "ready",
   "deleteFace",
-  "delete + sewn planar refill heal; adjacent-merge heal deferred",
+  "delete + sewn refill heal (planar or MakeFilling cap); adjacent-merge heal deferred",
 );
 const P_SPLIT = op(
   "split",
