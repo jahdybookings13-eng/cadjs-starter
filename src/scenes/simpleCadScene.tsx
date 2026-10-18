@@ -23,6 +23,7 @@ import {
   buildFillSurfaceNode,
   buildHoleNode,
   buildOffsetSurfaceNode,
+  buildProjectCurvesNode,
   buildRectangleProfileNodes,
   buildRuledSurfaceNode,
   buildShellNode,
@@ -366,6 +367,25 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
               pts,
               count,
               !!align,
+            ),
+          );
+          return nf;
+        },
+        projectCurves: (
+          srcFid: string,
+          tgtFid: string,
+          tags: string[],
+          dir: [number, number, number],
+        ) => {
+          const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          scadgenHistory.add(
+            buildProjectCurvesNode(
+              nf,
+              "Projected Curves",
+              srcFid,
+              tgtFid,
+              tags,
+              dir,
             ),
           );
           return nf;

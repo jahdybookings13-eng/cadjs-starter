@@ -22,6 +22,7 @@ import {
   patternBRep,
   deleteFaceBRep,
   splitBRep,
+  projectCurvesBRep,
   surfaceOpBRep,
   SketchToBrepService,
   makeSketchConstraint,
@@ -1271,6 +1272,62 @@ export class ScadgenExecutor {
           edgeTags: registerEdges(merged.brep.edges.length, node.featureId),
           faceTags: registerFaces(merged.brep.faces.length, node.featureId),
           ...(merged.occBrep !== undefined ? { occBrep: merged.occBrep } : {}),
+        };
+      }
+      case "projectCurves": {
+        const srcQ = listOf(node, "entities")[0];
+        const src = srcQ ? this.resolve(srcQ) : undefined;
+        const tgtQ = listOf(node, "targets")[0];
+        const tgt = tgtQ ? this.resolve(tgtQ) : undefined;
+        if (!src || !tgt) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "projectCurves: source or target not resolved",
+          };
+          return null;
+        }
+        let tags: string[] = [];
+        try {
+          const parsed: unknown = JSON.parse(
+            stringOfParam(node, "edgeTags") ?? "[]",
+          );
+          if (Array.isArray(parsed))
+            tags = parsed.filter((t): t is string => typeof t === "string");
+        } catch {
+          tags = [];
+        }
+        const idxs = tags.map((t) => src.edgeTags.indexOf(t) + 1);
+        if (!idxs.length || idxs.some((i) => i < 1)) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "projectCurves: edge tags not resolved",
+          };
+          return null;
+        }
+        const dirRaw = (stringOfParam(node, "direction") ?? "0,0,-1")
+          .split(",")
+          .map((x) => Number(x.trim()));
+        const res = await projectCurvesBRep(
+          { brep: src.brep, position: src.position, occBrep: src.occBrep },
+          { brep: tgt.brep, position: tgt.position, occBrep: tgt.occBrep },
+          idxs,
+          { x: dirRaw[0] ?? 0, y: dirRaw[1] ?? 0, z: dirRaw[2] ?? -1 },
+        );
+        if (!res.ok) {
+          report[node.featureId] = { status: "ERROR", detail: res.reason };
+          return null;
+        }
+        return {
+          featureId: node.featureId,
+          kind: "body",
+          brep: res.value.brep,
+          occBrep: res.value.occBrep,
+          position: src.position,
+          edgeTags: registerEdges(res.value.brep.edges.length, node.featureId),
+          faceTags: registerFaces(res.value.brep.faces.length, node.featureId),
+          edgeGeometry: res.value.edgeGeometry,
+          faceGeometry: res.value.faceGeometry,
+          vertexPositions: res.value.vertexPositions,
         };
       }
       case "surface": {

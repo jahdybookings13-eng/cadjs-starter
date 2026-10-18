@@ -31,32 +31,28 @@ interface ScadgenDbg {
   ) => string;
   tags: (fid: string) => { edges: number; faces: number } | null;
   etags: (fid: string) => string[] | null;
+  projectCurves: (
+    srcFid: string,
+    tgtFid: string,
+    tags: string[],
+    dir: [number, number, number],
+  ) => string;
+  ruledSurface: (fid: string, tagA: string, tagB: string) => string;
+  fillSurface: (fid: string, faceTag: string) => string;
+  offsetSurface: (fid: string, faceTag: string, d: number) => string;
   split: (
     fid: string,
     origin: [number, number, number],
     normal: [number, number, number],
   ) => string;
   delFace: (fid: string, tag: string) => string;
-  ruledSurface: (fid: string, tagA: string, tagB: string) => string;
-  fillSurface: (fid: string, faceTag: string) => string;
-  offsetSurface: (fid: string, faceTag: string, d: number) => string;
   fillet: (fid: string, tag: string, r: number) => string;
   modFillet: (fid: string, r?: number, tags?: string[]) => boolean;
   measEdge: (fid: string) => Promise<number[] | null>;
 }
 
-async function sg(page: import("@playwright/test").Page): Promise<ScadgenDbg> {
-  return page.evaluate(
-    () =>
-      (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } }).__cadDebug
-        .scadgen,
-  );
-}
-
-test("shell, draft, hole, circular pattern run on the real kernel", async ({
-  page,
-}) => {
-  test.setTimeout(180_000);
+async function boot(page: import("@playwright/test").Page): Promise<void> {
+  test.setTimeout(120_000);
   await page.goto("/", { waitUntil: "load" });
   await page.waitForFunction(
     () =>
@@ -68,7 +64,18 @@ test("shell, draft, hole, circular pattern run on the real kernel", async ({
     undefined,
     { timeout: 30_000 },
   );
+}
 
+function sg(page: import("@playwright/test").Page): Promise<ScadgenDbg> {
+  return page.evaluate(
+    () =>
+      (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } }).__cadDebug
+        .scadgen,
+  );
+}
+
+test("shell and draft run on the real kernel", async ({ page }) => {
+  await boot(page);
   const shellRes = await page.evaluate(async () => {
     const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
       .__cadDebug.scadgen;
@@ -111,7 +118,12 @@ test("shell, draft, hole, circular pattern run on the real kernel", async ({
   });
   expect(draftRes.status).toBe("OK");
   expect(draftRes.out?.faces).toBeGreaterThanOrEqual(6);
+});
 
+test("hole and circular/curve pattern run on the real kernel", async ({
+  page,
+}) => {
+  await boot(page);
   const holeRes = await page.evaluate(async () => {
     const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
       .__cadDebug.scadgen;
@@ -157,6 +169,20 @@ test("shell, draft, hole, circular pattern run on the real kernel", async ({
   expect(curveRes.status).toBe("OK");
   expect(curveRes.out?.faces).toBeGreaterThanOrEqual(18);
 
+  const badCurveRes = await page.evaluate(async () => {
+    const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      .__cadDebug.scadgen;
+    const boxFid = s.box(2, 2, 1);
+    await s.idle();
+    const bf = s.curvePattern(boxFid, [[0, 0, 0]], 3);
+    const st = await s.idle();
+    return { status: st[bf]?.status, detail: st[bf]?.detail };
+  });
+  expect(badCurveRes.status).toBe("ERROR");
+});
+
+test("delete-face and split run on the real kernel", async ({ page }) => {
+  await boot(page);
   const delRes = await page.evaluate(async () => {
     const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
       .__cadDebug.scadgen;
@@ -197,7 +223,12 @@ test("shell, draft, hole, circular pattern run on the real kernel", async ({
   expect(splitRes.status).toBe("OK");
   expect(splitRes.out?.faces).toBeGreaterThanOrEqual(6);
   expect(splitRes.badStatus).toBe("ERROR");
+});
 
+test("ruled, fill, offset surfaces and projectCurves run on the real kernel", async ({
+  page,
+}) => {
+  await boot(page);
   const surfRes = await page.evaluate(async () => {
     const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
       .__cadDebug.scadgen;
@@ -229,6 +260,31 @@ test("shell, draft, hole, circular pattern run on the real kernel", async ({
   expect(surfRes.offsetFaces).toBeGreaterThanOrEqual(1);
   expect(surfRes.bad).toBe("ERROR");
 
+  const projRes = await page.evaluate(async () => {
+    const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      .__cadDebug.scadgen;
+    const boxFid = s.box(2, 2, 1);
+    await s.idle();
+    const et = s.etags(boxFid) ?? [];
+    const pf = s.projectCurves(boxFid, boxFid, et, [0, 0, -1]);
+    const st = await s.idle();
+    const bad = s.projectCurves(boxFid, boxFid, ["nope_E9"], [0, 0, -1]);
+    const st2 = await s.idle();
+    return {
+      status: st[pf]?.status,
+      detail: st[pf]?.detail,
+      out: s.tags(pf),
+      badStatus: st2[bad]?.status,
+    };
+  });
+  expect(projRes.status).toBe("OK");
+  expect(projRes.out?.faces).toBe(0);
+  expect(projRes.out?.edges).toBeGreaterThanOrEqual(1);
+  expect(projRes.badStatus).toBe("ERROR");
+});
+
+test("modifyFillet re-specs radius on the real kernel", async ({ page }) => {
+  await boot(page);
   const modRes = await page.evaluate(async () => {
     const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
       .__cadDebug.scadgen;
@@ -250,7 +306,9 @@ test("shell, draft, hole, circular pattern run on the real kernel", async ({
         !!lenBefore &&
         !!lenAfter &&
         lenBefore.length === lenAfter.length &&
-        lenBefore.some((v, i) => Math.abs(v - (lenAfter[i] as number)) > 1e-4),
+        lenBefore.some(
+          (v, i) => Math.abs(v - (lenAfter[i] as number)) > 1e-4,
+        ),
     };
   });
   expect(modRes.statusBefore).toBe("OK");
@@ -272,15 +330,4 @@ test("shell, draft, hole, circular pattern run on the real kernel", async ({
     return { status: st[ff]?.status };
   });
   expect(impossibleFillet.status).toBe("ERROR");
-
-  const badCurveRes = await page.evaluate(async () => {
-    const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
-      .__cadDebug.scadgen;
-    const boxFid = s.box(2, 2, 1);
-    await s.idle();
-    const bf = s.curvePattern(boxFid, [[0, 0, 0]], 3);
-    const st = await s.idle();
-    return { status: st[bf]?.status, detail: st[bf]?.detail };
-  });
-  expect(badCurveRes.status).toBe("ERROR");
 });

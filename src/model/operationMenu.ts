@@ -172,9 +172,9 @@ const P_CURVE_ON_FACE = op(
 const P_PROJECT_CURVE = op(
   "project-curves",
   "Project Curves",
-  "planned",
-  null,
-  "tier 4: opProjectCurves",
+  "ready",
+  "projectCurves",
+  "BRepProj linear projection of source edges onto target body along a direction",
 );
 const P_SECTION = op(
   "section",

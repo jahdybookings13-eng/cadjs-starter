@@ -407,6 +407,42 @@ export function buildHoleNode(
   };
 }
 
+export function buildProjectCurvesNode(
+  featureId: string,
+  name: string,
+  sourceFeatureId: string,
+  targetFeatureId: string,
+  edgeTags: string[],
+  direction: [number, number, number],
+): ScadgenFeatureNode {
+  return {
+    featureId,
+    featureType: "projectCurves",
+    name,
+    namespace: "",
+    parameters: [
+      {
+        kind: "queryList",
+        parameterId: "entities",
+        queries: [faceQ(sourceFeatureId, "*")],
+      },
+      {
+        kind: "queryList",
+        parameterId: "targets",
+        queries: [faceQ(targetFeatureId, "*")],
+      },
+      {
+        kind: "string",
+        parameterId: "edgeTags",
+        value: JSON.stringify(edgeTags),
+      },
+      { kind: "string", parameterId: "direction", value: direction.join(",") },
+    ],
+    subFeatures: [],
+    suppressed: false,
+  };
+}
+
 export function buildRuledSurfaceNode(
   featureId: string,
   name: string,

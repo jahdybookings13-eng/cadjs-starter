@@ -7,6 +7,7 @@ import {
   buildDeleteFaceNode,
   buildFillSurfaceNode,
   buildOffsetSurfaceNode,
+  buildProjectCurvesNode,
   buildRuledSurfaceNode,
   buildMirrorNodes,
   buildLinearPatternNodes,
@@ -55,6 +56,33 @@ describe("primitive composite builders", () => {
       (x) => x.kind === "queryList" && x.parameterId === "axis",
     );
     expect(axis?.kind === "queryList" && axis.queries[0]?.entityTag).toBe("l3");
+  });
+  it("projectCurves node wires entities + targets + tags + direction", () => {
+    const nd = buildProjectCurvesNode(
+      "Fp",
+      "Proj",
+      "Fsrc",
+      "Ftgt",
+      ["Fsrc_E0", "Fsrc_E1"],
+      [0, 0, -1],
+    );
+    expect(nd.featureType).toBe("projectCurves");
+    const ent = nd.parameters.find(
+      (x) => x.kind === "queryList" && x.parameterId === "entities",
+    );
+    const tgt = nd.parameters.find(
+      (x) => x.kind === "queryList" && x.parameterId === "targets",
+    );
+    expect(ent?.kind === "queryList" && ent.queries[0]?.creationFeatureId).toBe(
+      "Fsrc",
+    );
+    expect(tgt?.kind === "queryList" && tgt.queries[0]?.creationFeatureId).toBe(
+      "Ftgt",
+    );
+    const dir = nd.parameters.find(
+      (x) => x.kind === "string" && x.parameterId === "direction",
+    );
+    expect(dir?.kind === "string" && dir.value).toBe("0,0,-1");
   });
   it("surface builders carry kind + tags + typed distance", () => {
     const ruled = buildRuledSurfaceNode(
