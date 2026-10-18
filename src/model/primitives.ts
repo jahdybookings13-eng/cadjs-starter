@@ -95,6 +95,7 @@ export function buildBoxNodes(
   w: number,
   h: number,
   d: number,
+  opts?: { midplane?: boolean; opposite?: boolean },
 ): ScadgenFeatureNode[] {
   const skFid = `${baseId}_sk`;
   return [
@@ -104,6 +105,18 @@ export function buildBoxNodes(
       name,
       [provenanceForFeature(skFid, "SKETCH_ENTITY", "l1")],
       q(d, `${(d * 1000).toFixed(0)} mm`),
+      [
+        {
+          kind: "boolean",
+          parameterId: "midplane",
+          value: !!opts?.midplane,
+        },
+        {
+          kind: "boolean",
+          parameterId: "oppositeDirection",
+          value: !!opts?.opposite,
+        },
+      ],
     ),
   ];
 }

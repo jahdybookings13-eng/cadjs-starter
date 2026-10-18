@@ -198,9 +198,14 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
             },
             scadgenHistory,
           ),
-        box: (w: number, h: number, d: number) => {
+        box: (
+          w: number,
+          h: number,
+          d: number,
+          opts?: { midplane?: boolean; opposite?: boolean },
+        ) => {
           const fid = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
-          for (const n of buildBoxNodes(fid, "Box", w, h, d))
+          for (const n of buildBoxNodes(fid, "Box", w, h, d, opts))
             scadgenHistory.add(n);
           return fid;
         },

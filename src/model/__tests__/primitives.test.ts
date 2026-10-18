@@ -17,6 +17,20 @@ import {
 } from "../primitives";
 
 describe("primitive composite builders", () => {
+  it("box carries midplane + oppositeDirection overrides", () => {
+    const [, ex] = buildBoxNodes("Fb", "Box", 1, 1, 1, {
+      midplane: true,
+      opposite: true,
+    });
+    const mid = ex?.parameters.find(
+      (x) => x.kind === "boolean" && x.parameterId === "midplane",
+    );
+    const opp = ex?.parameters.find(
+      (x) => x.kind === "boolean" && x.parameterId === "oppositeDirection",
+    );
+    expect(mid?.kind === "boolean" && mid.value).toBe(true);
+    expect(opp?.kind === "boolean" && opp.value).toBe(true);
+  });
   it("box = sketch(rect) + extrude with provenance to sketch", () => {
     const [sk, ex] = buildBoxNodes("Fx", "Box", 0.1, 0.2, 0.05);
     expect(sk?.featureType).toBe("newSketch");

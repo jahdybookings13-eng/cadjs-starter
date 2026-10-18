@@ -182,6 +182,14 @@ function stringOfParam(
   return p ? p.value : null;
 }
 
+function boolOfParam(node: ScadgenFeatureNode, parameterId: string): boolean {
+  const p = node.parameters.find(
+    (x): x is Extract<ScadgenParameter, { kind: "boolean" }> =>
+      x.kind === "boolean" && x.parameterId === parameterId,
+  );
+  return p ? p.value : false;
+}
+
 function listOf(
   node: ScadgenFeatureNode,
   parameterId: string,
@@ -582,7 +590,7 @@ export class ScadgenExecutor {
         const res = await extrudeBRep(
           src.brep,
           depth,
-          1,
+          boolOfParam(node, "oppositeDirection") ? -1 : 1,
           src.planeNormal
             ? {
                 x: src.planeNormal[0],
@@ -591,6 +599,7 @@ export class ScadgenExecutor {
               }
             : undefined,
           src.occBrep,
+          boolOfParam(node, "midplane"),
         );
         if (!res.ok) {
           report[node.featureId] = { status: "ERROR", detail: res.reason };

@@ -1,7 +1,12 @@
 import { expect, test } from "@playwright/test";
 
 interface ScadgenDbg {
-  box: (w: number, h: number, d: number) => string;
+  box: (
+    w: number,
+    h: number,
+    d: number,
+    opts?: { midplane?: boolean; opposite?: boolean },
+  ) => string;
   ftags: (fid: string) => string[] | null;
   idle: () => Promise<Record<string, { status: string; detail?: string }>>;
   shell: (fid: string, tag: string, t: number) => string;
@@ -49,6 +54,8 @@ interface ScadgenDbg {
   fillet: (fid: string, tags: string[], r: number, radii?: number[]) => string;
   modFillet: (fid: string, r?: number, tags?: string[]) => boolean;
   measEdge: (fid: string) => Promise<number[] | null>;
+  authoredIds: () => string[];
+  configureSync: () => void;
 }
 
 async function boot(page: import("@playwright/test").Page): Promise<void> {
@@ -281,6 +288,63 @@ test("ruled, fill, offset surfaces and projectCurves run on the real kernel", as
   expect(projRes.out?.faces).toBe(0);
   expect(projRes.out?.edges).toBeGreaterThanOrEqual(1);
   expect(projRes.badStatus).toBe("ERROR");
+});
+
+test("extrude honors midplane and oppositeDirection", async ({ page }) => {
+  await boot(page);
+  const r = await page.evaluate(async () => {
+    const dbg = (
+      window as unknown as {
+        __cadDebug: {
+          scadgen: ScadgenDbg;
+          getElements: () => {
+            nodeId: string;
+            position: [number, number, number];
+          }[];
+        };
+      }
+    ).__cadDebug;
+    const s = dbg.scadgen;
+    s.configureSync();
+    const mid = s.box(2, 2, 1, { midplane: true });
+    const opp = s.box(2, 2, 1, { opposite: true });
+    const st = await s.idle();
+    const els = () =>
+      (
+        window as unknown as {
+          __cadDebug: {
+            getElements: () => {
+              nodeId: string;
+              position: [number, number, number];
+            }[];
+          };
+        }
+      ).__cadDebug.getElements();
+    for (let i = 0; i < 60; i++) {
+      if (els().length >= 2) break;
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    const pos = els().map((e) => e.position[2]);
+    const authored = dbg.scadgen.authoredIds();
+    const zFor = (fid: string) => {
+      const pair = authored.find((a) => a.startsWith(`${fid}->`));
+      const nid = pair?.split("->")[1];
+      return els().find((e) => e.nodeId === nid)?.position[2];
+    };
+    return {
+      mid: st[mid]?.status,
+      opp: st[opp]?.status,
+      count: pos.length,
+      zMid: zFor(mid),
+      zOpp: zFor(opp),
+    };
+  });
+  expect(r.mid).toBe("OK");
+  expect(r.opp).toBe("OK");
+  expect(r.count).toBe(2);
+  // symmetric extrude sits on the profile plane; opposite grows downward
+  expect(Math.abs(r.zMid ?? 99)).toBeLessThan(0.2);
+  expect(r.zOpp ?? 99).toBeLessThan(-0.2);
 });
 
 test("modifyFillet re-specs radius on the real kernel", async ({ page }) => {
