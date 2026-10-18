@@ -93,7 +93,13 @@ export class ScadgenSceneSync {
     for (const node of nodes) {
       if (!COMMITTABLE.has(node.featureType)) continue;
       if (report[node.featureId]?.status !== "OK") continue;
-      if (this.synced.has(node.featureId)) continue;
+      if (this.executor?.isDeleted(node.featureId)) {
+        const gone = this.authored.get(node.featureId);
+        if (gone) this.core.setElementHidden?.(gone, true);
+        continue;
+      }
+      const reappeared = this.authored.get(node.featureId);
+      if (reappeared) this.core.setElementHidden?.(reappeared, false);
       const out = this.outputOf(node.featureId);
       if (!out) continue;
       this.syncExtras(node.featureId, out);
@@ -176,8 +182,16 @@ export class ScadgenSceneSync {
     const extras = out.additionalBodies ?? [];
     extras.forEach((b, i) => {
       const key = `${featureId}#${i + 1}`;
-      if (this.synced.has(key)) return;
-      let targetId = this.authored.get(key);
+      const target = this.executor?.isDeleted(key);
+      const existing = this.authored.get(key);
+      if (target && existing) {
+        this.core?.setElementHidden?.(existing, true);
+        this.synced.add(key);
+        return;
+      }
+      if (target) return;
+      if (existing) this.core?.setElementHidden?.(existing, false);
+      let targetId = existing;
       if (!targetId) {
         const created = b.brep
           ? this.core?.createElement?.(b.brep, b.position)

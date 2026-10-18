@@ -34,6 +34,7 @@ interface ScadgenDbg {
     separate?: boolean,
   ) => string;
   bodiesOf: (fid: string) => string[];
+  delBodies: (owners: string[]) => string;
   mirror: (src: string, axis: "X" | "Y" | "Z") => string;
   curvePattern: (
     fid: string,
@@ -451,7 +452,9 @@ test("separate pattern emits one body + element per instance", async ({
     const els = () =>
       (
         window as unknown as {
-          __cadDebug: { getElements: () => unknown[] };
+          __cadDebug: {
+            getElements: () => { nodeId: string; visible?: boolean }[];
+          };
         }
       ).__cadDebug.getElements();
     const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
@@ -465,18 +468,25 @@ test("separate pattern emits one body + element per instance", async ({
       if (els().length >= 5) break;
       await new Promise((res) => setTimeout(res, 100));
     }
+    const db = s.delBodies([`${pf}#1`, `${pf}#2`]);
+    const st2 = await s.idle();
+    await s.idle();
     return {
       status: st[pf]?.status,
       detail: st[pf]?.detail,
       bodies: s.bodiesOf(pf),
       elements: els().length,
       tag0: (s.etags(`${pf}#1`) ?? [""])[0],
+      delStatus: st2[db]?.status,
+      visible: els().filter((e) => e.visible !== false).length,
     };
   });
   expect(r.status).toBe("OK");
   expect(r.bodies.length).toBe(4);
   expect(r.elements).toBeGreaterThanOrEqual(5); // 1 box + 4 pattern bodies
   expect(r.tag0).toBe(`${r.bodies[1]}_E0`); // tags carry the body-qualified owner
+  expect(r.delStatus).toBe("OK");
+  expect(r.visible).toBe(3); // 5 elements minus 2 deleted bodies
 });
 
 test("modifyFillet re-specs radius on the real kernel", async ({ page }) => {

@@ -17,6 +17,7 @@ import {
   buildTorusNodes,
   buildCircularPatternNode,
   buildCurvePatternNode,
+  buildDeleteBodiesNode,
   buildDeleteFaceNode,
   buildSplitNode,
   buildDraftNode,
@@ -163,6 +164,9 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
         elements.map((el) => ({
           nodeId: el.nodeId,
           position: [el.position.x, el.position.y, el.position.z],
+          visible: (
+            getObject as (id: string) => { visible?: boolean } | undefined
+          )(el.nodeId)?.visible,
         })),
       getMode: () => mode,
       getFeatureTree: () => featureTree,
@@ -369,6 +373,13 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
               extra ?? [],
               !!separate,
             ),
+          );
+          return nf;
+        },
+        delBodies: (owners: string[]) => {
+          const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          scadgenHistory.add(
+            buildDeleteBodiesNode(nf, "Delete Bodies", owners),
           );
           return nf;
         },

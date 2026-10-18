@@ -229,9 +229,9 @@ const READY_TRANSFORM_SCALE = op(
 const P_COMPOSITE = op(
   "delete-bodies",
   "Delete Bodies",
-  "kernel-unwired",
-  null,
-  "opDeleteBodies trivial; UI delete exists in cadjs",
+  "ready",
+  "deleteBodies",
+  "body-set filter: removes selected owners (fid or fid#k) from output",
 );
 
 export const MENU_BY_SELECTION: Record<SelectionKind, MenuOp[]> = {

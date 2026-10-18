@@ -616,6 +616,28 @@ export function buildThickenNode(
   };
 }
 
+export function buildDeleteBodiesNode(
+  featureId: string,
+  name: string,
+  bodyOwners: string[],
+): ScadgenFeatureNode {
+  return {
+    featureId,
+    featureType: "deleteBodies",
+    name,
+    namespace: "",
+    parameters: [
+      {
+        kind: "string",
+        parameterId: "bodies",
+        value: JSON.stringify(bodyOwners),
+      },
+    ],
+    subFeatures: [],
+    suppressed: false,
+  };
+}
+
 export function buildDeleteFaceNode(
   featureId: string,
   name: string,

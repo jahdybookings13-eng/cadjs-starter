@@ -352,6 +352,11 @@ export function edgeOwnerOf(tag: string): string | null {
 export class ScadgenExecutor {
   readonly outputs = new Map<string, BodyOutput>();
   readonly bodySets = new Map<string, BodyOutput[]>();
+  private deleted = new Set<string>();
+
+  isDeleted(owner: string): boolean {
+    return this.deleted.has(owner);
+  }
   private prevGeom = new Map<
     string,
     { brep: Brep; tags: string[]; edgeTags: string[] }
@@ -395,6 +400,7 @@ export class ScadgenExecutor {
     const report: ExecReport = {};
     this.outputs.clear();
     this.bodySets.clear();
+    this.deleted.clear();
     this.scope = {};
     for (const node of history.evaluatedNodes()) {
       if (node.featureType === "variable") {
@@ -550,16 +556,28 @@ export class ScadgenExecutor {
   private resolve(query: ProvenanceQuery): BodyOutput | null {
     if (!query.creationFeatureId) return null;
     const fid = query.creationFeatureId;
+    if (this.deleted.has(fid)) return null;
     const hash = fid.lastIndexOf("#");
     if (hash > 0) {
       const base = fid.slice(0, hash);
       const k = Number(fid.slice(hash + 1));
       const set = this.bodySets.get(base);
-      if (set && Number.isInteger(k) && k >= 0 && k < set.length)
-        return set[k] ?? null;
+      if (set && Number.isInteger(k) && k >= 0 && k < set.length) {
+        const body = set[k]!;
+        return this.deleted.has(body.featureId) ? null : body;
+      }
       return this.outputs.get(fid) ?? null; // explicit extra owner id
     }
-    return this.outputs.get(fid) ?? null;
+    const out = this.outputs.get(fid) ?? null;
+    if (out && (out.additionalBodies?.length ?? 0) > 0) {
+      const set = this.bodySets.get(fid) ?? [out];
+      if (set.every((b) => this.deleted.has(b.featureId))) return null;
+    }
+    return out;
+  }
+
+  deleteBodies(owners: string[]): void {
+    for (const o of owners) this.deleted.add(o);
   }
 
   // Tag → index with persistent-naming retarget: exact hit first, else the
@@ -1663,6 +1681,28 @@ export class ScadgenExecutor {
           faceGeometry: res.value.faceGeometry,
           vertexPositions: res.value.vertexPositions,
         };
+      }
+      case "deleteBodies": {
+        let owners: string[] = [];
+        try {
+          const parsed: unknown = JSON.parse(
+            stringOfParam(node, "bodies") ?? "[]",
+          );
+          if (Array.isArray(parsed))
+            owners = parsed.filter((x): x is string => typeof x === "string");
+        } catch {
+          owners = [];
+        }
+        if (!owners.length) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "deleteBodies: no bodies given",
+          };
+          return null;
+        }
+        for (const o of owners) this.deleted.add(o);
+        report[node.featureId] = { status: "OK" };
+        return null;
       }
       case "split": {
         const bodyQ = listOf(node, "targets")[0];
