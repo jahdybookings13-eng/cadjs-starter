@@ -111,7 +111,7 @@ const P_SPLIT = op(
   "Split",
   "ready",
   "split",
-  "plane split via BRepAlgoAPI_Splitter; keeps positive half-space piece",
+  "plane split via BRepAlgoAPI_Splitter; keep param selects side — split twice for both halves",
 );
 const P_CIRC_PATTERN = op(
   "circular-pattern",

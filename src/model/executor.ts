@@ -1461,6 +1461,8 @@ export class ScadgenExecutor {
           { x: origin[0] ?? 0, y: origin[1] ?? 0, z: origin[2] ?? 0 },
           { x: normal[0] ?? 1, y: normal[1] ?? 0, z: normal[2] ?? 0 },
           src.occBrep,
+          undefined,
+          stringOfParam(node, "keep") === "negative" ? "negative" : "positive",
         );
         if (!res.ok) {
           report[node.featureId] = { status: "ERROR", detail: res.reason };

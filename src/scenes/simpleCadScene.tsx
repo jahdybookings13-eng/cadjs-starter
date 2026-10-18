@@ -420,9 +420,19 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
           fid: string,
           origin: [number, number, number],
           normal: [number, number, number],
+          keep?: "positive" | "negative",
         ) => {
           const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
-          scadgenHistory.add(buildSplitNode(nf, "Split", fid, origin, normal));
+          scadgenHistory.add(
+            buildSplitNode(
+              nf,
+              "Split",
+              fid,
+              origin,
+              normal,
+              keep ?? "positive",
+            ),
+          );
           return nf;
         },
         delFace: (fid: string, tag: string) => {

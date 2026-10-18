@@ -550,6 +550,7 @@ export function buildSplitNode(
   bodyFeatureId: string,
   planeOrigin: [number, number, number],
   planeNormal: [number, number, number],
+  keep: "positive" | "negative" = "positive",
 ): ScadgenFeatureNode {
   return {
     featureId,
@@ -572,6 +573,7 @@ export function buildSplitNode(
         parameterId: "planeNormal",
         value: planeNormal.join(","),
       },
+      { kind: "string", parameterId: "keep", value: keep },
     ],
     subFeatures: [],
     suppressed: false,
