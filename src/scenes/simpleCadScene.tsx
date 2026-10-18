@@ -28,6 +28,7 @@ import {
   trimSnapshot,
   type SketchSnapLike,
 } from "../model/constraints";
+import { buildEdgeFilletNode, modifyFillet } from "../model/filletEdit";
 import {
   edgeLength,
   nearestVertexDistance,
@@ -364,6 +365,16 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
           );
           return nf;
         },
+        fillet: (fid: string, tag: string, r: number) => {
+          const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          scadgenHistory.add(buildEdgeFilletNode(nf, "Fillet", fid, [tag], r));
+          return nf;
+        },
+        modFillet: (fid: string, r?: number, tags?: string[]) =>
+          modifyFillet(scadgenHistory, fid, {
+            ...(r !== undefined ? { radius: r } : {}),
+            ...(tags ? { edgeTags: tags } : {}),
+          }),
         etags: (fid: string) =>
           scadgenExecutor.outputs.get(fid)?.edgeTags ?? null,
         measPolyline: (fid: string) => {

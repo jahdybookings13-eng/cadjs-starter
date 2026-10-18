@@ -33,6 +33,13 @@ const READY_REVOLVE = op("revolve", "Revolve", "ready", "revolve");
 const READY_LOFT = op("loft", "Loft", "ready", "loft");
 const READY_SWEEP = op("sweep", "Sweep", "ready", "sweep");
 const READY_FILLET = op("fillet", "Fillet", "ready", "fillet");
+const READY_MODIFY_FILLET = op(
+  "modify-fillet",
+  "Modify Fillet",
+  "ready",
+  "fillet",
+  "history edit: radius/edge re-spec on existing fillet feature; rebuild-per-edit",
+);
 const READY_CHAMFER = op("chamfer", "Chamfer", "ready", "chamfer");
 const READY_BOOLEAN = op("boolean", "Boolean", "ready", "boolean");
 const READY_PATTERN = op(
@@ -258,6 +265,7 @@ export const MENU_BY_SELECTION: Record<SelectionKind, MenuOp[]> = {
     READY_MEASURE,
   ],
   "curved-face": [
+    READY_MODIFY_FILLET,
     P_HOLE,
     P_DRAFT,
     P_THICKEN,
@@ -268,6 +276,7 @@ export const MENU_BY_SELECTION: Record<SelectionKind, MenuOp[]> = {
   ],
   edge: [
     READY_FILLET,
+    READY_MODIFY_FILLET,
     READY_CHAMFER,
     P_MOVEFACE,
     P_SPLIT,

@@ -631,7 +631,8 @@ export class ScadgenExecutor {
           };
           return null;
         }
-        const idx = this.edgeIndices(src, qs);
+        // worker edge op API is 1-based (OCC IndexedMap); tags are 0-based.
+        const idx = this.edgeIndices(src, qs).map((i) => i + 1);
         const radius =
           quantityOf(node, "radius", this.scope) ??
           quantityOf(node, "width", this.scope) ??

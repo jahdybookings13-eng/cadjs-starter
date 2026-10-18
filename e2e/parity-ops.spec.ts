@@ -30,6 +30,10 @@ interface ScadgenDbg {
     align?: boolean,
   ) => string;
   tags: (fid: string) => { edges: number; faces: number } | null;
+  etags: (fid: string) => string[] | null;
+  fillet: (fid: string, tag: string, r: number) => string;
+  modFillet: (fid: string, r?: number, tags?: string[]) => boolean;
+  measEdge: (fid: string) => Promise<number[] | null>;
 }
 
 async function sg(page: import("@playwright/test").Page): Promise<ScadgenDbg> {
@@ -143,6 +147,50 @@ test("shell, draft, hole, circular pattern run on the real kernel", async ({
   });
   expect(curveRes.status).toBe("OK");
   expect(curveRes.out?.faces).toBeGreaterThanOrEqual(18);
+
+  const modRes = await page.evaluate(async () => {
+    const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      .__cadDebug.scadgen;
+    const boxFid = s.box(2, 2, 1);
+    await s.idle();
+    const et = s.etags(boxFid) ?? [];
+    const ff = s.fillet(boxFid, et[0] ?? "", 0.3);
+    const before = await s.idle();
+    const lenBefore = await s.measEdge(ff);
+    const applied = s.modFillet(ff, 0.6);
+    const after = await s.idle();
+    const lenAfter = await s.measEdge(ff);
+    return {
+      statusBefore: before[ff]?.status,
+      applied,
+      statusAfter: after[ff]?.status,
+      faces: s.tags(ff)?.faces,
+      changed:
+        !!lenBefore &&
+        !!lenAfter &&
+        lenBefore.length === lenAfter.length &&
+        lenBefore.some((v, i) => Math.abs(v - (lenAfter[i] as number)) > 1e-4),
+    };
+  });
+  expect(modRes.statusBefore).toBe("OK");
+  expect(modRes.applied).toBe(true);
+  expect(modRes.statusAfter).toBe("OK");
+  expect(modRes.faces).toBeGreaterThanOrEqual(7);
+  expect(modRes.changed).toBe(true);
+
+  const impossibleFillet = await page.evaluate(async () => {
+    const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      .__cadDebug.scadgen;
+    const boxFid = s.box(2, 2, 1);
+    await s.idle();
+    const et = s.etags(boxFid) ?? [];
+    const ff = s.fillet(boxFid, et[0] ?? "", 0.2);
+    await s.idle();
+    s.modFillet(ff, 5);
+    const st = await s.idle();
+    return { status: st[ff]?.status };
+  });
+  expect(impossibleFillet.status).toBe("ERROR");
 
   const badCurveRes = await page.evaluate(async () => {
     const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })

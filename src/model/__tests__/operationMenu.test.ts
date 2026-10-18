@@ -8,7 +8,13 @@ import {
 describe("operation menu (Onshape port)", () => {
   it("edge menu surfaces the two ready ops only in allowedOperations", () => {
     const ids = allowedOperations("edge").map((o) => o.id);
-    expect(ids).toEqual(["fillet", "chamfer", "measure", "variables"]);
+    expect(ids).toEqual([
+      "fillet",
+      "modify-fillet",
+      "chamfer",
+      "measure",
+      "variables",
+    ]);
   });
   it("body menu exposes boolean/mirror/pattern ready, shell+draft planned-but-visible, sheet hidden", () => {
     const m = menuFor("body");
