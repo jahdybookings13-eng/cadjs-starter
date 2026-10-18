@@ -1,11 +1,15 @@
+import {
+  DimensionalConstraint,
+  isDimensionalConstraint,
+  PLANE_SELECTOR,
+  type ConstraintType,
+  worldToScreen,
+} from "@vitekk02/cadjs";
 import React, { FC, useEffect, useRef, useState } from "react";
+
 import { createPortal } from "react-dom";
 import * as THREE from "three";
-import {
-  PLANE_SELECTOR,
-  worldToScreen,
-  type ConstraintType,
-} from "@vitekk02/cadjs";
+
 import {
   useCadCore,
   useCadVisualizer,
@@ -174,7 +178,10 @@ const SketchModeContent: FC<ModeContentProps> = ({
         event.preventDefault();
         const success = await finishSketch();
         if (!success) {
-          showToast("Sketch may have open profiles — try closing them first", "warning");
+          showToast(
+            "Sketch may have open profiles — try closing them first",
+            "warning",
+          );
           return;
         }
         setMode("move");
@@ -183,7 +190,10 @@ const SketchModeContent: FC<ModeContentProps> = ({
         event.stopImmediatePropagation();
         const success = await finishSketch();
         if (!success) {
-          showToast("Sketch may have open profiles — try closing them first", "warning");
+          showToast(
+            "Sketch may have open profiles — try closing them first",
+            "warning",
+          );
           return;
         }
         setMode("move");
@@ -192,8 +202,17 @@ const SketchModeContent: FC<ModeContentProps> = ({
     // Capture phase: fires AFTER bubble, so sketch's handleKeyDown (bubble) has
     // already run and potentially called preventDefault.
     window.addEventListener("keydown", handleSketchModeExit, true);
-    return () => window.removeEventListener("keydown", handleSketchModeExit, true);
-  }, [mode, activeSketch, isSelectingPlane, isChaining, finishSketch, setMode, showToast]);
+    return () =>
+      window.removeEventListener("keydown", handleSketchModeExit, true);
+  }, [
+    mode,
+    activeSketch,
+    isSelectingPlane,
+    isChaining,
+    finishSketch,
+    setMode,
+    showToast,
+  ]);
 
   // Prevent the browser's right-click menu on the canvas.
   useEffect(() => {
@@ -358,9 +377,10 @@ const SketchModeContent: FC<ModeContentProps> = ({
     if (!editingConstraintId || !activeSketch || !renderer || !camera) return;
 
     const constraint = activeSketch.constraints.find(
-      (c) => c.id === editingConstraintId,
+      (c): c is DimensionalConstraint =>
+        c.id === editingConstraintId && isDimensionalConstraint(c),
     );
-    if (!constraint || constraint.value === undefined) return;
+    if (!constraint) return;
 
     editingConstraintRef.current = {
       id: constraint.id,
@@ -552,7 +572,7 @@ const SketchModeContent: FC<ModeContentProps> = ({
           const v = getCurrentValueForConstraint(
             constraintId as ConstraintType,
           );
-          return v ?? null;
+          return v ?? undefined;
         }}
         onValueChange={handleConstraintPreviewChange}
         onValueCancel={handleConstraintPreviewCancel}

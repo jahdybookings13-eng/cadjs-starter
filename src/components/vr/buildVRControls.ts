@@ -1,6 +1,15 @@
 import * as THREE from "three";
 
-const DEFAULT_ACTIONS = ["Sketch", "Extrude", "Loft", "Sweep", "Revolve", "Fillet", "Shell", "Measure"];
+const DEFAULT_ACTIONS = [
+  "Sketch",
+  "Extrude",
+  "Loft",
+  "Sweep",
+  "Revolve",
+  "Fillet",
+  "Shell",
+  "Measure",
+];
 
 export function buildVRControls(actions: string[] = DEFAULT_ACTIONS) {
   const group = new THREE.Group();
@@ -61,26 +70,58 @@ export function buildVRControls(actions: string[] = DEFAULT_ACTIONS) {
   const GAP_RATIO = 0.06;
   const SEGMENTS_PER_ARC = 16;
 
-  function buildArcGeometry(innerR: number, outerR: number, startAngle: number, sweepAngle: number, segments: number): THREE.BufferGeometry {
+  function buildArcGeometry(
+    innerR: number,
+    outerR: number,
+    startAngle: number,
+    sweepAngle: number,
+    segments: number,
+  ): THREE.BufferGeometry {
     const positions: number[] = [];
     const uvs: number[] = [];
 
     for (let s = 0; s < segments; s++) {
       const a0 = startAngle + (s / segments) * sweepAngle;
       const a1 = startAngle + ((s + 1) / segments) * sweepAngle;
-      const c0 = Math.cos(a0), s0 = Math.sin(a0);
-      const c1 = Math.cos(a1), s1 = Math.sin(a1);
+      const c0 = Math.cos(a0),
+        s0 = Math.sin(a0);
+      const c1 = Math.cos(a1),
+        s1 = Math.sin(a1);
 
-      positions.push(innerR*c0, innerR*s0, 0, outerR*c0, outerR*s0, 0, outerR*c1, outerR*s1, 0);
-      positions.push(innerR*c0, innerR*s0, 0, outerR*c1, outerR*s1, 0, innerR*c1, innerR*s1, 0);
+      positions.push(
+        innerR * c0,
+        innerR * s0,
+        0,
+        outerR * c0,
+        outerR * s0,
+        0,
+        outerR * c1,
+        outerR * s1,
+        0,
+      );
+      positions.push(
+        innerR * c0,
+        innerR * s0,
+        0,
+        outerR * c1,
+        outerR * s1,
+        0,
+        innerR * c1,
+        innerR * s1,
+        0,
+      );
 
-      const u0 = s / segments, u1 = (s + 1) / segments;
-      uvs.push(u0,0, u0,1, u1,1);
-      uvs.push(u0,0, u1,1, u1,0);
+      const u0 = s / segments,
+        u1 = (s + 1) / segments;
+      uvs.push(u0, 0, u0, 1, u1, 1);
+      uvs.push(u0, 0, u1, 1, u1, 0);
     }
 
     const geo = new THREE.BufferGeometry();
-    geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    geo.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(positions, 3),
+    );
     geo.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
     geo.computeVertexNormals();
     geo.computeBoundingBox();
@@ -89,8 +130,8 @@ export function buildVRControls(actions: string[] = DEFAULT_ACTIONS) {
   }
 
   const totalAngle = Math.PI * 2;
-  const gapAngle = GAP_RATIO * totalAngle / actions.length;
-  const segAngle = (totalAngle / actions.length) - gapAngle;
+  const gapAngle = (GAP_RATIO * totalAngle) / actions.length;
+  const segAngle = totalAngle / actions.length - gapAngle;
 
   actions.forEach((action, i) => {
     const centerAngle = (i / actions.length) * totalAngle;
@@ -107,13 +148,16 @@ export function buildVRControls(actions: string[] = DEFAULT_ACTIONS) {
       segAngle,
       SEGMENTS_PER_ARC,
     );
-    const buttonBg = new THREE.Mesh(arcGeo, new THREE.MeshBasicMaterial({
-      color: 0x1a2030,
-      transparent: true,
-      opacity: 0.85,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-    }));
+    const buttonBg = new THREE.Mesh(
+      arcGeo,
+      new THREE.MeshBasicMaterial({
+        color: 0x1a2030,
+        transparent: true,
+        opacity: 0.85,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      }),
+    );
     buttonBg.position.set(0, 0, 0.001);
     buttonGroup.add(buttonBg);
 
@@ -132,7 +176,10 @@ export function buildVRControls(actions: string[] = DEFAULT_ACTIONS) {
     const textTex = new THREE.CanvasTexture(textCanvas);
     textTex.needsUpdate = true;
     const textMesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(CAROUSEL_RADIUS * segAngle * 0.85, RING_THICKNESS * 0.7),
+      new THREE.PlaneGeometry(
+        CAROUSEL_RADIUS * segAngle * 0.85,
+        RING_THICKNESS * 0.7,
+      ),
       new THREE.MeshBasicMaterial({
         map: textTex,
         transparent: true,
@@ -164,8 +211,11 @@ export function buildVRControls(actions: string[] = DEFAULT_ACTIONS) {
   // Create ray line geometry — -Z is forward when oriented by targetRaySpace
   const rayGeometry = new THREE.BufferGeometry();
   const rayPositions = new Float32Array([0, 0, 0, 0, 0, -1]);
-  rayGeometry.setAttribute("position", new THREE.BufferAttribute(rayPositions, 3));
-  
+  rayGeometry.setAttribute(
+    "position",
+    new THREE.BufferAttribute(rayPositions, 3),
+  );
+
   const rayMaterial = new THREE.LineBasicMaterial({
     color: 0x44aaff,
     transparent: true,
@@ -174,7 +224,7 @@ export function buildVRControls(actions: string[] = DEFAULT_ACTIONS) {
 
   const leftRayLine = new THREE.Line(rayGeometry.clone(), rayMaterial.clone());
   const rightRayLine = new THREE.Line(rayGeometry.clone(), rayMaterial.clone());
-  
+
   leftRay.add(leftRayLine);
   rightRay.add(rightRayLine);
 
@@ -186,9 +236,15 @@ export function buildVRControls(actions: string[] = DEFAULT_ACTIONS) {
     opacity: 0.8,
   });
 
-  const leftController = new THREE.Mesh(controllerGeometry, controllerMaterial.clone());
-  const rightController = new THREE.Mesh(controllerGeometry, controllerMaterial.clone());
-  
+  const leftController = new THREE.Mesh(
+    controllerGeometry,
+    controllerMaterial.clone(),
+  );
+  const rightController = new THREE.Mesh(
+    controllerGeometry,
+    controllerMaterial.clone(),
+  );
+
   leftRay.add(leftController);
   rightRay.add(rightController);
 
@@ -202,7 +258,11 @@ export function buildVRControls(actions: string[] = DEFAULT_ACTIONS) {
 
   const pencilBody = new THREE.Mesh(
     new THREE.CylinderGeometry(0.006, 0.006, 0.12, 16),
-    new THREE.MeshStandardMaterial({ color: 0xffdd00, roughness: 0.5, metalness: 0.2 }),
+    new THREE.MeshStandardMaterial({
+      color: 0xffdd00,
+      roughness: 0.5,
+      metalness: 0.2,
+    }),
   );
   pencil.add(pencilBody);
 
@@ -231,8 +291,14 @@ export function buildVRControls(actions: string[] = DEFAULT_ACTIONS) {
     rightRay,
     isLookingUp: (headDir: THREE.Vector3) => headDir.y > 0.7,
     isLookingDown: (headDir: THREE.Vector3) => headDir.y < -0.5,
-    isReachingBehindEar: (handPos: THREE.Vector3, headPos: THREE.Vector3, headQuat: THREE.Quaternion) => {
-      const rightEar = new THREE.Vector3(0.1, 0.1, -0.05).applyQuaternion(headQuat).add(headPos);
+    isReachingBehindEar: (
+      handPos: THREE.Vector3,
+      headPos: THREE.Vector3,
+      headQuat: THREE.Quaternion,
+    ) => {
+      const rightEar = new THREE.Vector3(0.1, 0.1, -0.05)
+        .applyQuaternion(headQuat)
+        .add(headPos);
       return handPos.distanceTo(rightEar) < 0.08;
     },
     updateHeadMenu: (headQuat: THREE.Quaternion, headPos: THREE.Vector3) => {
@@ -241,7 +307,13 @@ export function buildVRControls(actions: string[] = DEFAULT_ACTIONS) {
       headMenu.position.y += 0.3;
       headMenu.quaternion.copy(headQuat);
     },
-    updateCarousel: (headQuat: THREE.Quaternion, headPos: THREE.Vector3, playerOffset: THREE.Vector3, rotationOffset: number, selectedIndex: number) => {
+    updateCarousel: (
+      headQuat: THREE.Quaternion,
+      headPos: THREE.Vector3,
+      playerOffset: THREE.Vector3,
+      rotationOffset: number,
+      selectedIndex: number,
+    ) => {
       const WAIST_HEIGHT = 0.8;
       carousel.position.set(
         headPos.x - playerOffset.x,

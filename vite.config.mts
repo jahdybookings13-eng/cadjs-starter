@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import fs from "fs";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
@@ -14,18 +15,26 @@ export default defineConfig({
   server: {
     port: 3000,
     host: true,
-    https: fs.existsSync("./localhost+1.pem")
+    fs: {
+      allow: [
+        fileURLToPath(new URL(".", import.meta.url)),
+        fileURLToPath(new URL("../cadjs", import.meta.url)),
+      ],
+    },
+    ...(fs.existsSync("./localhost+1.pem")
       ? {
-          cert: fs.readFileSync("./localhost+1.pem"),
-          key: fs.readFileSync("./localhost+1-key.pem"),
+          https: {
+            cert: fs.readFileSync("./localhost+1.pem"),
+            key: fs.readFileSync("./localhost+1-key.pem"),
+          },
         }
-      : undefined,
+      : {}),
     headers: {
       "Cross-Origin-Embedder-Policy": "require-corp",
       "Cross-Origin-Opener-Policy": "same-origin",
       "Cache-Control": "no-store, no-cache, must-revalidate",
-      "Pragma": "no-cache",
-      "Expires": "0",
+      Pragma: "no-cache",
+      Expires: "0",
     },
   },
   optimizeDeps: {

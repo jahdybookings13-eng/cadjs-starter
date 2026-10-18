@@ -23,9 +23,8 @@ test("sketch mode → XY plane → draw rectangle → finish creates a profile",
   await page.mouse.down();
   await page.mouse.move(cx + 120, cy + 90, { steps: 10 });
   await page.mouse.up();
-  await page.keyboard.press("Escape");
 
-  await page.getByRole("button", { name: "Finish", exact: true }).click();
+  await page.getByRole("button", { name: "Finish ✓", exact: true }).click();
   await expect
     .poll(() => readMode(page), { timeout: 15_000 })
     .not.toBe("sketch");

@@ -47,23 +47,28 @@
 
 ### SKETCH MODE — Sectioned into Parts
 
-**PART 1: Sketch Mode Entry & Plane Selection** [NOT STARTED]
+**PART 1: Sketch Mode Entry & Plane Selection** [DONE — on-device verification pending]
 - Enter via tool belt → Sketch
 - Ray landing determines where you start:
   - Ray hits desk → desk sketch mode (locked to desk plane)
   - Ray hits body face → sketch on that face
   - Ray hits origin plane → sketch on that plane
   - Ray hits nothing → 3D freehand mode
-- No code written for this yet
+- `vrSketchSystem.classifyRayTarget/beginSketchOnPlane`, wired in `useVRSession.ts`
+  (commit 38c2c15). Handoff confirms done; on-device Quest feel still unverified.
 
-**PART 2: Desk Sketching** [NOT STARTED]
+**PART 2: Desk Sketching** [DONE — on-device verification pending]
 - Sketch locked to desk plane (XZ at 0.75m)
 - Ray = point placement, trigger = commit point
 - Grid appears on desk surface
 - Overhead PiP viewport (top-down view of sketch, dimensions, constraints)
-- No code written for this yet
+- `vrSketchDeskVisuals.ts`: desk grid (XZ @0.75m, 5cm/25cm), overhead PiP rendered to a
+  WebGLRenderTarget (top-down ortho cam: points as dots, lines as green + mm dimension labels,
+  circles + R labels), fades in when head pitches up ≥12° and out ≤4°. Wired per-frame in
+  `useVRSession.ts` (syncSketch/updateHeadPitch/renderPiP). eslint+tsc+build clean; PiP feel
+  and WebXR render-target binding still need a physical Quest 2 pass.
 
-**PART 3: 3D Freehand Sketching** [NOT STARTED]
+**PART 3: 3D Freehand Sketching** [DONE — on-device feel pending]
 - Grip button = place points (NOT trigger, NOT ray)
 - Grip press → lays point at hand position
 - Grip hold + move → defines next point

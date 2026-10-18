@@ -10,6 +10,42 @@ declare global {
       getMode: () => string;
       getFeatureTree: () => unknown;
       getCameraQuat: () => [number, number, number, number] | null;
+      scadgen?: {
+        nextId: () => string;
+        configureSync: () => void;
+        box: (w: number, h: number, d: number) => string;
+        cylinder: (r: number, h: number) => string;
+        sphere: (r: number) => string;
+        torus: (ringR: number, tubeR: number) => string;
+        mirror: (src: string, axis: "X" | "Y" | "Z") => string;
+        authoredIds: () => string[];
+        exportSceneStl: () => Promise<Uint8Array>;
+        exportSceneStep: () => Promise<Uint8Array>;
+        insertStl: (bytes: number[]) => string;
+        geom: (fid: string) => {
+          edges: number;
+          faces: number;
+          vertices: number;
+        } | null;
+        tags: (fid: string) => {
+          edges: number;
+          faces: number;
+          faceOwner: string | null;
+        } | null;
+        varRows: () => Array<{
+          name: string;
+          expression: string;
+          usedBy: { featureId: string }[];
+        }>;
+        varsFor: (fid: string) => string[];
+        states: () => Record<
+          string,
+          { featureStatus: string; inactive: boolean }
+        >;
+        idle: () => Promise<
+          Record<string, { status: string; detail?: string }>
+        >;
+      };
     };
   }
 }

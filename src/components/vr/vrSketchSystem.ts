@@ -10,6 +10,25 @@ import {
   type SketchArc,
   type SketchConstraint,
 } from "@vitekk02/cadjs";
+import {
+  buildSketchNode,
+  type ProvenanceQuery,
+  type ScadgenFeatureNode,
+} from "../../model/onshapeHistory";
+
+const FEATURE_ID_ALPHABET =
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+let featureSeq = 0;
+export function makeOnshapeStyleFeatureId(): string {
+  let tag = "";
+  for (let i = 0; i < 16; i++) {
+    tag +=
+      FEATURE_ID_ALPHABET[
+        Math.floor(Math.random() * FEATURE_ID_ALPHABET.length)
+      ];
+  }
+  return `F${tag}_${++featureSeq}`;
+}
 
 export type VRSketchPhase = "idle" | "selecting-plane" | "drawing";
 export type VRSketchSubMode = "line" | "rectangle" | "circle" | "arc" | "point";
@@ -29,6 +48,7 @@ export interface VRSketchState {
   phase: VRSketchPhase;
   subMode: VRSketchSubMode;
   sketchingContext: VRSketchContext | null;
+  sketchFeatureId: string | null;
   isChaining: boolean;
   lastPointId: string | null;
   lastPointWorld: THREE.Vector3 | null;
@@ -108,6 +128,7 @@ export interface VRSketchSystem {
 
   finishChain: () => void;
   cancelSketch: () => void;
+  getFeatureHistoryNode: () => ScadgenFeatureNode | null;
   updatePreview: (handWorldPos: THREE.Vector3) => void;
   clearPreview: () => void;
   setAxisSnap: (axis: "x" | "y" | "z" | null) => void;
@@ -165,6 +186,7 @@ export function createVRSketchSystem(
     phase: "idle",
     subMode: "line",
     sketchingContext: null,
+    sketchFeatureId: null,
     isChaining: false,
     lastPointId: null,
     lastPointWorld: null,
@@ -204,6 +226,7 @@ export function createVRSketchSystem(
   const beginSketchOnPlane = (plane: SketchPlane, context: VRSketchContext) => {
     state.sketchPlane = plane;
     state.sketchingContext = context;
+    state.sketchFeatureId = makeOnshapeStyleFeatureId();
     state.phase = "drawing";
     state.isChaining = false;
     state.lastPointId = null;
@@ -662,6 +685,51 @@ export function createVRSketchSystem(
     state.isDrawingArc = false;
   };
 
+  const getFeatureHistoryNode = (): ScadgenFeatureNode | null => {
+    const featureId = state.sketchFeatureId;
+    if (!featureId || state.sketchingContext === null) return null;
+    const prims = activeSketchRef.current?.primitives ?? [];
+    const entityTags = prims.filter((p) => p.type !== "point").map((p) => p.id);
+    const planeRef: ProvenanceQuery | null = state.sketchPlane
+      ? {
+          entityType:
+            state.sketchingContext === "face" ? "FACE" : "SKETCH_ENTITY",
+          historyType: "CREATION",
+          creationFeatureId: null,
+          entityTag: state.sketchPlane.type,
+          disambiguation: state.sketchingContext,
+        }
+      : null;
+    const live = activeSketchRef.current as unknown as {
+      primitives: unknown[];
+      constraints?: unknown[];
+    } | null;
+    const v = (vec: { x: number; y: number; z: number } | undefined) =>
+      vec ? [vec.x, vec.y, vec.z] : [0, 0, 0];
+    const snapshot = state.sketchPlane
+      ? {
+          id: featureId,
+          plane: {
+            type: state.sketchPlane.type,
+            origin: v(state.sketchPlane.origin),
+            normal: v(state.sketchPlane.normal),
+            xAxis: v(state.sketchPlane.xAxis),
+            yAxis: v(state.sketchPlane.yAxis),
+            offset: state.sketchPlane.offset ?? 0,
+          },
+          primitives: live?.primitives ?? [],
+          constraints: live?.constraints ?? [],
+        }
+      : undefined;
+    return buildSketchNode(
+      featureId,
+      "VR Sketch",
+      entityTags,
+      planeRef,
+      snapshot,
+    );
+  };
+
   const finishChain = () => {
     state.isChaining = false;
     state.lastPointId = null;
@@ -675,6 +743,7 @@ export function createVRSketchSystem(
     state.lastPointWorld = null;
     state.sketchPlane = null;
     state.sketchingContext = null;
+    state.sketchFeatureId = null;
     state.axisSnapAxis = null;
     clearTargetMarker();
     // Reset drawing states
@@ -817,6 +886,7 @@ export function createVRSketchSystem(
     setArcEnd,
     finishArc,
     finishChain,
+    getFeatureHistoryNode,
     cancelSketch,
     updatePreview,
     clearPreview,

@@ -56,7 +56,11 @@ export function createSubPrimSelector(): SubPrimSelector {
       const localPoint = hit.point.clone();
       mesh.worldToLocal(localPoint);
 
-      const vertexHit = findNearestVertex(localPoint, posAttr as THREE.BufferAttribute, VERTEX_THRESHOLD);
+      const vertexHit = findNearestVertex(
+        localPoint,
+        posAttr as THREE.BufferAttribute,
+        VERTEX_THRESHOLD,
+      );
       if (vertexHit !== null) {
         lastHit = {
           type: "vertex",
@@ -68,7 +72,12 @@ export function createSubPrimSelector(): SubPrimSelector {
         return lastHit;
       }
 
-      const edgeHit = findNearestEdge(localPoint, posAttr as THREE.BufferAttribute, geo.index as THREE.BufferAttribute | null, EDGE_THRESHOLD);
+      const edgeHit = findNearestEdge(
+        localPoint,
+        posAttr as THREE.BufferAttribute,
+        geo.index as THREE.BufferAttribute | null,
+        EDGE_THRESHOLD,
+      );
       if (edgeHit !== null) {
         lastHit = {
           type: "edge",
@@ -159,7 +168,11 @@ function findNearestEdge(
     const i1 = indexAttr.getX(i * 3 + 1);
     const i2 = indexAttr.getX(i * 3 + 2);
 
-    const edges: [number, number][] = [[i0, i1], [i1, i2], [i2, i0]];
+    const edges: [number, number][] = [
+      [i0, i1],
+      [i1, i2],
+      [i2, i0],
+    ];
 
     for (const [va, vb] of edges) {
       a.set(posAttr.getX(va), posAttr.getY(va), posAttr.getZ(va));

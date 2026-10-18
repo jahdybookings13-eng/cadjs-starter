@@ -59,24 +59,36 @@ export function buildVRRoom(opts: VRRoomOptions = {}): THREE.Group {
   });
 
   // Back wall (negative Z)
-  const backWall = new THREE.Mesh(new THREE.PlaneGeometry(roomW, roomH), wallMat);
+  const backWall = new THREE.Mesh(
+    new THREE.PlaneGeometry(roomW, roomH),
+    wallMat,
+  );
   backWall.position.set(0, roomH / 2, -roomD / 2);
   room.add(backWall);
 
   // Front wall (positive Z)
-  const frontWall = new THREE.Mesh(new THREE.PlaneGeometry(roomW, roomH), wallMat);
+  const frontWall = new THREE.Mesh(
+    new THREE.PlaneGeometry(roomW, roomH),
+    wallMat,
+  );
   frontWall.rotation.y = Math.PI;
   frontWall.position.set(0, roomH / 2, roomD / 2);
   room.add(frontWall);
 
   // Left wall (negative X)
-  const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(roomD, roomH), wallMat);
+  const leftWall = new THREE.Mesh(
+    new THREE.PlaneGeometry(roomD, roomH),
+    wallMat,
+  );
   leftWall.rotation.y = Math.PI / 2;
   leftWall.position.set(-roomW / 2, roomH / 2, 0);
   room.add(leftWall);
 
   // Right wall (positive X)
-  const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(roomD, roomH), wallMat);
+  const rightWall = new THREE.Mesh(
+    new THREE.PlaneGeometry(roomD, roomH),
+    wallMat,
+  );
   rightWall.rotation.y = -Math.PI / 2;
   rightWall.position.set(roomW / 2, roomH / 2, 0);
   room.add(rightWall);
@@ -200,11 +212,17 @@ export function buildVRRoom(opts: VRRoomOptions = {}): THREE.Group {
   pctx.lineWidth = 1;
   for (let mm = 0; mm <= padWidth * 1000; mm += 10) {
     const px = mm * mmToPad;
-    pctx.beginPath(); pctx.moveTo(px, 0); pctx.lineTo(px, padRes); pctx.stroke();
+    pctx.beginPath();
+    pctx.moveTo(px, 0);
+    pctx.lineTo(px, padRes);
+    pctx.stroke();
   }
   for (let mm = 0; mm <= padDepth * 1000; mm += 10) {
     const py = mm * mmToPad;
-    pctx.beginPath(); pctx.moveTo(0, py); pctx.lineTo(padRes, py); pctx.stroke();
+    pctx.beginPath();
+    pctx.moveTo(0, py);
+    pctx.lineTo(padRes, py);
+    pctx.stroke();
   }
 
   // Major grid — 50mm
@@ -212,22 +230,38 @@ export function buildVRRoom(opts: VRRoomOptions = {}): THREE.Group {
   pctx.lineWidth = 1.5;
   for (let mm = 0; mm <= padWidth * 1000; mm += 50) {
     const px = mm * mmToPad;
-    pctx.beginPath(); pctx.moveTo(px, 0); pctx.lineTo(px, padRes); pctx.stroke();
+    pctx.beginPath();
+    pctx.moveTo(px, 0);
+    pctx.lineTo(px, padRes);
+    pctx.stroke();
   }
   for (let mm = 0; mm <= padDepth * 1000; mm += 50) {
     const py = mm * mmToPad;
-    pctx.beginPath(); pctx.moveTo(0, py); pctx.lineTo(padRes, py); pctx.stroke();
+    pctx.beginPath();
+    pctx.moveTo(0, py);
+    pctx.lineTo(padRes, py);
+    pctx.stroke();
   }
 
   // 3 perspective sections (dividers + labels)
   const thirdW = padRes / 3;
   pctx.strokeStyle = "rgba(200, 220, 200, 0.5)";
   pctx.lineWidth = 2;
-  pctx.beginPath(); pctx.moveTo(thirdW, 0); pctx.lineTo(thirdW, padRes); pctx.stroke();
-  pctx.beginPath(); pctx.moveTo(thirdW * 2, 0); pctx.lineTo(thirdW * 2, padRes); pctx.stroke();
+  pctx.beginPath();
+  pctx.moveTo(thirdW, 0);
+  pctx.lineTo(thirdW, padRes);
+  pctx.stroke();
+  pctx.beginPath();
+  pctx.moveTo(thirdW * 2, 0);
+  pctx.lineTo(thirdW * 2, padRes);
+  pctx.stroke();
 
   // Perspective axis lines per section
-  const axisColors = ["rgba(255,80,80,0.7)", "rgba(80,255,80,0.7)", "rgba(80,80,255,0.7)"];
+  const axisColors = [
+    "rgba(255,80,80,0.7)",
+    "rgba(80,255,80,0.7)",
+    "rgba(80,80,255,0.7)",
+  ];
   const labels = ["TOP", "FRONT", "SIDE"];
   pctx.font = `bold ${Math.round(padRes * 0.03)}px monospace`;
 
@@ -238,8 +272,14 @@ export function buildVRRoom(opts: VRRoomOptions = {}): THREE.Group {
     // Center crosshair
     pctx.strokeStyle = axisColors[i]!;
     pctx.lineWidth = 2;
-    pctx.beginPath(); pctx.moveTo(thirdW * i + 20, cy); pctx.lineTo(thirdW * (i + 1) - 20, cy); pctx.stroke();
-    pctx.beginPath(); pctx.moveTo(cx, 20); pctx.lineTo(cx, padRes - 20); pctx.stroke();
+    pctx.beginPath();
+    pctx.moveTo(thirdW * i + 20, cy);
+    pctx.lineTo(thirdW * (i + 1) - 20, cy);
+    pctx.stroke();
+    pctx.beginPath();
+    pctx.moveTo(cx, 20);
+    pctx.lineTo(cx, padRes - 20);
+    pctx.stroke();
 
     // Label
     pctx.fillStyle = "rgba(200, 220, 200, 0.8)";

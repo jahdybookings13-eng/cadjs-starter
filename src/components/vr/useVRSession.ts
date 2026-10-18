@@ -12,9 +12,32 @@ import { buildVRControls } from "./buildVRControls";
 import { createVRGrabSystem, type VRGrabSystem } from "./vrGrabSystem";
 import {
   createVRSketchSystem,
+  makeOnshapeStyleFeatureId,
   type VRSketchSystem,
   DESK_HEIGHT,
 } from "./vrSketchSystem";
+import {
+  buildExtrudeNode,
+  buildFilletNode,
+  buildLoftNode,
+  buildRevolveNode,
+  buildSweepNode,
+  type ProvenanceQuery,
+  type ScadgenFeatureNode,
+  type ScadgenParameter,
+} from "../../model/onshapeHistory";
+import "../../model/bootstrap";
+import {
+  makeElementAuthor,
+  pairNewElements,
+} from "../../model/elementAuthoring";
+import { scadgenHistory } from "../../model/featureEngine";
+import { scadgenSceneSync } from "../../model/sceneSync";
+import {
+  createDeskSketchVisuals,
+  type DeskSketchVisuals,
+  type SketchPrimitiveLite,
+} from "./vrSketchDeskVisuals";
 
 const MOVE_SPEED = 2.0;
 
@@ -58,6 +81,11 @@ export function useVRSession() {
     solveSketch,
     pushSketchUndo,
     activeSketch,
+    elements,
+    addElement,
+    getObject,
+    idCounter,
+    updateElementBrep,
     startSketch,
     finishSketch,
     cancelSketch,
@@ -77,6 +105,86 @@ export function useVRSession() {
   const finishSketchRef = useRef(finishSketch);
   const cancelSketchRef = useRef(cancelSketch);
   const currentModeRef = useRef(currentMode);
+  const elementsRef = useRef(elements);
+  const pendingSketchMapping = useRef<{
+    featureId: string;
+    before: Set<string>;
+  } | null>(null);
+
+  useEffect(() => {
+    elementsRef.current = elements;
+    const pending = pendingSketchMapping.current;
+    if (pending) {
+      const created = elements.find((el) => !pending.before.has(el.nodeId));
+      if (created) {
+        const node = scadgenHistory.get(pending.featureId);
+        if (node) {
+          node.extensions = {
+            ...(node.extensions ?? {}),
+            elementNodeId: created.nodeId,
+          };
+          scadgenHistory.touch(pending.featureId);
+        }
+        pendingSketchMapping.current = null;
+      }
+    }
+  }, [elements]);
+
+  useEffect(() => {
+    scadgenSceneSync.configure(
+      {
+        updateElementBrep,
+        postCreate: (nodeId, out) => {
+          pendingAuthorFixups.current.set(nodeId, out);
+        },
+        createElement: makeElementAuthor(
+          (b, p) =>
+            (addElement as unknown as (b: unknown, p: unknown) => void)(b, p),
+          () => idCounter,
+        ),
+        setElementHidden: (nodeId, hidden) => {
+          const obj = getObject(nodeId);
+          if (obj) obj.visible = hidden ? false : true;
+        },
+      },
+      scadgenHistory,
+    );
+  }, [updateElementBrep, addElement, idCounter, getObject]);
+
+  useEffect(() => {
+    if (!pendingAuthorFixups.current.size) {
+      for (const el of elements) seenElementIds.current.add(el.nodeId);
+      return;
+    }
+    const ids = elements.map((el) => el.nodeId);
+    const pending = [...pendingAuthorFixups.current].map(
+      ([predictedId, out]) => ({
+        predictedId,
+        brep: out.brep,
+        position: out.position,
+        occBrep: out.occBrep,
+        edgeGeometry: out.edgeGeometry,
+        faceGeometry: out.faceGeometry,
+        vertexPositions: out.vertexPositions,
+      }),
+    );
+    const pairs = pairNewElements(ids, seenElementIds.current, pending);
+    for (const { actualId, item } of pairs) {
+      if (actualId !== item.predictedId)
+        scadgenSceneSync.remapElementId(item.predictedId, actualId);
+      updateElementBrep(
+        actualId,
+        item.brep as never,
+        item.position as never,
+        undefined,
+        item.edgeGeometry as never,
+        item.occBrep,
+        item.faceGeometry as never,
+        item.vertexPositions as never,
+      );
+      pendingAuthorFixups.current.delete(item.predictedId);
+    }
+  }, [elements, updateElementBrep]);
 
   useEffect(() => {
     setModeRef.current = setMode;
@@ -113,7 +221,19 @@ export function useVRSession() {
   const beltGripActive = useRef(false);
   const beltGripPrevAngle = useRef(0);
   const sketchSystemRef = useRef<VRSketchSystem | null>(null);
+  const deskVisualsRef = useRef<DeskSketchVisuals | null>(null);
+  const lastSketchHistoryRef = useRef<ScadgenFeatureNode | null>(null);
   const sketchGripWasPressed = useRef(false);
+  const freehandStrokePending = useRef(false);
+  const pendingAuthorFixups = useRef(
+    new Map<string, import("../../model/executor").BodyOutput>(),
+  );
+  const seenElementIds = useRef(new Set<string>());
+  const vrExtrudeArmed = useRef(false);
+  const vrActionArmed = useRef<"revolve" | "sweep" | "loft" | "fillet" | null>(
+    null,
+  );
+  const extrudeTriggerWasPressed = useRef(false);
   const sketchTriggerWasPressed = useRef(false);
   const leftGripWasPressed = useRef(false);
   const rightGripWasPressed = useRef(false);
@@ -174,6 +294,13 @@ export function useVRSession() {
       );
       sketchSystemRef.current = sketchSystem;
 
+      // Desk sketching visuals: grid on desk + overhead PiP (VR_SKETCH_SPEC Part 2)
+      const deskVisuals: DeskSketchVisuals = createDeskSketchVisuals(
+        scene,
+        renderer,
+      );
+      deskVisualsRef.current = deskVisuals;
+
       // Hide origin helpers
       hiddenInVR.current = [];
       scene.traverse((child) => {
@@ -226,6 +353,11 @@ export function useVRSession() {
         sketchTriggerWasPressed.current = false;
         leftGripWasPressed.current = false;
         rightGripWasPressed.current = false;
+
+        if (deskVisualsRef.current) {
+          deskVisualsRef.current.dispose();
+          deskVisualsRef.current = null;
+        }
 
         sessionRef.current = null;
         setContinuousRender(false);
@@ -460,9 +592,32 @@ export function useVRSession() {
                 }
               }
 
-              // 3D FREEHAND: grip places points at hand position
+              // 3D FREEHAND: grip press starts a stroke, drag defines it,
+              // release commits the point (VR_SKETCH_SPEC Part 3)
               if (context === "freehand") {
                 if (rightGrip && !sketchGripWasPressed.current) {
+                  if (sketch.state.isChaining && sketch.state.lastPointId) {
+                    freehandStrokePending.current = true;
+                  } else {
+                    const placePos =
+                      sketch.state.axisSnapAxis && sketch.state.lastPointWorld
+                        ? sketch.projectWithAxisSnap(
+                            rightHandPos,
+                            sketch.state.lastPointWorld,
+                          )
+                        : sketch.projectToSketchPlane(rightHandPos);
+                    const pointResult = sketch.placePoint(placePos);
+                    sketch.state.isChaining = true;
+                    sketch.state.lastPointId = pointResult.pointId;
+                    sketch.state.lastPointWorld = placePos.clone();
+                  }
+                }
+                if (
+                  !rightGrip &&
+                  sketchGripWasPressed.current &&
+                  freehandStrokePending.current
+                ) {
+                  freehandStrokePending.current = false;
                   const placePos =
                     sketch.state.axisSnapAxis && sketch.state.lastPointWorld
                       ? sketch.projectWithAxisSnap(
@@ -477,7 +632,6 @@ export function useVRSession() {
                       pointResult.pointId,
                     );
                   }
-                  sketch.state.isChaining = true;
                   sketch.state.lastPointId = pointResult.pointId;
                   sketch.state.lastPointWorld = placePos.clone();
                 }
@@ -513,6 +667,16 @@ export function useVRSession() {
               if (source.handedness === "right") rightTrigger = trig;
             }
             if (leftGrip && rightGrip && leftTrigger && rightTrigger) {
+              lastSketchHistoryRef.current = sketch.getFeatureHistoryNode();
+              if (lastSketchHistoryRef.current) {
+                scadgenHistory.add(lastSketchHistoryRef.current);
+              }
+              debugLog(
+                lastSketchHistoryRef.current
+                  ? `HISTORY: ${lastSketchHistoryRef.current.featureId} (${lastSketchHistoryRef.current.parameters.length} params) | tree=${scadgenHistory.size()}`
+                  : "HISTORY: no node (empty sketch?)",
+              );
+              freehandStrokePending.current = false;
               sketch.finishChain();
               if (sketch.state.previewLine?.parent) {
                 scene.remove(sketch.state.previewLine);
@@ -520,7 +684,13 @@ export function useVRSession() {
               sketch.clearPreview();
               sketch.clearTargetMarker();
               sketch.setPhase("idle");
-              finishSketchRef.current();
+              if (lastSketchHistoryRef.current) {
+                pendingSketchMapping.current = {
+                  featureId: lastSketchHistoryRef.current.featureId,
+                  before: new Set(elementsRef.current.map((el) => el.nodeId)),
+                };
+              }
+              void finishSketchRef.current();
               setModeRef.current("move");
             }
 
@@ -531,6 +701,8 @@ export function useVRSession() {
                 if (sketch.state.previewLine?.parent) {
                   scene.remove(sketch.state.previewLine);
                 }
+                lastSketchHistoryRef.current = null;
+                freehandStrokePending.current = false;
                 sketch.cancelSketch();
                 cancelSketchRef.current();
                 setModeRef.current("move");
@@ -814,6 +986,25 @@ export function useVRSession() {
                         if (sketchSystemRef.current) {
                           sketchSystemRef.current.setPhase("selecting-plane");
                         }
+                      } else if (newMode === "extrude") {
+                        vrExtrudeArmed.current = true;
+                        debugLog(
+                          "VR EXTRUDE ARMED: trigger to extrude last sketch 10 mm",
+                        );
+                      } else if (
+                        newMode === "revolve" ||
+                        newMode === "sweep" ||
+                        newMode === "loft" ||
+                        newMode === "fillet"
+                      ) {
+                        vrActionArmed.current = newMode as
+                          | "revolve"
+                          | "sweep"
+                          | "loft"
+                          | "fillet";
+                        debugLog(
+                          `VR ${newMode.toUpperCase()} ARMED: pull trigger`,
+                        );
                       } else {
                         setModeRef.current(newMode);
                       }
@@ -962,6 +1153,210 @@ export function useVRSession() {
           }
         }
 
+        // VR EXTRUDE P3.5: belt-armed, right trigger commits a default extrude
+        const armed = vrExtrudeArmed.current || vrActionArmed.current !== null;
+        if (armed) {
+          let rTrig = false;
+          for (const source of session.inputSources) {
+            if (source.handedness === "right" && source.gamepad) {
+              rTrig = source.gamepad.buttons[0]?.pressed ?? false;
+            }
+          }
+          if (rTrig && !extrudeTriggerWasPressed.current) {
+            const action = vrActionArmed.current;
+            if (
+              action === "revolve" ||
+              action === "sweep" ||
+              action === "loft" ||
+              action === "fillet"
+            ) {
+              vrActionArmed.current = null;
+              const mapped = scadgenHistory
+                .evaluatedNodes()
+                .filter(
+                  (n: ScadgenFeatureNode) =>
+                    n.featureType === "newSketch" &&
+                    n.extensions?.elementNodeId,
+                )
+                .slice(-2);
+              const entQueries = (n: ScadgenFeatureNode): ProvenanceQuery[] => {
+                const p = n.parameters.find(
+                  (x: ScadgenParameter) =>
+                    x.kind === "queryList" && x.parameterId === "entities",
+                );
+                return p && p.kind === "queryList" ? p.queries : [];
+              };
+              if (action === "revolve") {
+                const t = mapped[mapped.length - 1];
+                if (t) {
+                  const firstLine = (t.extensions as Record<string, unknown>)
+                    .sketch
+                    ? ((
+                        (
+                          (t.extensions as Record<string, unknown>).sketch as {
+                            primitives: Array<Record<string, unknown>>;
+                          }
+                        ).primitives ?? []
+                      ).find((p) => p.type === "line")?.id as
+                        | string
+                        | undefined)
+                    : undefined;
+                  scadgenHistory.add(
+                    buildRevolveNode(
+                      makeOnshapeStyleFeatureId(),
+                      `Revolve ${scadgenHistory.size()}`,
+                      entQueries(t),
+                      [
+                        {
+                          entityType: "SKETCH_ENTITY",
+                          historyType: "CREATION",
+                          creationFeatureId: firstLine ? t.featureId : null,
+                          entityTag: firstLine ?? "NORMAL",
+                        },
+                      ],
+                      {
+                        value: Math.PI * 2,
+                        units: "rad",
+                        expression: "360 deg",
+                      },
+                    ),
+                  );
+                  debugLog("VR REVOLVE: node added");
+                } else debugLog("VR REVOLVE: no mapped sketch");
+              } else if (mapped.length >= 2) {
+                const profile = mapped[mapped.length - 2];
+                const path = mapped[mapped.length - 1];
+                if (profile && path) {
+                  scadgenHistory.add(
+                    buildSweepNode(
+                      makeOnshapeStyleFeatureId(),
+                      `Sweep ${scadgenHistory.size()}`,
+                      entQueries(profile),
+                      entQueries(path),
+                    ),
+                  );
+                  debugLog("VR SWEEP: node added");
+                }
+              } else if (action === "loft") {
+                if (mapped.length >= 2) {
+                  const a = mapped[mapped.length - 2];
+                  const b = mapped[mapped.length - 1];
+                  if (a && b) {
+                    const body = (f: ScadgenFeatureNode): ProvenanceQuery => ({
+                      entityType: "FACE",
+                      historyType: "CREATION",
+                      creationFeatureId: f.featureId,
+                      entityTag: "",
+                    });
+                    scadgenHistory.add(
+                      buildLoftNode(
+                        makeOnshapeStyleFeatureId(),
+                        `Loft ${scadgenHistory.size()}`,
+                        [body(a), body(b)],
+                      ),
+                    );
+                    debugLog("VR LOFT: node added");
+                  }
+                } else {
+                  debugLog("VR LOFT: needs 2 mapped sketches");
+                }
+              } else if (action === "fillet") {
+                const bodies = scadgenHistory
+                  .evaluatedNodes()
+                  .filter(
+                    (n: ScadgenFeatureNode) =>
+                      [
+                        "extrude",
+                        "revolve",
+                        "sweep",
+                        "loft",
+                        "fillet",
+                      ].includes(n.featureType) && n.extensions?.elementNodeId,
+                  );
+                const t = bodies[bodies.length - 1];
+                if (t) {
+                  scadgenHistory.add(
+                    buildFilletNode(
+                      makeOnshapeStyleFeatureId(),
+                      `Fillet ${scadgenHistory.size()}`,
+                      [
+                        {
+                          entityType: "EDGE",
+                          historyType: "CREATION",
+                          creationFeatureId: t.featureId,
+                          entityTag: "ALL",
+                        },
+                      ],
+                      { value: 5, units: "mm", expression: "5 mm" },
+                    ),
+                  );
+                  debugLog("VR FILLET: all-edge fillet on last body");
+                } else {
+                  debugLog("VR FILLET: no mapped body");
+                }
+              } else {
+                debugLog("VR SWEEP: needs profile + path sketches");
+              }
+            }
+          }
+          if (
+            rTrig &&
+            !extrudeTriggerWasPressed.current &&
+            vrExtrudeArmed.current
+          ) {
+            vrExtrudeArmed.current = false;
+            let target: ScadgenFeatureNode | null = null;
+            for (const n of scadgenHistory.evaluatedNodes()) {
+              if (
+                n.featureType === "newSketch" &&
+                n.extensions?.elementNodeId
+              ) {
+                target = n;
+              }
+            }
+            if (target) {
+              const ent = target.parameters.find(
+                (p: ScadgenParameter) =>
+                  p.kind === "queryList" && p.parameterId === "entities",
+              );
+              const queries =
+                ent && ent.kind === "queryList" ? ent.queries : [];
+              scadgenHistory.add(
+                buildExtrudeNode(
+                  makeOnshapeStyleFeatureId(),
+                  `Extrude ${scadgenHistory.size()}`,
+                  queries,
+                  { value: 0.01, units: "mm", expression: "10 mm" },
+                ),
+              );
+              debugLog("VR EXTRUDE: node added, rebuild queued");
+            } else {
+              debugLog("VR EXTRUDE: no mapped sketch in tree");
+            }
+          }
+          extrudeTriggerWasPressed.current = rTrig;
+        }
+
+        // Desk sketch visuals (Part 2): grid + overhead PiP fade by head pitch
+        const deskViz = deskVisualsRef.current;
+        if (deskViz) {
+          const sk = sketchSystemRef.current;
+          const prims =
+            (activeSketchRef.current?.primitives as unknown as
+              | SketchPrimitiveLite[]
+              | undefined) ?? null;
+          deskViz.syncSketch(
+            sk?.state.phase ?? "idle",
+            sk?.state.sketchingContext ?? null,
+            sk?.state.sketchPlane ?? null,
+            prims,
+          );
+          deskViz.updateHeadPitch(
+            renderer.xr.isPresenting ? renderer.xr.getCamera() : cam,
+          );
+          deskViz.renderPiP();
+        }
+
         renderer.render(scene, cam);
       });
 
@@ -976,5 +1371,5 @@ export function useVRSession() {
     if (session) session.end();
   }, []);
 
-  return { inVR, vrSupported, enterVR, exitVR };
+  return { inVR, vrSupported, enterVR, exitVR, lastSketchHistoryRef };
 }

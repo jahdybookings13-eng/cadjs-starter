@@ -14,6 +14,7 @@ export default [
       "**/coverage/**",
       "test-results/**",
       "playwright-report/**",
+      "src/lib/*.mjs",
     ],
   },
   {
@@ -82,4 +83,5 @@ export default [
     },
   },
   prettierRecommended,
+  { files: ["**/*.d.ts"], rules: { "spaced-comment": "off" } },
 ];

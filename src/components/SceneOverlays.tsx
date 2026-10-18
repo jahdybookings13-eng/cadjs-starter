@@ -1,6 +1,6 @@
 import React from "react";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { SceneMode } from "@vitekk02/cadjs";
+import { SceneMode, type PickItem } from "@vitekk02/cadjs";
 import SelectOtherMenu from "./SelectOtherMenu";
 import NavigationBar from "./NavigationBar";
 import ModeInfoCard from "./ModeInfoCard";
@@ -13,10 +13,10 @@ import ModeInfoCard from "./ModeInfoCard";
 interface SelectOtherMenuState {
   x: number;
   y: number;
-  items: unknown[];
-  onHover?: (item: unknown | null) => void;
-  onPick: (item: unknown) => void;
-  onCancel?: () => void;
+  items: PickItem[];
+  onHover?: ((item: PickItem | null) => void) | undefined;
+  onPick: (item: PickItem) => void;
+  onCancel?: (() => void) | undefined;
 }
 
 interface SceneOverlaysProps {

@@ -23,7 +23,9 @@ export const VRButton: React.FC<VRButtonProps> = ({
             : "bg-gray-600 text-gray-300"
       }`}
       onClick={vrSupported ? (inVR ? onExitVR : onEnterVR) : undefined}
-      title={vrSupported ? (inVR ? "Exit VR" : "Enter VR") : "WebXR not detected"}
+      title={
+        vrSupported ? (inVR ? "Exit VR" : "Enter VR") : "WebXR not detected"
+      }
     >
       {inVR ? "Exit VR" : vrSupported ? "VR" : "No XR"}
     </button>

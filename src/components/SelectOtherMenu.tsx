@@ -8,7 +8,7 @@ interface SelectOtherMenuProps {
   y: number;
   items: PickItem[];
   onPick: (item: PickItem) => void;
-  onHover?: (item: PickItem | null) => void;
+  onHover?: ((item: PickItem | null) => void) | undefined;
   onClose: () => void;
 }
 

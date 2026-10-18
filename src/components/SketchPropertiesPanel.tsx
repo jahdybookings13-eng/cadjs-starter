@@ -373,11 +373,7 @@ const PrimitiveSection: FC<PrimitiveSectionProps> = ({
     );
   }
 
-  return (
-    <div className="text-xs text-gray-400">
-      {primitive.type} (no editable properties)
-    </div>
-  );
+  return <div className="text-xs text-gray-400">(no editable properties)</div>;
 };
 
 const SketchPropertiesPanel: FC<SketchPropertiesPanelProps> = ({

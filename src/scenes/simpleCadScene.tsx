@@ -1,17 +1,52 @@
 import React, { useRef, useEffect, useState, useMemo } from "react";
 import {
+  HELPERS,
+  SceneMode,
+  buildBrowserSections,
+  buildElementHelpers,
+  ImportExportService,
+} from "@vitekk02/cadjs";
+import { buildInsertNode } from "../model/onshapeHistory";
+import { registerImportAsset } from "../model/assets";
+import { variablesForFeature, variablesPanelRows } from "../model/variables";
+import {
+  buildBoxNodes,
+  buildCylinderNodes,
+  buildMirrorNodes,
+  buildSphereNodes,
+  buildTorusNodes,
+  buildCircularPatternNode,
+  buildDraftNode,
+  buildHoleNode,
+  buildRectangleProfileNodes,
+  buildShellNode,
+} from "../model/primitives";
+import {
+  buildConstraintNode,
+  extendSnapshot,
+  trimSnapshot,
+  type SketchSnapLike,
+} from "../model/constraints";
+import {
+  edgeLength,
+  nearestVertexDistance,
+  polylineLength,
+  straightEdgeAngle,
+} from "../model/measure";
+import { scadgenHistory } from "../model/featureEngine";
+import { faceOwnerOf, scadgenExecutor } from "../model/executor";
+import { scadgenSceneSync } from "../model/sceneSync";
+import "../model/bootstrap";
+import { makeElementAuthor, pairNewElements } from "../model/elementAuthoring";
+
+let scadgenIdCounter = 0;
+import {
   NamedView,
   useCadCore,
   useCadVisualizer,
   useCameraAnimation,
   useSelectOther,
 } from "@vitekk02/cadjs/react";
-import {
-  HELPERS,
-  SceneMode,
-  buildBrowserSections,
-  buildElementHelpers,
-} from "@vitekk02/cadjs";
 import { useToast } from "../contexts/ToastContext";
 import ViewCube from "../components/ViewCube";
 import { BrowserSidePanel } from "../components/BrowserSidePanel";
@@ -33,11 +68,18 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
   initialMode = "move",
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
+  const pendingAuthorFixups = useRef(
+    new Map<string, import("../model/executor").BodyOutput>(),
+  );
+  const seenElementIds = useRef(new Set<string>());
   const {
     selectElement,
     deselectElement,
     elements,
+    addElement,
     getObject,
+    idCounter,
+    updateElementBrep,
     mode,
     removeElement,
     selectedElements,
@@ -124,11 +166,307 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
               camera.quaternion.w,
             ]
           : null,
+      scadgen: {
+        nextId: () => `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`,
+        configureSync: () =>
+          scadgenSceneSync.configure(
+            {
+              updateElementBrep,
+              postCreate: (nodeId, out) => {
+                pendingAuthorFixups.current.set(nodeId, out);
+              },
+              createElement: makeElementAuthor(
+                (b, p) =>
+                  (addElement as unknown as (b: unknown, p: unknown) => void)(
+                    b,
+                    p,
+                  ),
+                () => idCounter,
+              ),
+              setElementHidden: (id, hidden) => {
+                const o = getObject(id);
+                if (o) o.visible = !hidden;
+              },
+            },
+            scadgenHistory,
+          ),
+        box: (w: number, h: number, d: number) => {
+          const fid = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          for (const n of buildBoxNodes(fid, "Box", w, h, d))
+            scadgenHistory.add(n);
+          return fid;
+        },
+        cylinder: (r: number, h: number) => {
+          const fid = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          for (const n of buildCylinderNodes(fid, "Cyl", r, h))
+            scadgenHistory.add(n);
+          return fid;
+        },
+        sphere: (r: number) => {
+          const fid = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          for (const n of buildSphereNodes(fid, "Sph", r))
+            scadgenHistory.add(n);
+          return fid;
+        },
+        torus: (ringR: number, tubeR: number) => {
+          const fid = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          for (const n of buildTorusNodes(fid, "Torus", ringR, tubeR))
+            scadgenHistory.add(n);
+          return fid;
+        },
+        mirror: (src: string, axis: "X" | "Y" | "Z") => {
+          const fid = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          scadgenHistory.add(buildMirrorNodes(fid, "Mirror", src, axis));
+          return fid;
+        },
+        rect: (w: number, h: number) => {
+          const fid = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          const nodes = buildRectangleProfileNodes(fid, "Rect", {
+            width: w,
+            height: h,
+          });
+          for (const n of nodes) scadgenHistory.add(n);
+          return nodes[0]?.featureId ?? fid;
+        },
+        constrain: (
+          sketchFid: string,
+          type: string,
+          primitiveIds: string[],
+          value?: number,
+        ) => {
+          const fid = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          scadgenHistory.add(
+            buildConstraintNode({
+              featureId: fid,
+              sketchFeatureId: sketchFid,
+              type: type as never,
+              primitiveIds,
+              ...(value !== undefined ? { value } : {}),
+            }),
+          );
+          return fid;
+        },
+        trimAt: (sketchFid: string, primId: string, x: number, y: number) => {
+          const node = scadgenHistory
+            .evaluatedNodes()
+            .find((n) => n.featureId === sketchFid);
+          const snap = node?.extensions?.sketch as SketchSnapLike | undefined;
+          if (!snap) return null;
+          const r = trimSnapshot(snap, primId, { x, y });
+          if (!r) return null;
+          scadgenHistory.setSnapshot(sketchFid, r.snapshot as never);
+          return r.removed;
+        },
+        extendTo: (sketchFid: string, lineId: string, isStart: boolean) => {
+          const node = scadgenHistory
+            .evaluatedNodes()
+            .find((n) => n.featureId === sketchFid);
+          const snap = node?.extensions?.sketch as SketchSnapLike | undefined;
+          if (!snap) return false;
+          const r = extendSnapshot(snap, lineId, isStart);
+          if (!r) return false;
+          scadgenHistory.setSnapshot(sketchFid, r as never);
+          return true;
+        },
+        faceDirs: (fid: string) => {
+          const o = scadgenExecutor.outputs.get(fid);
+          if (!o) return null;
+          const json = o.brep.toJSON();
+          const verts = json.vertices;
+          const sc = verts.length
+            ? verts.reduce(
+                (a, v) => ({
+                  x: a.x + v.x / verts.length,
+                  y: a.y + v.y / verts.length,
+                  z: a.z + v.z / verts.length,
+                }),
+                { x: 0, y: 0, z: 0 },
+              )
+            : { x: 0, y: 0, z: 0 };
+          return json.faces.map((f, i) => {
+            const fv = f.vertices ?? [];
+            const c = fv.length
+              ? fv.reduce(
+                  (a, v) => ({
+                    x: a.x + v.x / fv.length,
+                    y: a.y + v.y / fv.length,
+                    z: a.z + v.z / fv.length,
+                  }),
+                  { x: 0, y: 0, z: 0 },
+                )
+              : sc;
+            const r = {
+              x: c.x - sc.x,
+              y: c.y - sc.y,
+              z: c.z - sc.z,
+            };
+            const len = Math.hypot(r.x, r.y, r.z) || 1;
+            return {
+              tag: o.faceTags[i] ?? String(i),
+              center: c,
+              normal: { x: r.x / len, y: r.y / len, z: r.z / len },
+            };
+          });
+        },
+        ftags: (fid: string) =>
+          scadgenExecutor.outputs.get(fid)?.faceTags ?? null,
+        shell: (fid: string, tag: string, t: number) => {
+          const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          scadgenHistory.add(buildShellNode(nf, "Shell", fid, [tag], t));
+          return nf;
+        },
+        draft: (
+          fid: string,
+          tags: string[],
+          angleDeg: number,
+          neutral: string,
+        ) => {
+          const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          scadgenHistory.add(
+            buildDraftNode(nf, "Draft", fid, tags, angleDeg, neutral),
+          );
+          return nf;
+        },
+        hole: (
+          fid: string,
+          centers: [number, number, number][],
+          r: number,
+          d: number,
+        ) => {
+          const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          scadgenHistory.add(buildHoleNode(nf, "Hole", fid, centers, r, d));
+          return nf;
+        },
+        circPattern: (fid: string, count: number) => {
+          const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          scadgenHistory.add(
+            buildCircularPatternNode(nf, "Circular Pattern", fid, count),
+          );
+          return nf;
+        },
+        etags: (fid: string) =>
+          scadgenExecutor.outputs.get(fid)?.edgeTags ?? null,
+        measPolyline: (fid: string) => {
+          const o = scadgenExecutor.outputs.get(fid);
+          return o ? polylineLength(o) : null;
+        },
+        measAngle: (fid: string, a: string, b: string) => {
+          const o = scadgenExecutor.outputs.get(fid);
+          return o ? straightEdgeAngle(o, a, b) : null;
+        },
+        measDist: (fa: string, fb: string) => {
+          const oa = scadgenExecutor.outputs.get(fa);
+          const ob = scadgenExecutor.outputs.get(fb);
+          return oa && ob ? nearestVertexDistance(oa, ob) : null;
+        },
+        measEdge: async (fid: string) => {
+          const o = scadgenExecutor.outputs.get(fid);
+          if (!o) return null;
+          const out: number[] = [];
+          for (const t of o.edgeTags) out.push(await edgeLength(o, t));
+          return out;
+        },
+        states: () => scadgenHistory.toListResponse().featureStates,
+        tags: (fid: string) => {
+          const o = scadgenExecutor.outputs.get(fid);
+          return o
+            ? {
+                edges: o.edgeTags.length,
+                faces: o.faceTags.length,
+                faceOwner: o.faceTags.length
+                  ? faceOwnerOf(o.faceTags[0] ?? "")
+                  : null,
+              }
+            : null;
+        },
+        varRows: () => variablesPanelRows(scadgenHistory.evaluatedNodes()),
+        varsFor: (fid: string) =>
+          variablesForFeature(scadgenHistory.evaluatedNodes(), fid),
+        exportSceneStl: () =>
+          ImportExportService.getInstance()
+            .export(elements)
+            .then((blob) => blob.arrayBuffer())
+            .then((buf) => new Uint8Array(buf)),
+        exportSceneStep: () =>
+          ImportExportService.getInstance()
+            .exportStep(elements)
+            .then((blob) => blob.arrayBuffer())
+            .then((buf) => new Uint8Array(buf)),
+        insertStl: (bytes: number[]) => {
+          const assetId = `stl_${Date.now().toString(36)}`;
+          registerImportAsset(
+            assetId,
+            "stl",
+            "inserted",
+            new Uint8Array(bytes),
+          );
+          const fid = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          scadgenHistory.add(buildInsertNode(fid, "Inserted", assetId, "stl"));
+          return fid;
+        },
+        authoredIds: () => scadgenSceneSync.authoredIds(),
+        geom: (fid: string) => {
+          const o = scadgenExecutor.outputs.get(fid);
+          return o
+            ? {
+                edges: o.brep.edges.length,
+                faces: o.brep.faces.length,
+                vertices: o.brep.vertices.length,
+              }
+            : null;
+        },
+        idle: () =>
+          scadgenExecutor.whenIdle().then(() => scadgenExecutor.lastReport),
+      },
     };
     return () => {
       delete (window as unknown as { __cadDebug?: object }).__cadDebug;
     };
-  }, [elements, mode, featureTree, camera]);
+  }, [
+    elements,
+    mode,
+    featureTree,
+    camera,
+    updateElementBrep,
+    addElement,
+    getObject,
+    idCounter,
+  ]);
+
+  useEffect(() => {
+    if (!pendingAuthorFixups.current.size) {
+      for (const el of elements) seenElementIds.current.add(el.nodeId);
+      return;
+    }
+    const ids = elements.map((el) => el.nodeId);
+    const pending = [...pendingAuthorFixups.current].map(
+      ([predictedId, out]) => ({
+        predictedId,
+        brep: out.brep,
+        position: out.position,
+        occBrep: out.occBrep,
+        edgeGeometry: out.edgeGeometry,
+        faceGeometry: out.faceGeometry,
+        vertexPositions: out.vertexPositions,
+      }),
+    );
+    const pairs = pairNewElements(ids, seenElementIds.current, pending);
+    for (const { actualId, item } of pairs) {
+      if (actualId !== item.predictedId)
+        scadgenSceneSync.remapElementId(item.predictedId, actualId);
+      updateElementBrep(
+        actualId,
+        item.brep as never,
+        item.position as never,
+        undefined,
+        item.edgeGeometry as never,
+        item.occBrep,
+        item.faceGeometry as never,
+        item.vertexPositions as never,
+      );
+      pendingAuthorFixups.current.delete(item.predictedId);
+    }
+  }, [elements, updateElementBrep]);
 
   const { inVR, vrSupported, enterVR, exitVR } = useVRSession();
 
@@ -165,7 +503,8 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
     string[]
   >([]);
   const originGroupRef = useOriginHelpers(scene, originVisibility);
-  const ModeContent = inVR && mode === "sketch" ? undefined : MODE_COMPONENTS[mode];
+  const ModeContent =
+    inVR && mode === "sketch" ? undefined : MODE_COMPONENTS[mode];
 
   const [undoDropdownOpen, setUndoDropdownOpen] = useState(false);
   const [redoDropdownOpen, setRedoDropdownOpen] = useState(false);

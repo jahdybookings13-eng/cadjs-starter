@@ -33,8 +33,8 @@ interface PrimaryToolbarProps {
   redoDropdownOpen: boolean;
   setUndoDropdownOpen: (v: boolean) => void;
   setRedoDropdownOpen: (v: boolean) => void;
-  undoDropdownRef: React.RefObject<HTMLDivElement>;
-  redoDropdownRef: React.RefObject<HTMLDivElement>;
+  undoDropdownRef: React.RefObject<HTMLDivElement | null>;
+  redoDropdownRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export function getModeLabel(

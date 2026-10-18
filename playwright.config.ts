@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
@@ -10,7 +11,12 @@ export default defineConfig({
   expect: { timeout: 15_000 },
   reporter: process.env.CI ? "github" : "list",
   use: {
-    baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3000",
+    baseURL:
+      process.env.E2E_BASE_URL ??
+      `${fs.existsSync("./localhost+1.pem") ? "https" : "http"}://localhost:${
+        process.env.E2E_PORT ?? "3000"
+      }`,
+    ignoreHTTPSErrors: true,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
@@ -22,8 +28,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run dev",
-    port: 3000,
+    command: `npm run dev -- --port ${process.env.E2E_PORT ?? "3000"} --strictPort`,
+    port: Number(process.env.E2E_PORT ?? 3000),
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     stdout: "pipe",

@@ -32,9 +32,16 @@ export interface PhysicsWorld {
     mass?: number,
   ) => RAPIER.RigidBody;
   removeBody: (body: RAPIER.RigidBody) => void;
-  setBodyPosition: (body: RAPIER.RigidBody, x: number, y: number, z: number) => void;
+  setBodyPosition: (
+    body: RAPIER.RigidBody,
+    x: number,
+    y: number,
+    z: number,
+  ) => void;
   setBodyKinematic: (body: RAPIER.RigidBody, kinematic: boolean) => void;
-  syncMeshes: (entries: Map<string, { body: RAPIER.RigidBody; mesh: THREE.Object3D }>) => void;
+  syncMeshes: (
+    entries: Map<string, { body: RAPIER.RigidBody; mesh: THREE.Object3D }>,
+  ) => void;
   dispose: () => void;
 }
 
@@ -42,13 +49,25 @@ export async function createPhysicsWorld(
   gravity: [number, number, number] = [0, -9.81, 0],
 ): Promise<PhysicsWorld> {
   await RAPIER.init();
-  const world = new RAPIER.World({ x: gravity[0], y: gravity[1], z: gravity[2] });
+  const world = new RAPIER.World({
+    x: gravity[0],
+    y: gravity[1],
+    z: gravity[2],
+  });
 
   const update = () => {
     world.step();
   };
 
-  const addStaticBox = (id: string, hx: number, hy: number, hz: number, px: number, py: number, pz: number) => {
+  const addStaticBox = (
+    id: string,
+    hx: number,
+    hy: number,
+    hz: number,
+    px: number,
+    py: number,
+    pz: number,
+  ) => {
     const desc = RAPIER.RigidBodyDesc.fixed().setTranslation(px, py, pz);
     const body = world.createRigidBody(desc);
     const collider = RAPIER.ColliderDesc.cuboid(hx, hy, hz);
@@ -56,19 +75,37 @@ export async function createPhysicsWorld(
     return body;
   };
 
-  const addDynamicBox = (id: string, hx: number, hy: number, hz: number, px: number, py: number, pz: number, mass = 1.0) => {
+  const addDynamicBox = (
+    id: string,
+    hx: number,
+    hy: number,
+    hz: number,
+    px: number,
+    py: number,
+    pz: number,
+    mass = 1.0,
+  ) => {
     const desc = RAPIER.RigidBodyDesc.dynamic()
       .setTranslation(px, py, pz)
       .setLinearDamping(0.5)
       .setAngularDamping(0.5);
     const body = world.createRigidBody(desc);
     const vol = hx * hy * hz * 8;
-    const collider = RAPIER.ColliderDesc.cuboid(hx, hy, hz).setDensity(mass / vol);
+    const collider = RAPIER.ColliderDesc.cuboid(hx, hy, hz).setDensity(
+      mass / vol,
+    );
     world.createCollider(collider, body);
     return body;
   };
 
-  const addDynamicSphere = (id: string, radius: number, px: number, py: number, pz: number, mass = 1.0) => {
+  const addDynamicSphere = (
+    id: string,
+    radius: number,
+    px: number,
+    py: number,
+    pz: number,
+    mass = 1.0,
+  ) => {
     const desc = RAPIER.RigidBodyDesc.dynamic()
       .setTranslation(px, py, pz)
       .setLinearDamping(0.5)
@@ -84,7 +121,12 @@ export async function createPhysicsWorld(
     world.removeRigidBody(body);
   };
 
-  const setBodyPosition = (body: RAPIER.RigidBody, x: number, y: number, z: number) => {
+  const setBodyPosition = (
+    body: RAPIER.RigidBody,
+    x: number,
+    y: number,
+    z: number,
+  ) => {
     body.setTranslation({ x, y, z }, true);
   };
 
@@ -96,7 +138,9 @@ export async function createPhysicsWorld(
     }
   };
 
-  const syncMeshes = (entries: Map<string, { body: RAPIER.RigidBody; mesh: THREE.Object3D }>) => {
+  const syncMeshes = (
+    entries: Map<string, { body: RAPIER.RigidBody; mesh: THREE.Object3D }>,
+  ) => {
     entries.forEach(({ body, mesh }) => {
       const t = body.translation();
       const r = body.rotation();
@@ -109,7 +153,18 @@ export async function createPhysicsWorld(
     world.free();
   };
 
-  return { world, update, addStaticBox, addDynamicBox, addDynamicSphere, removeBody, setBodyPosition, setBodyKinematic, syncMeshes, dispose };
+  return {
+    world,
+    update,
+    addStaticBox,
+    addDynamicBox,
+    addDynamicSphere,
+    removeBody,
+    setBodyPosition,
+    setBodyKinematic,
+    syncMeshes,
+    dispose,
+  };
 }
 
 export function buildRoomBoundaries(
@@ -129,7 +184,15 @@ export function buildRoomBoundaries(
   physics.addStaticBox("wall-left", wt / 2, 1.5, halfRoom, -halfRoom, 1.5, 0);
   physics.addStaticBox("wall-right", wt / 2, 1.5, halfRoom, halfRoom, 1.5, 0);
 
-  physics.addStaticBox("desk-top", deskWidth / 2, 0.02, deskDepth / 2, 0, deskHeight, 0);
+  physics.addStaticBox(
+    "desk-top",
+    deskWidth / 2,
+    0.02,
+    deskDepth / 2,
+    0,
+    deskHeight,
+    0,
+  );
 
   const legW = 0.03;
   const legs: [number, number][] = [
@@ -139,6 +202,14 @@ export function buildRoomBoundaries(
     [deskWidth / 2 - 0.04, deskDepth / 2 - 0.04],
   ];
   legs.forEach(([lx, lz], i) => {
-    physics.addStaticBox(`leg-${i}`, legW, deskHeight / 2, legW, lx, deskHeight / 2, lz);
+    physics.addStaticBox(
+      `leg-${i}`,
+      legW,
+      deskHeight / 2,
+      legW,
+      lx,
+      deskHeight / 2,
+      lz,
+    );
   });
 }

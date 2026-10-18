@@ -1,7 +1,14 @@
 import { useEffect } from "react";
 import { SceneMode } from "@vitekk02/cadjs";
 
-type NamedView = "front" | "back" | "left" | "right" | "top" | "bottom" | "isometric";
+type NamedView =
+  | "front"
+  | "back"
+  | "left"
+  | "right"
+  | "top"
+  | "bottom"
+  | "isometric";
 
 /**
  * Centralizes scene-level keyboard listeners. Each `useEffect` here listens

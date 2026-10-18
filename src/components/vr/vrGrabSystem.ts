@@ -60,7 +60,8 @@ export function createVRGrabSystem(): VRGrabSystem {
         obj = obj.parent;
       }
       if (!obj) continue;
-      const userData = (obj as unknown as Record<string, unknown>).userData as Record<string, unknown>;
+      const userData = (obj as unknown as Record<string, unknown>)
+        .userData as Record<string, unknown>;
       if (userData.id) {
         state.heldObjectId = userData.id as string;
         state.heldObjectMesh = obj;
@@ -99,10 +100,17 @@ export function createVRGrabSystem(): VRGrabSystem {
   };
 
   const updateTwoHandScale = (secondControllerPos: THREE.Vector3) => {
-    if (!state.heldObjectMesh || !state.gripOrigin || !state.initialScale || !secondHandOrigin) return;
+    if (
+      !state.heldObjectMesh ||
+      !state.gripOrigin ||
+      !state.initialScale ||
+      !secondHandOrigin
+    )
+      return;
 
     const originalDist = state.gripOrigin.distanceTo(secondHandOrigin);
-    const currentDist = state.heldObjectMesh.position.distanceTo(secondControllerPos);
+    const currentDist =
+      state.heldObjectMesh.position.distanceTo(secondControllerPos);
 
     if (originalDist < 0.01) return;
 
