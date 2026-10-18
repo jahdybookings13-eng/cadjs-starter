@@ -688,10 +688,59 @@ export class ScadgenExecutor {
   ): Promise<BodyOutput | null> {
     switch (node.featureType) {
       case "newSketch": {
-        const snap = snapshotOf(node);
+        let snap = snapshotOf(node);
         if (!snap) {
           report[node.featureId] = { status: "ERROR", detail: "no snapshot" };
           return null;
+        }
+        const datumRef = stringOfParam(node, "planeRef");
+        if (datumRef) {
+          const datum = this.outputs.get(datumRef) ?? null;
+          if (!datum) {
+            report[node.featureId] = {
+              status: "ERROR",
+              detail: "sketch-on-datum: planeRef unresolved",
+            };
+            return null;
+          }
+          const dn = datum.planeNormal ?? [0, 0, 1];
+          const dl = Math.hypot(dn[0], dn[1], dn[2]) || 1;
+          const n = { x: dn[0] / dl, y: dn[1] / dl, z: dn[2] / dl };
+          const raw = snap.plane.xAxis ?? [1, 0, 0];
+          const rx = raw[0] ?? 1,
+            ry = raw[1] ?? 0,
+            rz = raw[2] ?? 0;
+          const dx = rx * n.x + ry * n.y + rz * n.z;
+          let ax = rx - n.x * dx,
+            ay = ry - n.y * dx,
+            az = rz - n.z * dx;
+          if (Math.hypot(ax, ay, az) < 1e-6) {
+            const ref = Math.abs(n.z) < 0.9 ? [0, 0, 1] : [1, 0, 0];
+            ax = n.y * (ref[2] ?? 0) - n.z * (ref[1] ?? 0);
+            ay = n.z * (ref[0] ?? 1) - n.x * (ref[2] ?? 0);
+            az = n.x * (ref[1] ?? 0) - n.y * (ref[0] ?? 1);
+          }
+          const xl = Math.hypot(ax, ay, az) || 1;
+          ax /= xl;
+          ay /= xl;
+          az /= xl;
+          const x0 = [ax, ay, az];
+          const y0 = [
+            n.y * az - n.z * ay,
+            n.z * ax - n.x * az,
+            n.x * ay - n.y * ax,
+          ];
+          snap = {
+            ...snap,
+            plane: {
+              ...snap.plane,
+              type: "DATUM",
+              origin: [datum.position.x, datum.position.y, datum.position.z],
+              normal: [n.x, n.y, n.z],
+              xAxis: x0,
+              yAxis: y0,
+            },
+          };
         }
         const plane = revivePlane(snap.plane);
         const sketch = {

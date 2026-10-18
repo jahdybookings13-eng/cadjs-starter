@@ -160,7 +160,7 @@ const P_CPLANE = op(
   "Plane",
   "ready",
   "createPlane",
-  "datum plane BODY (planar quad) for booleans/sections/extrude targets; sketch-on-datum wiring deferred",
+  "datum plane BODY (planar quad); sketch-on-datum wired (planeRef on newSketch, orthonormalized)",
 );
 const P_CURVE_ON_FACE = op(
   "curve-on-face",

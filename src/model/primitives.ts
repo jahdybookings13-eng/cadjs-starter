@@ -121,6 +121,43 @@ export function buildBoxNodes(
   ];
 }
 
+export function buildDatumSketchExtrudeNodes(
+  baseId: string,
+  name: string,
+  datumFeatureId: string,
+  width: number,
+  height: number,
+  depth: number,
+): ScadgenFeatureNode[] {
+  const skFid = `${baseId}_sk`;
+  const plane = {
+    type: "DATUM",
+    origin: [0, 0, 0],
+    normal: [0, 0, 1],
+    xAxis: [1, 0, 0],
+    yAxis: [0, 1, 0],
+  };
+  const sk = sketchNode(
+    skFid,
+    `${name} profile`,
+    plane,
+    rectPrims(width, height),
+  );
+  sk.parameters = [
+    ...sk.parameters,
+    { kind: "string", parameterId: "planeRef", value: datumFeatureId },
+  ];
+  return [
+    sk,
+    buildExtrudeNode(
+      baseId,
+      name,
+      [provenanceForFeature(skFid, "SKETCH_ENTITY", "l1")],
+      q(depth, `${(depth * 1000).toFixed(0)} mm`),
+    ),
+  ];
+}
+
 export function buildCylinderNodes(
   baseId: string,
   name: string,

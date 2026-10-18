@@ -31,6 +31,7 @@ import {
   buildProjectCurvesNode,
   buildRectangleProfileNodes,
   buildRuledSurfaceNode,
+  buildDatumSketchExtrudeNodes,
   buildThreadNode,
   buildScaleNode,
   buildShellNode,
@@ -473,6 +474,24 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
           const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
           scadgenHistory.add(buildThickenNode(nf, "Thicken", fid, [tag], t));
           return nf;
+        },
+        sketchOnDatum: (
+          datumFid: string,
+          w: number,
+          h: number,
+          depth: number,
+        ) => {
+          const base = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          const nodes = buildDatumSketchExtrudeNodes(
+            base,
+            "Datum pad",
+            datumFid,
+            w,
+            h,
+            depth,
+          );
+          for (const nd of nodes) scadgenHistory.add(nd);
+          return base;
         },
         thread: (
           fid: string,

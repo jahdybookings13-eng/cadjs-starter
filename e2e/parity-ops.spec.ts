@@ -68,6 +68,7 @@ interface ScadgenDbg {
   ) => string;
   delFace: (fid: string, tag: string) => string;
   moveFace: (fid: string, tag: string, d: number) => string;
+  sketchOnDatum: (d: string, w: number, h: number, depth: number) => string;
   thread: (
     fid: string,
     size: string,
@@ -301,6 +302,22 @@ test("delete-face and split run on the real kernel", async ({ page }) => {
   expect(splitRes.bothStatus).toBe("OK");
   expect(splitRes.bothBodies.length).toBe(2);
   expect(splitRes.bothBodies[1]?.endsWith("#1")).toBe(true);
+});
+
+test("sketch-on-datum places a pad on a datum plane", async ({ page }) => {
+  await boot(page);
+  const r = await page.evaluate(async () => {
+    const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      .__cadDebug.scadgen;
+    const datum = s.createPlane([0.001, 0.001, 0.005], [0.3, 0.2, 1]);
+    const pad = s.sketchOnDatum(datum, 0.002, 0.002, 0.001);
+    const st = await s.idle();
+    const w = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      .__cadDebug.scadgen;
+    return { pad: st[pad]?.status, faces: w.tags(pad)?.faces ?? 0 };
+  });
+  expect(r.pad).toBe("OK");
+  expect(r.faces).toBeGreaterThan(3);
 });
 
 test("thread cuts real ISO grooves on a cylinder", async ({ page }) => {
