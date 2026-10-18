@@ -22,6 +22,7 @@ import {
   patternBRep,
   deleteFaceBRep,
   splitBRep,
+  thickenBRep,
   projectCurvesBRep,
   surfaceOpBRep,
   SketchToBrepService,
@@ -987,7 +988,8 @@ export class ScadgenExecutor {
       case "shell":
       case "hole":
       case "draft":
-      case "deleteFace": {
+      case "deleteFace":
+      case "thicken": {
         const bodyQ = listOf(node, "targets")[0];
         const src = bodyQ ? this.resolve(bodyQ) : undefined;
         if (!src) {
@@ -1068,6 +1070,22 @@ export class ScadgenExecutor {
             quantityOf(node, "angle", this.scope) ?? 0,
             dir.normal,
             dir.point,
+            src.occBrep,
+          );
+        } else if (node.featureType === "thicken") {
+          const idxs = this.faceIndices(src, listOf(node, "faces"));
+          if (!idxs.length) {
+            report[node.featureId] = {
+              status: "ERROR",
+              detail: "thicken: no faces selected",
+            };
+            return null;
+          }
+          res = await thickenBRep(
+            src.brep,
+            src.position,
+            idxs,
+            quantityOf(node, "thickness", this.scope) ?? 0.001,
             src.occBrep,
           );
         } else if (node.featureType === "deleteFace") {

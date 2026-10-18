@@ -9,6 +9,7 @@ import {
   buildOffsetSurfaceNode,
   buildProjectCurvesNode,
   buildRuledSurfaceNode,
+  buildThickenNode,
   buildMirrorNodes,
   buildLinearPatternNodes,
   buildSplitNode,
@@ -146,6 +147,15 @@ describe("primitive composite builders", () => {
     );
     expect(o?.kind === "string" && o.value).toBe("1,2,3");
     expect(n?.kind === "string" && n.value).toBe("0,0,1");
+  });
+  it("thicken node carries faces + typed thickness", () => {
+    const nd = buildThickenNode("Ft", "Thicken", "Fbody", ["Fbody_F1"], 0.02);
+    expect(nd.featureType).toBe("thicken");
+    const t = nd.parameters.find(
+      (x) => x.kind === "quantity" && x.parameterId === "thickness",
+    );
+    expect(t?.kind === "quantity" && t.value).toBe(0.02);
+    expect(t?.kind === "quantity" && t.expression).toContain("m");
   });
   it("delete-face node carries targets + faces queries", () => {
     const nd = buildDeleteFaceNode("Fd", "Del", "Fbody", ["Fbody_F2"]);

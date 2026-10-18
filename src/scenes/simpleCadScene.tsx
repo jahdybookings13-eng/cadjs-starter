@@ -27,6 +27,7 @@ import {
   buildRectangleProfileNodes,
   buildRuledSurfaceNode,
   buildShellNode,
+  buildThickenNode,
 } from "../model/primitives";
 import {
   buildConstraintNode,
@@ -433,6 +434,11 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
               keep ?? "positive",
             ),
           );
+          return nf;
+        },
+        thicken: (fid: string, tag: string, t: number) => {
+          const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          scadgenHistory.add(buildThickenNode(nf, "Thicken", fid, [tag], t));
           return nf;
         },
         delFace: (fid: string, tag: string) => {

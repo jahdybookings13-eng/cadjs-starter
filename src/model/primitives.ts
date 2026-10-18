@@ -580,6 +580,42 @@ export function buildSplitNode(
   };
 }
 
+export function buildThickenNode(
+  featureId: string,
+  name: string,
+  bodyFeatureId: string,
+  faceTags: string[],
+  thickness: number,
+): ScadgenFeatureNode {
+  return {
+    featureId,
+    featureType: "thicken",
+    name,
+    namespace: "",
+    parameters: [
+      {
+        kind: "queryList",
+        parameterId: "targets",
+        queries: [faceQ(bodyFeatureId, "*")],
+      },
+      {
+        kind: "queryList",
+        parameterId: "faces",
+        queries: faceTags.map((t) => faceQ(bodyFeatureId, t)),
+      },
+      {
+        kind: "quantity",
+        parameterId: "thickness",
+        value: thickness,
+        units: "m",
+        expression: formatQuantityExpression(thickness, "m"),
+      },
+    ],
+    subFeatures: [],
+    suppressed: false,
+  };
+}
+
 export function buildDeleteFaceNode(
   featureId: string,
   name: string,

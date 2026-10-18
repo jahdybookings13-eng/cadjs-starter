@@ -52,6 +52,7 @@ interface ScadgenDbg {
     keep?: "positive" | "negative",
   ) => string;
   delFace: (fid: string, tag: string) => string;
+  thicken: (fid: string, tag: string, t: number) => string;
   fillet: (fid: string, tags: string[], r: number, radii?: number[]) => string;
   modFillet: (fid: string, r?: number, tags?: string[]) => boolean;
   measEdge: (fid: string) => Promise<number[] | null>;
@@ -242,6 +243,19 @@ test("ruled, fill, offset surfaces and projectCurves run on the real kernel", as
   page,
 }) => {
   await boot(page);
+  const thkRes = await page.evaluate(async () => {
+    const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      .__cadDebug.scadgen;
+    const boxFid = s.box(2, 2, 1);
+    await s.idle();
+    const ft = s.ftags(boxFid) ?? [];
+    const tf = s.thicken(boxFid, ft[0] ?? "", 0.5);
+    const st = await s.idle();
+    return { status: st[tf]?.status, detail: st[tf]?.detail, out: s.tags(tf) };
+  });
+  expect(thkRes.status).toBe("OK");
+  expect(thkRes.out?.faces).toBeGreaterThanOrEqual(6);
+
   const surfRes = await page.evaluate(async () => {
     const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
       .__cadDebug.scadgen;

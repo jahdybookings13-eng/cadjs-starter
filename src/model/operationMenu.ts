@@ -88,9 +88,9 @@ const P_SHELL = op(
 const P_THICKEN = op(
   "thicken",
   "Thicken",
-  "planned",
-  null,
-  "tier 1: opThicken",
+  "ready",
+  "thicken",
+  "face slabs via normal-offset wires + ruled solid (planar exact, curved ruled-approx)",
 );
 const P_MOVEFACE = op(
   "move-face",
