@@ -18,15 +18,22 @@ function faceKeys(brep: Brep): string[] {
   );
 }
 
-export function matchFaceTags(
-  prevBrep: Brep,
+function edgeKeys(brep: Brep): string[] {
+  const edges = brep.edges as unknown as Array<{ start?: V3; end?: V3 }>;
+  return edges.map((e) =>
+    [key(e.start ?? { x: 0, y: 0, z: 0 }), key(e.end ?? { x: 0, y: 0, z: 0 })]
+      .sort()
+      .join("|"),
+  );
+}
+
+function matchByKeys(
+  prevKeys: string[],
   prevTags: string[],
-  nextBrep: Brep,
+  nextKeys: string[],
   nextTags: string[],
 ): Map<string, string> {
   const out = new Map<string, string>();
-  const prevKeys = faceKeys(prevBrep);
-  const nextKeys = faceKeys(nextBrep);
   const countOf = (keys: string[]) => {
     const m = new Map<string, number>();
     for (const k of keys) m.set(k, (m.get(k) ?? 0) + 1);
@@ -48,4 +55,32 @@ export function matchFaceTags(
     out.set(pt, nt);
   }
   return out;
+}
+
+export function matchFaceTags(
+  prevBrep: Brep,
+  prevTags: string[],
+  nextBrep: Brep,
+  nextTags: string[],
+): Map<string, string> {
+  return matchByKeys(
+    faceKeys(prevBrep),
+    prevTags,
+    faceKeys(nextBrep),
+    nextTags,
+  );
+}
+
+export function matchEdgeTags(
+  prevBrep: Brep,
+  prevTags: string[],
+  nextBrep: Brep,
+  nextTags: string[],
+): Map<string, string> {
+  return matchByKeys(
+    edgeKeys(prevBrep),
+    prevTags,
+    edgeKeys(nextBrep),
+    nextTags,
+  );
 }

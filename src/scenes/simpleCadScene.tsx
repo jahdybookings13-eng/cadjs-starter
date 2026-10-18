@@ -479,6 +479,9 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
             ...(tags ? { edgeTags: tags } : {}),
           }),
         tagMap: (fid: string) => scadgenExecutor.stabilityOf(fid),
+        tagChain: (fid: string) => scadgenExecutor.tagChainOf(fid),
+        resolveTag: (fid: string, oldTag: string, kind?: "face" | "edge") =>
+          scadgenExecutor.resolveTag(fid, oldTag, kind ?? "face"),
         etags: (fid: string) =>
           scadgenExecutor.outputs.get(fid)?.edgeTags ?? null,
         measPolyline: (fid: string) => {

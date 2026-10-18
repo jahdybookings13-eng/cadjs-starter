@@ -33,7 +33,8 @@ import {
   transformBrepVertices,
 } from "@vitekk02/cadjs";
 import { getImportAsset } from "./assets";
-import { matchFaceTags } from "./tagStability";
+import { matchEdgeTags, matchFaceTags } from "./tagStability";
+import { TagChain } from "./tagChain";
 import {
   DIM_ANGLE,
   DIM_LENGTH,
@@ -345,8 +346,14 @@ export function edgeOwnerOf(tag: string): string | null {
 
 export class ScadgenExecutor {
   readonly outputs = new Map<string, BodyOutput>();
-  private prevGeom = new Map<string, { brep: Brep; tags: string[] }>();
+  private prevGeom = new Map<
+    string,
+    { brep: Brep; tags: string[]; edgeTags: string[] }
+  >();
   private stability = new Map<string, Map<string, string>>();
+  private edgeStability = new Map<string, Map<string, string>>();
+  private chains = new Map<string, TagChain>();
+  private edgeChains = new Map<string, TagChain>();
   private scope: Scope = {};
   lastReport: ExecReport = {};
   private rebuiltListeners: Array<(r: ExecReport) => void> = [];
@@ -438,14 +445,33 @@ export class ScadgenExecutor {
           if (out.kind === "body" && out.faceTags.length) {
             const prev = this.prevGeom.get(node.featureId);
             const world = this.worldFaceBrep(out);
-            if (prev)
-              this.stability.set(
-                node.featureId,
-                matchFaceTags(prev.brep, prev.tags, world, out.faceTags),
+            if (prev) {
+              const matches = matchFaceTags(
+                prev.brep,
+                prev.tags,
+                world,
+                out.faceTags,
               );
+              this.stability.set(node.featureId, matches);
+              const chain = this.chains.get(node.featureId) ?? new TagChain();
+              chain.apply(matches);
+              this.chains.set(node.featureId, chain);
+              const eMatches = matchEdgeTags(
+                prev.brep,
+                prev.edgeTags,
+                world,
+                out.edgeTags,
+              );
+              this.edgeStability.set(node.featureId, eMatches);
+              const eChain =
+                this.edgeChains.get(node.featureId) ?? new TagChain();
+              eChain.apply(eMatches);
+              this.edgeChains.set(node.featureId, eChain);
+            }
             this.prevGeom.set(node.featureId, {
               brep: world,
               tags: [...out.faceTags],
+              edgeTags: [...out.edgeTags],
             });
           }
           report[node.featureId] = { status: "OK" };
@@ -512,13 +538,45 @@ export class ScadgenExecutor {
     return this.outputs.get(query.creationFeatureId) ?? null;
   }
 
+  // Tag → index with persistent-naming retarget: exact hit first, else the
+  // surviving chain mapping for the old tag, else -1 (unknown).
+  tagIndex(out: BodyOutput, kind: "face" | "edge", tag: string): number {
+    const tags = kind === "face" ? out.faceTags : out.edgeTags;
+    const direct = tags.indexOf(tag);
+    if (direct >= 0) return direct;
+    const chain =
+      kind === "face"
+        ? this.chains.get(out.featureId)
+        : this.edgeChains.get(out.featureId);
+    const remapped = chain?.get(tag);
+    if (!remapped) return -1;
+    return tags.indexOf(remapped);
+  }
+
+  resolveTag(
+    featureId: string,
+    oldTag: string,
+    kind: "face" | "edge" = "face",
+  ): string | null {
+    const chain =
+      kind === "face"
+        ? this.chains.get(featureId)
+        : this.edgeChains.get(featureId);
+    return chain?.get(oldTag) ?? null;
+  }
+
+  tagChainOf(featureId: string): Record<string, string> | null {
+    const c = this.chains.get(featureId);
+    return c ? c.snapshot() : null;
+  }
+
   private edgeIndices(
     source: BodyOutput,
     queries: ProvenanceQuery[],
   ): number[] {
     const all: number[] = [];
     for (const q of queries) {
-      const i = source.edgeTags.indexOf(q.entityTag);
+      const i = this.tagIndex(source, "edge", q.entityTag);
       if (i >= 0) all.push(i);
     }
     return all.length ? all : [...source.edgeTags.keys()];
@@ -530,7 +588,7 @@ export class ScadgenExecutor {
   ): number[] {
     const out: number[] = [];
     for (const q of queries) {
-      const i = source.faceTags.indexOf(q.entityTag);
+      const i = this.tagIndex(source, "face", q.entityTag);
       if (i >= 0 && !out.includes(i)) out.push(i);
     }
     return out;
@@ -1440,8 +1498,10 @@ export class ScadgenExecutor {
         } catch {
           tags = [];
         }
-        const idxs = tags.map((t) => src.edgeTags.indexOf(t) + 1);
-        if (!idxs.length || idxs.some((i) => i < 1)) {
+        const idxs = tags
+          .map((t) => this.tagIndex(src, "edge", t) + 1)
+          .filter((i) => i > 0);
+        if (!idxs.length || idxs.length !== tags.length) {
           report[node.featureId] = {
             status: "ERROR",
             detail: "projectCurves: edge tags not resolved",
@@ -1504,8 +1564,10 @@ export class ScadgenExecutor {
           } catch {
             tags = [];
           }
-          const idxs = tags.map((t) => src.edgeTags.indexOf(t) + 1);
-          if (idxs.length < 2 || idxs.some((i) => i < 1)) {
+          const idxs = tags
+            .map((t) => this.tagIndex(src, "edge", t) + 1)
+            .filter((i) => i > 0);
+          if (idxs.length < 2 || idxs.length !== tags.length) {
             report[node.featureId] = {
               status: "ERROR",
               detail: "surface: edge tags not resolved",
@@ -1514,7 +1576,9 @@ export class ScadgenExecutor {
           }
           opts.edgeIndices = idxs;
         } else {
-          const faceIdx = src.faceTags.indexOf(
+          const faceIdx = this.tagIndex(
+            src,
+            "face",
             stringOfParam(node, "faceTag") ?? "",
           );
           if (faceIdx < 0) {
