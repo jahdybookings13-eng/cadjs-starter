@@ -106,7 +106,13 @@ const P_DELETEFACE = op(
   "deleteFace",
   "delete + sewn planar refill heal; adjacent-merge heal deferred",
 );
-const P_SPLIT = op("split", "Split", "planned", null, "tier 3: opSplitPart");
+const P_SPLIT = op(
+  "split",
+  "Split",
+  "ready",
+  "split",
+  "plane split via BRepAlgoAPI_Splitter; keeps positive half-space piece",
+);
 const P_CIRC_PATTERN = op(
   "circular-pattern",
   "Circular Pattern",

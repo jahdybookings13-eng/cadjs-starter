@@ -31,6 +31,11 @@ interface ScadgenDbg {
   ) => string;
   tags: (fid: string) => { edges: number; faces: number } | null;
   etags: (fid: string) => string[] | null;
+  split: (
+    fid: string,
+    origin: [number, number, number],
+    normal: [number, number, number],
+  ) => string;
   delFace: (fid: string, tag: string) => string;
   fillet: (fid: string, tag: string, r: number) => string;
   modFillet: (fid: string, r?: number, tags?: string[]) => boolean;
@@ -169,6 +174,26 @@ test("shell, draft, hole, circular pattern run on the real kernel", async ({
   expect(delRes.status).toBe("OK");
   expect(delRes.out?.faces).toBeGreaterThanOrEqual(6);
   expect(delRes.badStatus).toBe("ERROR");
+
+  const splitRes = await page.evaluate(async () => {
+    const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      .__cadDebug.scadgen;
+    const boxFid = s.box(2, 2, 1);
+    await s.idle();
+    const sf = s.split(boxFid, [0, 0, 0], [1, 0, 0]);
+    const st = await s.idle();
+    const badFid = s.split(boxFid, [-5, 0, 0], [-1, 0, 0]);
+    const st2 = await s.idle();
+    return {
+      status: st[sf]?.status,
+      detail: st[sf]?.detail,
+      out: s.tags(sf),
+      badStatus: st2[badFid]?.status,
+    };
+  });
+  expect(splitRes.status).toBe("OK");
+  expect(splitRes.out?.faces).toBeGreaterThanOrEqual(6);
+  expect(splitRes.badStatus).toBe("ERROR");
 
   const modRes = await page.evaluate(async () => {
     const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })

@@ -21,6 +21,7 @@ import {
   holeBRep,
   patternBRep,
   deleteFaceBRep,
+  splitBRep,
   SketchToBrepService,
   makeSketchConstraint,
   requiresValue,
@@ -1269,6 +1270,44 @@ export class ScadgenExecutor {
           edgeTags: registerEdges(merged.brep.edges.length, node.featureId),
           faceTags: registerFaces(merged.brep.faces.length, node.featureId),
           ...(merged.occBrep !== undefined ? { occBrep: merged.occBrep } : {}),
+        };
+      }
+      case "split": {
+        const bodyQ = listOf(node, "targets")[0];
+        const src = bodyQ ? this.resolve(bodyQ) : undefined;
+        if (!src) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "split: body not resolved",
+          };
+          return null;
+        }
+        const parse3 = (raw: string | null, dflt: number[]) =>
+          (raw ?? dflt.join(",")).split(",").map((x) => Number(x.trim()));
+        const origin = parse3(stringOfParam(node, "planeOrigin"), [0, 0, 0]);
+        const normal = parse3(stringOfParam(node, "planeNormal"), [1, 0, 0]);
+        const res = await splitBRep(
+          src.brep,
+          src.position,
+          { x: origin[0] ?? 0, y: origin[1] ?? 0, z: origin[2] ?? 0 },
+          { x: normal[0] ?? 1, y: normal[1] ?? 0, z: normal[2] ?? 0 },
+          src.occBrep,
+        );
+        if (!res.ok) {
+          report[node.featureId] = { status: "ERROR", detail: res.reason };
+          return null;
+        }
+        return {
+          featureId: node.featureId,
+          kind: "body",
+          brep: res.value.brep,
+          occBrep: res.value.occBrep,
+          position: src.position,
+          edgeTags: registerEdges(res.value.brep.edges.length, node.featureId),
+          faceTags: registerFaces(res.value.brep.faces.length, node.featureId),
+          edgeGeometry: res.value.edgeGeometry,
+          faceGeometry: res.value.faceGeometry,
+          vertexPositions: res.value.vertexPositions,
         };
       }
       case "mirror": {

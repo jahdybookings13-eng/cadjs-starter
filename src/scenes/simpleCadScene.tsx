@@ -18,6 +18,7 @@ import {
   buildCircularPatternNode,
   buildCurvePatternNode,
   buildDeleteFaceNode,
+  buildSplitNode,
   buildDraftNode,
   buildHoleNode,
   buildRectangleProfileNodes,
@@ -364,6 +365,15 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
               !!align,
             ),
           );
+          return nf;
+        },
+        split: (
+          fid: string,
+          origin: [number, number, number],
+          normal: [number, number, number],
+        ) => {
+          const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          scadgenHistory.add(buildSplitNode(nf, "Split", fid, origin, normal));
           return nf;
         },
         delFace: (fid: string, tag: string) => {

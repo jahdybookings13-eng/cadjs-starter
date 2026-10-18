@@ -12,6 +12,7 @@ describe("operation menu (Onshape port)", () => {
       "fillet",
       "modify-fillet",
       "chamfer",
+      "split",
       "measure",
       "variables",
     ]);

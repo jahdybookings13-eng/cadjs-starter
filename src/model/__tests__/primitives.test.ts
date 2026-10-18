@@ -7,6 +7,7 @@ import {
   buildDeleteFaceNode,
   buildMirrorNodes,
   buildLinearPatternNodes,
+  buildSplitNode,
   buildSphereNodes,
   buildTorusNodes,
 } from "../primitives";
@@ -51,6 +52,18 @@ describe("primitive composite builders", () => {
       (x) => x.kind === "queryList" && x.parameterId === "axis",
     );
     expect(axis?.kind === "queryList" && axis.queries[0]?.entityTag).toBe("l3");
+  });
+  it("split node carries targets + plane origin/normal", () => {
+    const nd = buildSplitNode("Fs", "Split", "Fbody", [1, 2, 3], [0, 0, 1]);
+    expect(nd.featureType).toBe("split");
+    const o = nd.parameters.find(
+      (x) => x.kind === "string" && x.parameterId === "planeOrigin",
+    );
+    const n = nd.parameters.find(
+      (x) => x.kind === "string" && x.parameterId === "planeNormal",
+    );
+    expect(o?.kind === "string" && o.value).toBe("1,2,3");
+    expect(n?.kind === "string" && n.value).toBe("0,0,1");
   });
   it("delete-face node carries targets + faces queries", () => {
     const nd = buildDeleteFaceNode("Fd", "Del", "Fbody", ["Fbody_F2"]);
