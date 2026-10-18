@@ -550,7 +550,7 @@ export function buildSplitNode(
   bodyFeatureId: string,
   planeOrigin: [number, number, number],
   planeNormal: [number, number, number],
-  keep: "positive" | "negative" = "positive",
+  keep: "positive" | "negative" | "both" = "positive",
 ): ScadgenFeatureNode {
   return {
     featureId,
@@ -652,6 +652,7 @@ export function buildCurvePatternNode(
   count: number,
   align = false,
   extraSourceFeatureIds: string[] = [],
+  separate = false,
 ): ScadgenFeatureNode {
   return {
     featureId,
@@ -668,6 +669,7 @@ export function buildCurvePatternNode(
         ],
       },
       { kind: "string", parameterId: "patternType", value: "curve" },
+      { kind: "string", parameterId: "separate", value: String(separate) },
       {
         kind: "quantity",
         parameterId: "count",
@@ -695,6 +697,7 @@ export function buildCircularPatternNode(
   axisDir: [number, number, number] = [0, 0, 1],
   angleDeg = 360,
   extraSourceFeatureIds: string[] = [],
+  separate = false,
 ): ScadgenFeatureNode {
   return {
     featureId,
@@ -711,6 +714,7 @@ export function buildCircularPatternNode(
         ],
       },
       { kind: "string", parameterId: "patternType", value: "circular" },
+      { kind: "string", parameterId: "separate", value: String(separate) },
       {
         kind: "quantity",
         parameterId: "count",

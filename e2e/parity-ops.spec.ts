@@ -27,7 +27,13 @@ interface ScadgenDbg {
     r: number,
     d: number,
   ) => string;
-  circPattern: (fid: string, count: number, extra?: string[]) => string;
+  circPattern: (
+    fid: string,
+    count: number,
+    extra?: string[],
+    separate?: boolean,
+  ) => string;
+  bodiesOf: (fid: string) => string[];
   mirror: (src: string, axis: "X" | "Y" | "Z") => string;
   curvePattern: (
     fid: string,
@@ -57,7 +63,7 @@ interface ScadgenDbg {
     fid: string,
     origin: [number, number, number],
     normal: [number, number, number],
-    keep?: "positive" | "negative",
+    keep?: "positive" | "negative" | "both",
   ) => string;
   delFace: (fid: string, tag: string) => string;
   thicken: (fid: string, tag: string, t: number) => string;
@@ -244,6 +250,7 @@ test("delete-face and split run on the real kernel", async ({ page }) => {
     await s.idle();
     const sf = s.split(boxFid, [1, 0, 0], [1, 0, 0]);
     const sn = s.split(boxFid, [1, 0, 0], [1, 0, 0], "negative");
+    const sb = s.split(boxFid, [1, 0, 0], [1, 0, 0], "both");
     const st = await s.idle();
     const badFid = s.split(boxFid, [3, 0, 0], [1, 0, 0]);
     const st2 = await s.idle();
@@ -254,6 +261,9 @@ test("delete-face and split run on the real kernel", async ({ page }) => {
       out: s.tags(sf),
       negOut: s.tags(sn),
       badStatus: st2[badFid]?.status,
+      bothStatus: st2[sb]?.status,
+      bothDetail: st2[sb]?.detail,
+      bothBodies: s.bodiesOf(sb),
     };
   });
   expect(splitRes.status).toBe("OK");
@@ -261,6 +271,9 @@ test("delete-face and split run on the real kernel", async ({ page }) => {
   expect(splitRes.out?.faces).toBeGreaterThanOrEqual(6);
   expect(splitRes.negOut?.faces).toBeGreaterThanOrEqual(6);
   expect(splitRes.badStatus).toBe("ERROR");
+  expect(splitRes.bothStatus).toBe("OK");
+  expect(splitRes.bothBodies.length).toBe(2);
+  expect(splitRes.bothBodies[1]?.endsWith("#1")).toBe(true);
 });
 
 test("ruled, fill, offset surfaces and projectCurves run on the real kernel", async ({
@@ -428,6 +441,42 @@ test("face tags stay stable across a parameter rebuild", async ({ page }) => {
   expect(r.map2).not.toBeNull();
   // growing the box along z leaves the profile-plane cap untouched -> >=1 stable tag
   expect(Object.keys(r.map2 ?? {}).length).toBeGreaterThanOrEqual(1);
+});
+
+test("separate pattern emits one body + element per instance", async ({
+  page,
+}) => {
+  await boot(page);
+  const r = await page.evaluate(async () => {
+    const els = () =>
+      (
+        window as unknown as {
+          __cadDebug: { getElements: () => unknown[] };
+        }
+      ).__cadDebug.getElements();
+    const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      .__cadDebug.scadgen;
+    s.configureSync();
+    const boxFid = s.box(2, 2, 1);
+    await s.idle();
+    const pf = s.circPattern(boxFid, 4, [], true);
+    const st = await s.idle();
+    for (let i = 0; i < 60; i++) {
+      if (els().length >= 5) break;
+      await new Promise((res) => setTimeout(res, 100));
+    }
+    return {
+      status: st[pf]?.status,
+      detail: st[pf]?.detail,
+      bodies: s.bodiesOf(pf),
+      elements: els().length,
+      tag0: (s.etags(`${pf}#1`) ?? [""])[0],
+    };
+  });
+  expect(r.status).toBe("OK");
+  expect(r.bodies.length).toBe(4);
+  expect(r.elements).toBeGreaterThanOrEqual(5); // 1 box + 4 pattern bodies
+  expect(r.tag0).toBe(`${r.bodies[1]}_E0`); // tags carry the body-qualified owner
 });
 
 test("modifyFillet re-specs radius on the real kernel", async ({ page }) => {

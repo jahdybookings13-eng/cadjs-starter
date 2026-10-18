@@ -79,6 +79,11 @@ export class ScadgenSceneSync {
   forget(featureId: string): void {
     this.synced.delete(featureId);
     this.authored.delete(featureId);
+    for (const key of [...this.authored.keys()])
+      if (key.startsWith(`${featureId}#`)) {
+        this.authored.delete(key);
+        this.synced.delete(key);
+      }
   }
 
   onRebuilt = (report: ExecReport): void => {
@@ -91,7 +96,11 @@ export class ScadgenSceneSync {
       if (this.synced.has(node.featureId)) continue;
       const out = this.outputOf(node.featureId);
       if (!out) continue;
-      let targetId = this.resolveTargetElementId(node);
+      this.syncExtras(node.featureId, out);
+      // A separate (multi-body) pattern must NOT consume its source element —
+      // every instance is a new body with its own element.
+      const multi = (out.additionalBodies?.length ?? 0) > 0;
+      let targetId = multi ? undefined : this.resolveTargetElementId(node);
       let justCreated = false;
       if (!targetId) {
         const created = this.core.createElement?.(out.brep, out.position);
@@ -159,6 +168,40 @@ export class ScadgenSceneSync {
       if (typeof ext?.elementNodeId === "string") ids.push(ext.elementNodeId);
     }
     return ids;
+  }
+
+  // Extra bodies from multi-body features (split-both, separate patterns)
+  // each get their own element, keyed `${fid}#${k}` in the authored map.
+  private syncExtras(featureId: string, out: BodyOutput): void {
+    const extras = out.additionalBodies ?? [];
+    extras.forEach((b, i) => {
+      const key = `${featureId}#${i + 1}`;
+      if (this.synced.has(key)) return;
+      let targetId = this.authored.get(key);
+      if (!targetId) {
+        const created = b.brep
+          ? this.core?.createElement?.(b.brep, b.position)
+          : undefined;
+        if (typeof created === "string" && created) {
+          targetId = created;
+          this.authored.set(key, created);
+          this.core?.postCreate?.(created, b);
+          this.synced.add(key);
+        }
+        return;
+      }
+      this.core?.updateElementBrep(
+        targetId,
+        b.brep,
+        b.position,
+        { type: "body" },
+        b.edgeGeometry,
+        b.occBrep,
+        b.faceGeometry,
+        b.vertexPositions,
+      );
+      this.synced.add(key);
+    });
   }
 
   private outputOf(featureId: string): BodyOutput | undefined {

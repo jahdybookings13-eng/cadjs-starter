@@ -31,6 +31,7 @@ import {
   validateConstraint,
   sweepBRep,
   transformBrepVertices,
+  type ParityResult,
 } from "@vitekk02/cadjs";
 import { getImportAsset } from "./assets";
 import { matchEdgeTags, matchFaceTags } from "./tagStability";
@@ -68,6 +69,10 @@ export interface BodyOutput {
   faceGeometry?: THREE.BufferGeometry | undefined;
   vertexPositions?: Float32Array | undefined;
   snapshot?: SketchSnapshot;
+  /** Sibling bodies produced by the same feature (split-both, separate
+   *  patterns). Each carries featureId `${fid}#${k}` — body addressing lives
+   *  in the owner id itself, so tags/ownership/chains work unchanged. */
+  additionalBodies?: BodyOutput[];
 }
 
 export interface ExecReport {
@@ -346,6 +351,7 @@ export function edgeOwnerOf(tag: string): string | null {
 
 export class ScadgenExecutor {
   readonly outputs = new Map<string, BodyOutput>();
+  readonly bodySets = new Map<string, BodyOutput[]>();
   private prevGeom = new Map<
     string,
     { brep: Brep; tags: string[]; edgeTags: string[] }
@@ -388,6 +394,7 @@ export class ScadgenExecutor {
   private async rebuild(history: ScadgenHistory): Promise<ExecReport> {
     const report: ExecReport = {};
     this.outputs.clear();
+    this.bodySets.clear();
     this.scope = {};
     for (const node of history.evaluatedNodes()) {
       if (node.featureType === "variable") {
@@ -441,40 +448,20 @@ export class ScadgenExecutor {
       try {
         const out = await this.execute(node, report);
         if (out) {
-          this.outputs.set(node.featureId, out);
-          if (out.kind === "body" && out.faceTags.length) {
-            const prev = this.prevGeom.get(node.featureId);
-            const world = this.worldFaceBrep(out);
-            if (prev) {
-              const matches = matchFaceTags(
-                prev.brep,
-                prev.tags,
-                world,
-                out.faceTags,
-              );
-              this.stability.set(node.featureId, matches);
-              const chain = this.chains.get(node.featureId) ?? new TagChain();
-              chain.apply(matches);
-              this.chains.set(node.featureId, chain);
-              const eMatches = matchEdgeTags(
-                prev.brep,
-                prev.edgeTags,
-                world,
-                out.edgeTags,
-              );
-              this.edgeStability.set(node.featureId, eMatches);
-              const eChain =
-                this.edgeChains.get(node.featureId) ?? new TagChain();
-              eChain.apply(eMatches);
-              this.edgeChains.set(node.featureId, eChain);
-            }
-            this.prevGeom.set(node.featureId, {
-              brep: world,
-              tags: [...out.faceTags],
-              edgeTags: [...out.edgeTags],
-            });
+          const bodies = [
+            out,
+            ...(out.additionalBodies ?? []).map((b, i) => ({
+              ...b,
+              featureId: `${node.featureId}#${i + 1}`,
+            })),
+          ];
+          for (const b of bodies) this.outputs.set(b.featureId, b);
+          this.bodySets.set(node.featureId, bodies);
+          for (const b of bodies) {
+            if (b.kind !== "body" || !b.faceTags.length) continue;
+            this.trackStability(b);
           }
-          report[node.featureId] = { status: "OK" };
+          report[out.featureId] = { status: "OK" };
           history.setState(node.featureId, {
             featureStatus: "OK",
             inactive: false,
@@ -501,6 +488,33 @@ export class ScadgenExecutor {
       }
     }
     return report;
+  }
+
+  private trackStability(b: BodyOutput): void {
+    const prev = this.prevGeom.get(b.featureId);
+    const world = this.worldFaceBrep(b);
+    if (prev) {
+      const matches = matchFaceTags(prev.brep, prev.tags, world, b.faceTags);
+      this.stability.set(b.featureId, matches);
+      const chain = this.chains.get(b.featureId) ?? new TagChain();
+      chain.apply(matches);
+      this.chains.set(b.featureId, chain);
+      const eMatches = matchEdgeTags(
+        prev.brep,
+        prev.edgeTags,
+        world,
+        b.edgeTags,
+      );
+      this.edgeStability.set(b.featureId, eMatches);
+      const eChain = this.edgeChains.get(b.featureId) ?? new TagChain();
+      eChain.apply(eMatches);
+      this.edgeChains.set(b.featureId, eChain);
+    }
+    this.prevGeom.set(b.featureId, {
+      brep: world,
+      tags: [...b.faceTags],
+      edgeTags: [...b.edgeTags],
+    });
   }
 
   private worldFaceBrep(out: BodyOutput): Brep {
@@ -535,7 +549,17 @@ export class ScadgenExecutor {
 
   private resolve(query: ProvenanceQuery): BodyOutput | null {
     if (!query.creationFeatureId) return null;
-    return this.outputs.get(query.creationFeatureId) ?? null;
+    const fid = query.creationFeatureId;
+    const hash = fid.lastIndexOf("#");
+    if (hash > 0) {
+      const base = fid.slice(0, hash);
+      const k = Number(fid.slice(hash + 1));
+      const set = this.bodySets.get(base);
+      if (set && Number.isInteger(k) && k >= 0 && k < set.length)
+        return set[k] ?? null;
+      return this.outputs.get(fid) ?? null; // explicit extra owner id
+    }
+    return this.outputs.get(fid) ?? null;
   }
 
   // Tag → index with persistent-naming retarget: exact hit first, else the
@@ -1325,6 +1349,7 @@ export class ScadgenExecutor {
               count,
               pathPoints: pts,
               align: stringOfParam(node, "align") === "true",
+              separate: stringOfParam(node, "separate") === "true",
             };
           } else {
             const angle = quantityOf(node, "angle", this.scope) ?? Math.PI * 2;
@@ -1338,6 +1363,7 @@ export class ScadgenExecutor {
               .map((x) => Number(x.trim()));
             spec = {
               kind: "circular",
+              separate: stringOfParam(node, "separate") === "true",
               count,
               axisOrigin: {
                 x: origin[0] ?? 0,
@@ -1363,18 +1389,20 @@ export class ScadgenExecutor {
               };
               return null;
             }
-            pieces.push({
-              featureId: node.featureId,
-              kind: "body",
-              brep: res.value.brep,
-              occBrep: res.value.occBrep,
-              position: one.position,
-              edgeTags: [],
-              faceTags: [],
-              edgeGeometry: res.value.edgeGeometry,
-              faceGeometry: res.value.faceGeometry,
-              vertexPositions: res.value.vertexPositions,
-            });
+            const list = Array.isArray(res.value) ? res.value : [res.value];
+            for (const v of list)
+              pieces.push({
+                featureId: node.featureId,
+                kind: "body",
+                brep: v.brep,
+                occBrep: v.occBrep,
+                position: one.position,
+                edgeTags: [],
+                faceTags: [],
+                edgeGeometry: v.edgeGeometry,
+                faceGeometry: v.faceGeometry,
+                vertexPositions: v.vertexPositions,
+              });
           }
           const merged: {
             brep: Brep;
@@ -1384,7 +1412,7 @@ export class ScadgenExecutor {
             faceGeometry?: THREE.BufferGeometry | undefined;
             vertexPositions?: Float32Array | undefined;
           } =
-            pieces.length === 1
+            pieces.length === 1 || stringOfParam(node, "separate") === "true"
               ? {
                   brep: pieces[0]!.brep,
                   position: pieces[0]!.position,
@@ -1394,6 +1422,25 @@ export class ScadgenExecutor {
                   vertexPositions: pieces[0]!.vertexPositions,
                 }
               : await this.sendBooleanOp("union", pieces);
+          const separateOn =
+            stringOfParam(node, "separate") === "true" && pieces.length > 1;
+          const extraBodies: BodyOutput[] = separateOn
+            ? pieces.slice(1).map((p, i) => {
+                const owner = `${node.featureId}#${i + 1}`;
+                return {
+                  featureId: owner,
+                  kind: "body" as const,
+                  brep: p.brep,
+                  occBrep: p.occBrep,
+                  position: p.position,
+                  edgeTags: registerEdges(p.brep.edges.length, owner),
+                  faceTags: registerFaces(p.brep.faces.length, owner),
+                  edgeGeometry: p.edgeGeometry,
+                  faceGeometry: p.faceGeometry,
+                  vertexPositions: p.vertexPositions,
+                };
+              })
+            : [];
           return {
             featureId: node.featureId,
             kind: "body",
@@ -1413,6 +1460,7 @@ export class ScadgenExecutor {
             ...(merged.vertexPositions !== undefined
               ? { vertexPositions: merged.vertexPositions }
               : {}),
+            ...(extraBodies.length ? { additionalBodies: extraBodies } : {}),
           };
         }
         const srcQs = listOf(node, "entities");
@@ -1630,6 +1678,9 @@ export class ScadgenExecutor {
           (raw ?? dflt.join(",")).split(",").map((x) => Number(x.trim()));
         const origin = parse3(stringOfParam(node, "planeOrigin"), [0, 0, 0]);
         const normal = parse3(stringOfParam(node, "planeNormal"), [1, 0, 0]);
+        const keepRaw = stringOfParam(node, "keep");
+        const keep =
+          keepRaw === "negative" || keepRaw === "both" ? keepRaw : "positive";
         const res = await splitBRep(
           src.brep,
           src.position,
@@ -1637,24 +1688,37 @@ export class ScadgenExecutor {
           { x: normal[0] ?? 1, y: normal[1] ?? 0, z: normal[2] ?? 0 },
           src.occBrep,
           undefined,
-          stringOfParam(node, "keep") === "negative" ? "negative" : "positive",
+          keep,
         );
         if (!res.ok) {
           report[node.featureId] = { status: "ERROR", detail: res.reason };
           return null;
         }
-        return {
-          featureId: node.featureId,
+        const pair = "primary" in res.value ? res.value : null;
+        const prim: ParityResult = pair
+          ? pair.primary
+          : (res.value as ParityResult);
+        const bodyOf = (v: ParityResult, suffix: string): BodyOutput => ({
+          featureId: `${node.featureId}${suffix}`,
           kind: "body",
-          brep: res.value.brep,
-          occBrep: res.value.occBrep,
+          brep: v.brep,
+          occBrep: v.occBrep,
           position: src.position,
-          edgeTags: registerEdges(res.value.brep.edges.length, node.featureId),
-          faceTags: registerFaces(res.value.brep.faces.length, node.featureId),
-          edgeGeometry: res.value.edgeGeometry,
-          faceGeometry: res.value.faceGeometry,
-          vertexPositions: res.value.vertexPositions,
-        };
+          edgeTags: registerEdges(
+            v.brep.edges.length,
+            `${node.featureId}${suffix}`,
+          ),
+          faceTags: registerFaces(
+            v.brep.faces.length,
+            `${node.featureId}${suffix}`,
+          ),
+          edgeGeometry: v.edgeGeometry,
+          faceGeometry: v.faceGeometry,
+          vertexPositions: v.vertexPositions,
+        });
+        const out = bodyOf(prim, "");
+        if (pair) out.additionalBodies = [bodyOf(pair.secondary, "#1")];
+        return out;
       }
       case "mirror": {
         const srcQ = listOf(node, "entities")[0];
