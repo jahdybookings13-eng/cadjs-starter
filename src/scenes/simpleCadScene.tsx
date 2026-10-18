@@ -31,6 +31,7 @@ import {
   buildProjectCurvesNode,
   buildRectangleProfileNodes,
   buildRuledSurfaceNode,
+  buildThreadNode,
   buildScaleNode,
   buildShellNode,
   buildThickenNode,
@@ -471,6 +472,27 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
         thicken: (fid: string, tag: string, t: number) => {
           const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
           scadgenHistory.add(buildThickenNode(nf, "Thicken", fid, [tag], t));
+          return nf;
+        },
+        thread: (
+          fid: string,
+          size: string,
+          kind?: "external" | "internal",
+          standard?: "iso" | "unified" | "npt",
+          mode?: "coarse" | "fine",
+        ) => {
+          const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          scadgenHistory.add(
+            buildThreadNode(
+              nf,
+              `Thread ${size}`,
+              fid,
+              size,
+              kind ?? "external",
+              standard,
+              mode,
+            ),
+          );
           return nf;
         },
         createPlane: (

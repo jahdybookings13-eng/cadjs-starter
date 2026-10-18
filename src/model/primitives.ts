@@ -640,6 +640,44 @@ export function buildScaleNode(
   };
 }
 
+export function buildThreadNode(
+  featureId: string,
+  name: string,
+  sourceFeatureId: string,
+  size: string,
+  kind: "external" | "internal",
+  standard: "iso" | "unified" | "npt" = "iso",
+  mode: "coarse" | "fine" = "coarse",
+  engagement = 1,
+): ScadgenFeatureNode {
+  return {
+    featureId,
+    featureType: "thread",
+    name,
+    namespace: "",
+    parameters: [
+      {
+        kind: "queryList",
+        parameterId: "entities",
+        queries: [faceQ(sourceFeatureId, "*")],
+      },
+      { kind: "string", parameterId: "standard", value: standard },
+      { kind: "string", parameterId: "size", value: size },
+      { kind: "string", parameterId: "mode", value: mode },
+      { kind: "string", parameterId: "kind", value: kind },
+      {
+        kind: "quantity",
+        parameterId: "engagement",
+        value: engagement,
+        units: "",
+        expression: String(engagement),
+      },
+    ],
+    subFeatures: [],
+    suppressed: false,
+  };
+}
+
 export function buildMoveFaceNode(
   featureId: string,
   name: string,

@@ -28,6 +28,7 @@ import {
   sectionBRep,
   moveFaceBRep,
   thickenBRep,
+  threadBRep,
   projectCurvesBRep,
   surfaceOpBRep,
   SketchToBrepService,
@@ -39,6 +40,11 @@ import {
   type ParityResult,
 } from "@vitekk02/cadjs";
 import { getImportAsset } from "./assets";
+import {
+  resolveThread,
+  type ThreadSpec,
+  type ThreadStandard,
+} from "./threadStandards";
 import { matchEdgeTags, matchFaceTags } from "./tagStability";
 import { TagChain } from "./tagChain";
 import {
@@ -1708,6 +1714,129 @@ export class ScadgenExecutor {
         for (const o of owners) this.deleted.add(o);
         report[node.featureId] = { status: "OK" };
         return null;
+      }
+      case "thread": {
+        const srcQ = listOf(node, "entities")[0];
+        const src = srcQ ? this.resolve(srcQ) : undefined;
+        if (!src) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "thread: source not resolved",
+          };
+          return null;
+        }
+        const standard = (stringOfParam(node, "standard") ??
+          "iso") as ThreadStandard;
+        const size = stringOfParam(node, "size") ?? "M6";
+        const mode = (stringOfParam(node, "mode") ?? "coarse") as
+          | "coarse"
+          | "fine";
+        const kind = (stringOfParam(node, "kind") ?? "external") as
+          | "external"
+          | "internal";
+        const eng = quantityOf(node, "engagement", this.scope) ?? 1;
+        let spec: ThreadSpec;
+        try {
+          spec = resolveThread(standard, size, mode, eng);
+        } catch (e) {
+          report[node.featureId] = { status: "ERROR", detail: String(e) };
+          return null;
+        }
+        const aRaw = src.planeNormal ?? [0, 0, 1];
+        const alen = Math.hypot(aRaw[0], aRaw[1], aRaw[2]) || 1;
+        const a = {
+          x: aRaw[0] / alen,
+          y: aRaw[1] / alen,
+          z: aRaw[2] / alen,
+        };
+        const pos = src.position;
+        const worldV = src.brep.toJSON().vertices.map((q) => ({
+          x: q.x + pos.x,
+          y: q.y + pos.y,
+          z: q.z + pos.z,
+        }));
+        const proj = worldV.map((q) => {
+          const h = q.x * a.x + q.y * a.y + q.z * a.z;
+          const px = q.x - a.x * h,
+            py = q.y - a.y * h,
+            pz = q.z - a.z * h;
+          return {
+            h,
+            r: Math.hypot(px, py, pz),
+            px,
+            py,
+            pz,
+          };
+        });
+        const bin = Math.max(1e-5, spec.pitch * 0.15);
+        const counts = new Map<number, number>();
+        for (const { r } of proj) {
+          const b = Math.round(r / bin);
+          counts.set(b, (counts.get(b) ?? 0) + 1);
+        }
+        let best: [number, number] = [0, 0];
+        for (const [b, c] of counts) if (c > best[1]) best = [b, c];
+        if (best[1] < Math.max(6, proj.length * 0.2)) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "thread: no cylindrical surface found",
+          };
+          return null;
+        }
+        const radius = best[0] * bin;
+        const band = proj.filter((p) => Math.abs(p.r - radius) < bin * 1.5);
+        const hMin = Math.min(...band.map((p) => p.h));
+        const hMax = Math.max(...band.map((p) => p.h));
+        const base = {
+          x: band.reduce((acc, p) => acc + p.px, 0) / band.length,
+          y: band.reduce((acc, p) => acc + p.py, 0) / band.length,
+          z: band.reduce((acc, p) => acc + p.pz, 0) / band.length,
+        };
+        const runout = spec.pitch * 0.75;
+        const tHeight = hMax - hMin - 2 * runout;
+        if (tHeight < spec.pitch) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "thread: band too short for even one pitch",
+          };
+          return null;
+        }
+        const res = await threadBRep(
+          src.brep,
+          pos,
+          {
+            origin: {
+              x: base.x + a.x * (hMin + runout),
+              y: base.y + a.y * (hMin + runout),
+              z: base.z + a.z * (hMin + runout),
+            },
+            axisDir: a,
+            radius,
+            pitch: spec.pitch,
+            height: tHeight,
+            depth: spec.depth,
+            kind,
+            taperPerLength: spec.taperPerLength,
+          },
+          src.occBrep,
+        );
+        if (!res.ok) {
+          report[node.featureId] = { status: "ERROR", detail: res.reason };
+          return null;
+        }
+        return {
+          featureId: node.featureId,
+          kind: "body",
+          brep: res.value.brep,
+          occBrep: res.value.occBrep,
+          position: pos.clone(),
+          planeNormal: src.planeNormal,
+          edgeTags: registerEdges(res.value.brep.edges.length, node.featureId),
+          faceTags: registerFaces(res.value.brep.faces.length, node.featureId),
+          edgeGeometry: res.value.edgeGeometry,
+          faceGeometry: res.value.faceGeometry,
+          vertexPositions: res.value.vertexPositions,
+        };
       }
       case "createPlane": {
         const o = (stringOfParam(node, "origin") ?? "0,0,0")

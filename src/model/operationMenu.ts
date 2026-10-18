@@ -194,9 +194,9 @@ const P_WRAP = op("wrap", "Wrap", "deferred", null, "tier 6");
 const P_THREAD = op(
   "thread",
   "Thread",
-  "deferred",
-  null,
-  "tier 6: externalThread",
+  "ready",
+  "thread",
+  "ISO metric/unified/NPT tables + groove cut (torus-stack v1; true helix boolean parked for native-speed wasm rebuild)",
 );
 const P_SHEET = op(
   "sheet-metal",

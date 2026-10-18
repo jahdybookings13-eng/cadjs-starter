@@ -68,6 +68,14 @@ interface ScadgenDbg {
   ) => string;
   delFace: (fid: string, tag: string) => string;
   moveFace: (fid: string, tag: string, d: number) => string;
+  thread: (
+    fid: string,
+    size: string,
+    kind?: "external" | "internal",
+    standard?: "iso" | "unified" | "npt",
+    mode?: "coarse" | "fine",
+  ) => string;
+  cylinder: (r: number, h: number) => string;
   createPlane: (
     origin: [number, number, number],
     normal: [number, number, number],
@@ -293,6 +301,31 @@ test("delete-face and split run on the real kernel", async ({ page }) => {
   expect(splitRes.bothStatus).toBe("OK");
   expect(splitRes.bothBodies.length).toBe(2);
   expect(splitRes.bothBodies[1]?.endsWith("#1")).toBe(true);
+});
+
+test("thread cuts real ISO grooves on a cylinder", async ({ page }) => {
+  await boot(page);
+  const r = await page.evaluate(async () => {
+    const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      .__cadDebug.scadgen;
+    const cyl = s.cylinder(0.003, 0.012);
+    await s.idle();
+    const before = s.tags(cyl)?.faces ?? 0;
+    const th = s.thread(cyl, "M6");
+    const st = await s.idle();
+    const after = s.tags(th)?.faces ?? 0;
+    const bad = s.thread(cyl, "M99");
+    const st3 = await s.idle();
+    return {
+      before,
+      th: st[th]?.status,
+      after,
+      bad: st3[bad]?.status,
+    };
+  });
+  expect(r.th).toBe("OK");
+  expect(r.after).toBeGreaterThan(r.before);
+  expect(r.bad).not.toBe("OK");
 });
 
 test("createPlane, curveOnFace, scale run on the real kernel", async ({
