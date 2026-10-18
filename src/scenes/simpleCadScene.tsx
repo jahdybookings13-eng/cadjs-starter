@@ -20,8 +20,11 @@ import {
   buildDeleteFaceNode,
   buildSplitNode,
   buildDraftNode,
+  buildFillSurfaceNode,
   buildHoleNode,
+  buildOffsetSurfaceNode,
   buildRectangleProfileNodes,
+  buildRuledSurfaceNode,
   buildShellNode,
 } from "../model/primitives";
 import {
@@ -364,6 +367,27 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
               count,
               !!align,
             ),
+          );
+          return nf;
+        },
+        ruledSurface: (fid: string, tagA: string, tagB: string) => {
+          const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          scadgenHistory.add(
+            buildRuledSurfaceNode(nf, "Ruled Surface", fid, tagA, tagB),
+          );
+          return nf;
+        },
+        fillSurface: (fid: string, faceTag: string) => {
+          const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          scadgenHistory.add(
+            buildFillSurfaceNode(nf, "Fill Surface", fid, faceTag),
+          );
+          return nf;
+        },
+        offsetSurface: (fid: string, faceTag: string, d: number) => {
+          const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          scadgenHistory.add(
+            buildOffsetSurfaceNode(nf, "Offset Surface", fid, faceTag, d),
           );
           return nf;
         },

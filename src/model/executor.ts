@@ -22,6 +22,7 @@ import {
   patternBRep,
   deleteFaceBRep,
   splitBRep,
+  surfaceOpBRep,
   SketchToBrepService,
   makeSketchConstraint,
   requiresValue,
@@ -1270,6 +1271,84 @@ export class ScadgenExecutor {
           edgeTags: registerEdges(merged.brep.edges.length, node.featureId),
           faceTags: registerFaces(merged.brep.faces.length, node.featureId),
           ...(merged.occBrep !== undefined ? { occBrep: merged.occBrep } : {}),
+        };
+      }
+      case "surface": {
+        const bodyQ = listOf(node, "targets")[0];
+        const src = bodyQ ? this.resolve(bodyQ) : undefined;
+        if (!src) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "surface: body not resolved",
+          };
+          return null;
+        }
+        const kind = stringOfParam(node, "kind");
+        if (kind !== "ruled" && kind !== "fill" && kind !== "offset") {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "surface: unknown kind",
+          };
+          return null;
+        }
+        const opts: Parameters<typeof surfaceOpBRep>[3] = {};
+        if (kind === "ruled") {
+          let tags: string[] = [];
+          try {
+            const parsed: unknown = JSON.parse(
+              stringOfParam(node, "edgeTags") ?? "[]",
+            );
+            if (Array.isArray(parsed))
+              tags = parsed.filter((t): t is string => typeof t === "string");
+          } catch {
+            tags = [];
+          }
+          const idxs = tags.map((t) => src.edgeTags.indexOf(t) + 1);
+          if (idxs.length < 2 || idxs.some((i) => i < 1)) {
+            report[node.featureId] = {
+              status: "ERROR",
+              detail: "surface: edge tags not resolved",
+            };
+            return null;
+          }
+          opts.edgeIndices = idxs;
+        } else {
+          const faceIdx = src.faceTags.indexOf(
+            stringOfParam(node, "faceTag") ?? "",
+          );
+          if (faceIdx < 0) {
+            report[node.featureId] = {
+              status: "ERROR",
+              detail: "surface: face tag not resolved",
+            };
+            return null;
+          }
+          opts.faceIndex = faceIdx;
+          if (kind === "offset")
+            opts.distance = quantityOf(node, "distance", this.scope) ?? 0.001;
+        }
+        const res = await surfaceOpBRep(
+          kind,
+          src.brep,
+          src.position,
+          opts,
+          src.occBrep,
+        );
+        if (!res.ok) {
+          report[node.featureId] = { status: "ERROR", detail: res.reason };
+          return null;
+        }
+        return {
+          featureId: node.featureId,
+          kind: "body",
+          brep: res.value.brep,
+          occBrep: res.value.occBrep,
+          position: src.position,
+          edgeTags: registerEdges(res.value.brep.edges.length, node.featureId),
+          faceTags: registerFaces(res.value.brep.faces.length, node.featureId),
+          edgeGeometry: res.value.edgeGeometry,
+          faceGeometry: res.value.faceGeometry,
+          vertexPositions: res.value.vertexPositions,
         };
       }
       case "split": {

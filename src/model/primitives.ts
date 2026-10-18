@@ -407,6 +407,94 @@ export function buildHoleNode(
   };
 }
 
+export function buildRuledSurfaceNode(
+  featureId: string,
+  name: string,
+  bodyFeatureId: string,
+  edgeTagA: string,
+  edgeTagB: string,
+): ScadgenFeatureNode {
+  return {
+    featureId,
+    featureType: "surface",
+    name,
+    namespace: "",
+    parameters: [
+      {
+        kind: "queryList",
+        parameterId: "targets",
+        queries: [faceQ(bodyFeatureId, "*")],
+      },
+      { kind: "string", parameterId: "kind", value: "ruled" },
+      {
+        kind: "string",
+        parameterId: "edgeTags",
+        value: JSON.stringify([edgeTagA, edgeTagB]),
+      },
+    ],
+    subFeatures: [],
+    suppressed: false,
+  };
+}
+
+export function buildFillSurfaceNode(
+  featureId: string,
+  name: string,
+  bodyFeatureId: string,
+  faceTag: string,
+): ScadgenFeatureNode {
+  return {
+    featureId,
+    featureType: "surface",
+    name,
+    namespace: "",
+    parameters: [
+      {
+        kind: "queryList",
+        parameterId: "targets",
+        queries: [faceQ(bodyFeatureId, "*")],
+      },
+      { kind: "string", parameterId: "kind", value: "fill" },
+      { kind: "string", parameterId: "faceTag", value: faceTag },
+    ],
+    subFeatures: [],
+    suppressed: false,
+  };
+}
+
+export function buildOffsetSurfaceNode(
+  featureId: string,
+  name: string,
+  bodyFeatureId: string,
+  faceTag: string,
+  distance: number,
+): ScadgenFeatureNode {
+  return {
+    featureId,
+    featureType: "surface",
+    name,
+    namespace: "",
+    parameters: [
+      {
+        kind: "queryList",
+        parameterId: "targets",
+        queries: [faceQ(bodyFeatureId, "*")],
+      },
+      { kind: "string", parameterId: "kind", value: "offset" },
+      { kind: "string", parameterId: "faceTag", value: faceTag },
+      {
+        kind: "quantity",
+        parameterId: "distance",
+        value: distance,
+        units: "m",
+        expression: formatQuantityExpression(distance, "m"),
+      },
+    ],
+    subFeatures: [],
+    suppressed: false,
+  };
+}
+
 export function buildSplitNode(
   featureId: string,
   name: string,

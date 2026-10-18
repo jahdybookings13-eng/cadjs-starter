@@ -37,6 +37,9 @@ interface ScadgenDbg {
     normal: [number, number, number],
   ) => string;
   delFace: (fid: string, tag: string) => string;
+  ruledSurface: (fid: string, tagA: string, tagB: string) => string;
+  fillSurface: (fid: string, faceTag: string) => string;
+  offsetSurface: (fid: string, faceTag: string, d: number) => string;
   fillet: (fid: string, tag: string, r: number) => string;
   modFillet: (fid: string, r?: number, tags?: string[]) => boolean;
   measEdge: (fid: string) => Promise<number[] | null>;
@@ -194,6 +197,37 @@ test("shell, draft, hole, circular pattern run on the real kernel", async ({
   expect(splitRes.status).toBe("OK");
   expect(splitRes.out?.faces).toBeGreaterThanOrEqual(6);
   expect(splitRes.badStatus).toBe("ERROR");
+
+  const surfRes = await page.evaluate(async () => {
+    const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      .__cadDebug.scadgen;
+    const boxFid = s.box(2, 2, 1);
+    await s.idle();
+    const et = s.etags(boxFid) ?? [];
+    const ft = s.ftags(boxFid) ?? [];
+    const ru = s.ruledSurface(boxFid, et[0] ?? "", et[1] ?? "");
+    const fi = s.fillSurface(boxFid, ft[0] ?? "");
+    const of = s.offsetSurface(boxFid, ft[0] ?? "", 0.5);
+    const bad = s.ruledSurface(boxFid, "nope_1", "nope_2");
+    const st = await s.idle();
+    return {
+      ruled: st[ru]?.status,
+      ruledDetail: st[ru]?.detail,
+      ruledFaces: s.tags(ru)?.faces,
+      fill: st[fi]?.status,
+      fillFaces: s.tags(fi)?.faces,
+      offset: st[of]?.status,
+      offsetFaces: s.tags(of)?.faces,
+      bad: st[bad]?.status,
+    };
+  });
+  expect(surfRes.ruled).toBe("OK");
+  expect(surfRes.ruledFaces).toBeGreaterThanOrEqual(1);
+  expect(surfRes.fill).toBe("OK");
+  expect(surfRes.fillFaces).toBeGreaterThanOrEqual(1);
+  expect(surfRes.offset).toBe("OK");
+  expect(surfRes.offsetFaces).toBeGreaterThanOrEqual(1);
+  expect(surfRes.bad).toBe("ERROR");
 
   const modRes = await page.evaluate(async () => {
     const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })

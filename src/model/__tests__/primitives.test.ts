@@ -5,6 +5,9 @@ import {
   buildCylinderNodes,
   buildCurvePatternNode,
   buildDeleteFaceNode,
+  buildFillSurfaceNode,
+  buildOffsetSurfaceNode,
+  buildRuledSurfaceNode,
   buildMirrorNodes,
   buildLinearPatternNodes,
   buildSplitNode,
@@ -52,6 +55,43 @@ describe("primitive composite builders", () => {
       (x) => x.kind === "queryList" && x.parameterId === "axis",
     );
     expect(axis?.kind === "queryList" && axis.queries[0]?.entityTag).toBe("l3");
+  });
+  it("surface builders carry kind + tags + typed distance", () => {
+    const ruled = buildRuledSurfaceNode(
+      "Fr",
+      "Ruled",
+      "Fbody",
+      "Fbody_E1",
+      "Fbody_E2",
+    );
+    expect(ruled.featureType).toBe("surface");
+    const kind = ruled.parameters.find(
+      (x) => x.kind === "string" && x.parameterId === "kind",
+    );
+    expect(kind?.kind === "string" && kind.value).toBe("ruled");
+    const tags = ruled.parameters.find(
+      (x) => x.kind === "string" && x.parameterId === "edgeTags",
+    );
+    expect(tags?.kind === "string" && JSON.parse(tags.value)).toEqual([
+      "Fbody_E1",
+      "Fbody_E2",
+    ]);
+    const fill = buildFillSurfaceNode("Ffi", "Fill", "Fbody", "Fbody_F0");
+    const fk = fill.parameters.find(
+      (x) => x.kind === "string" && x.parameterId === "kind",
+    );
+    expect(fk?.kind === "string" && fk.value).toBe("fill");
+    const off = buildOffsetSurfaceNode(
+      "Fo",
+      "Offset",
+      "Fbody",
+      "Fbody_F0",
+      0.01,
+    );
+    const d = off.parameters.find(
+      (x) => x.kind === "quantity" && x.parameterId === "distance",
+    );
+    expect(d?.kind === "quantity" && d.expression).toContain("m");
   });
   it("split node carries targets + plane origin/normal", () => {
     const nd = buildSplitNode("Fs", "Split", "Fbody", [1, 2, 3], [0, 0, 1]);

@@ -185,10 +185,10 @@ const P_SECTION = op(
 );
 const P_SURFACE = op(
   "ruled-fill-surface",
-  "Ruled / Fill Surface",
-  "planned",
-  null,
-  "tier 4",
+  "Ruled / Fill / Offset Surface",
+  "ready",
+  "surface",
+  "ThruSections-ruled, MakeFilling patches, planar normal-offset refill",
 );
 const P_WRAP = op("wrap", "Wrap", "deferred", null, "tier 6");
 const P_THREAD = op(
@@ -268,6 +268,7 @@ export const MENU_BY_SELECTION: Record<SelectionKind, MenuOp[]> = {
     P_SECTION,
     P_CPLANE,
     P_CURVE_ON_FACE,
+    P_SURFACE,
     READY_MEASURE,
   ],
   "curved-face": [
@@ -278,6 +279,7 @@ export const MENU_BY_SELECTION: Record<SelectionKind, MenuOp[]> = {
     P_MOVEFACE,
     P_CURVE_ON_FACE,
     P_PROJECT_CURVE,
+    P_SURFACE,
     READY_MEASURE,
   ],
   edge: [
