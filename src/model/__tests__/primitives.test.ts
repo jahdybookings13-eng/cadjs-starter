@@ -4,6 +4,7 @@ import {
   buildConeNodes,
   buildCylinderNodes,
   buildCurvePatternNode,
+  buildDeleteFaceNode,
   buildMirrorNodes,
   buildLinearPatternNodes,
   buildSphereNodes,
@@ -50,6 +51,18 @@ describe("primitive composite builders", () => {
       (x) => x.kind === "queryList" && x.parameterId === "axis",
     );
     expect(axis?.kind === "queryList" && axis.queries[0]?.entityTag).toBe("l3");
+  });
+  it("delete-face node carries targets + faces queries", () => {
+    const nd = buildDeleteFaceNode("Fd", "Del", "Fbody", ["Fbody_F2"]);
+    expect(nd.featureType).toBe("deleteFace");
+    const faces = nd.parameters.find(
+      (x) => x.kind === "queryList" && x.parameterId === "faces",
+    );
+    expect(
+      faces?.kind === "queryList" &&
+        faces.queries[0]?.creationFeatureId === "Fbody" &&
+        faces.queries[0]?.entityTag === "Fbody_F2",
+    ).toBe(true);
   });
   it("curve pattern node carries patternType=curve + pathPoints + align", () => {
     const pat = buildCurvePatternNode(

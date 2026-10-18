@@ -20,6 +20,7 @@ import {
   draftBRep,
   holeBRep,
   patternBRep,
+  deleteFaceBRep,
   SketchToBrepService,
   makeSketchConstraint,
   requiresValue,
@@ -949,7 +950,8 @@ export class ScadgenExecutor {
       }
       case "shell":
       case "hole":
-      case "draft": {
+      case "draft":
+      case "deleteFace": {
         const bodyQ = listOf(node, "targets")[0];
         const src = bodyQ ? this.resolve(bodyQ) : undefined;
         if (!src) {
@@ -1032,6 +1034,16 @@ export class ScadgenExecutor {
             dir.point,
             src.occBrep,
           );
+        } else if (node.featureType === "deleteFace") {
+          const idxs = this.faceIndices(src, listOf(node, "faces"));
+          if (!idxs.length) {
+            report[node.featureId] = {
+              status: "ERROR",
+              detail: "deleteFace: no faces selected",
+            };
+            return null;
+          }
+          res = await deleteFaceBRep(src.brep, src.position, idxs, src.occBrep);
         } else {
           const centersRaw = stringOfParam(node, "centerPoints");
           let centers: { x: number; y: number; z: number }[] = [];

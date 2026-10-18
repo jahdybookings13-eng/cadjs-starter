@@ -31,6 +31,7 @@ interface ScadgenDbg {
   ) => string;
   tags: (fid: string) => { edges: number; faces: number } | null;
   etags: (fid: string) => string[] | null;
+  delFace: (fid: string, tag: string) => string;
   fillet: (fid: string, tag: string, r: number) => string;
   modFillet: (fid: string, r?: number, tags?: string[]) => boolean;
   measEdge: (fid: string) => Promise<number[] | null>;
@@ -147,6 +148,27 @@ test("shell, draft, hole, circular pattern run on the real kernel", async ({
   });
   expect(curveRes.status).toBe("OK");
   expect(curveRes.out?.faces).toBeGreaterThanOrEqual(18);
+
+  const delRes = await page.evaluate(async () => {
+    const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      .__cadDebug.scadgen;
+    const boxFid = s.box(2, 2, 1);
+    await s.idle();
+    const ft = s.ftags(boxFid) ?? [];
+    const df = s.delFace(boxFid, ft[3] ?? "");
+    const st = await s.idle();
+    const badFid = s.delFace(boxFid, "no_such_tag");
+    const st2 = await s.idle();
+    return {
+      status: st[df]?.status,
+      detail: st[df]?.detail,
+      out: s.tags(df),
+      badStatus: st2[badFid]?.status,
+    };
+  });
+  expect(delRes.status).toBe("OK");
+  expect(delRes.out?.faces).toBeGreaterThanOrEqual(6);
+  expect(delRes.badStatus).toBe("ERROR");
 
   const modRes = await page.evaluate(async () => {
     const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })

@@ -407,6 +407,34 @@ export function buildHoleNode(
   };
 }
 
+export function buildDeleteFaceNode(
+  featureId: string,
+  name: string,
+  bodyFeatureId: string,
+  faceTags: string[],
+): ScadgenFeatureNode {
+  return {
+    featureId,
+    featureType: "deleteFace",
+    name,
+    namespace: "",
+    parameters: [
+      {
+        kind: "queryList",
+        parameterId: "targets",
+        queries: [faceQ(bodyFeatureId, "*")],
+      },
+      {
+        kind: "queryList",
+        parameterId: "faces",
+        queries: faceTags.map((t) => faceQ(bodyFeatureId, t)),
+      },
+    ],
+    subFeatures: [],
+    suppressed: false,
+  };
+}
+
 export function buildCurvePatternNode(
   featureId: string,
   name: string,

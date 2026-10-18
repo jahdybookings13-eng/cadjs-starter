@@ -102,9 +102,9 @@ const P_MOVEFACE = op(
 const P_DELETEFACE = op(
   "delete-face",
   "Delete Face",
-  "planned",
-  null,
-  "tier 3: opDeleteFace + heal",
+  "ready",
+  "deleteFace",
+  "delete + sewn planar refill heal; adjacent-merge heal deferred",
 );
 const P_SPLIT = op("split", "Split", "planned", null, "tier 3: opSplitPart");
 const P_CIRC_PATTERN = op(

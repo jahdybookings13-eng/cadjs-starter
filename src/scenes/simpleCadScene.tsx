@@ -17,6 +17,7 @@ import {
   buildTorusNodes,
   buildCircularPatternNode,
   buildCurvePatternNode,
+  buildDeleteFaceNode,
   buildDraftNode,
   buildHoleNode,
   buildRectangleProfileNodes,
@@ -362,6 +363,13 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
               count,
               !!align,
             ),
+          );
+          return nf;
+        },
+        delFace: (fid: string, tag: string) => {
+          const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          scadgenHistory.add(
+            buildDeleteFaceNode(nf, "Delete Face", fid, [tag]),
           );
           return nf;
         },

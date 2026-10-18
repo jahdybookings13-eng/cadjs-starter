@@ -34,6 +34,7 @@ describe("operation menu (Onshape port)", () => {
       "new-sketch",
       "extrude",
       "revolve",
+      "delete-face",
       "measure",
     ]);
     expect(
