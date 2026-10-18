@@ -651,6 +651,7 @@ export function buildCurvePatternNode(
   pathPoints: [number, number, number][],
   count: number,
   align = false,
+  extraSourceFeatureIds: string[] = [],
 ): ScadgenFeatureNode {
   return {
     featureId,
@@ -661,7 +662,10 @@ export function buildCurvePatternNode(
       {
         kind: "queryList",
         parameterId: "entities",
-        queries: [faceQ(bodyFeatureId, "*")],
+        queries: [
+          faceQ(bodyFeatureId, "*"),
+          ...extraSourceFeatureIds.map((f) => faceQ(f, "*")),
+        ],
       },
       { kind: "string", parameterId: "patternType", value: "curve" },
       {
@@ -690,6 +694,7 @@ export function buildCircularPatternNode(
   count: number,
   axisDir: [number, number, number] = [0, 0, 1],
   angleDeg = 360,
+  extraSourceFeatureIds: string[] = [],
 ): ScadgenFeatureNode {
   return {
     featureId,
@@ -700,7 +705,10 @@ export function buildCircularPatternNode(
       {
         kind: "queryList",
         parameterId: "entities",
-        queries: [faceQ(bodyFeatureId, "*")],
+        queries: [
+          faceQ(bodyFeatureId, "*"),
+          ...extraSourceFeatureIds.map((f) => faceQ(f, "*")),
+        ],
       },
       { kind: "string", parameterId: "patternType", value: "circular" },
       {

@@ -1173,7 +1173,10 @@ export class ScadgenExecutor {
         const patternType = stringOfParam(node, "patternType");
         if (patternType === "circular" || patternType === "curve") {
           const qs = listOf(node, "entities");
-          const src = qs[0] ? this.resolve(qs[0]) : undefined;
+          const srcs = qs
+            .map((q) => this.resolve(q))
+            .filter((o): o is BodyOutput => !!o);
+          const src = srcs[0];
           if (!src) {
             report[node.featureId] = {
               status: "ERROR",
@@ -1241,40 +1244,78 @@ export class ScadgenExecutor {
               angleRad: angle,
             };
           }
-          const res = await patternBRep(
-            src.brep,
-            src.position,
-            spec,
-            src.occBrep,
-          );
-          if (!res.ok) {
-            report[node.featureId] = {
-              status: "ERROR",
-              detail: res.reason,
-            };
-            return null;
+          const pieces: BodyOutput[] = [];
+          for (const one of srcs) {
+            const res = await patternBRep(
+              one.brep,
+              one.position,
+              spec,
+              one.occBrep,
+            );
+            if (!res.ok) {
+              report[node.featureId] = {
+                status: "ERROR",
+                detail: res.reason,
+              };
+              return null;
+            }
+            pieces.push({
+              featureId: node.featureId,
+              kind: "body",
+              brep: res.value.brep,
+              occBrep: res.value.occBrep,
+              position: one.position,
+              edgeTags: [],
+              faceTags: [],
+              edgeGeometry: res.value.edgeGeometry,
+              faceGeometry: res.value.faceGeometry,
+              vertexPositions: res.value.vertexPositions,
+            });
           }
+          const merged: {
+            brep: Brep;
+            position: THREE.Vector3;
+            occBrep?: string | undefined;
+            edgeGeometry?: THREE.BufferGeometry | undefined;
+            faceGeometry?: THREE.BufferGeometry | undefined;
+            vertexPositions?: Float32Array | undefined;
+          } =
+            pieces.length === 1
+              ? {
+                  brep: pieces[0]!.brep,
+                  position: pieces[0]!.position,
+                  occBrep: pieces[0]!.occBrep,
+                  edgeGeometry: pieces[0]!.edgeGeometry,
+                  faceGeometry: pieces[0]!.faceGeometry,
+                  vertexPositions: pieces[0]!.vertexPositions,
+                }
+              : await this.sendBooleanOp("union", pieces);
           return {
             featureId: node.featureId,
             kind: "body",
-            brep: res.value.brep,
-            occBrep: res.value.occBrep,
-            position: src.position,
-            edgeTags: registerEdges(
-              res.value.brep.edges.length,
-              node.featureId,
-            ),
-            faceTags: registerFaces(
-              res.value.brep.faces.length,
-              node.featureId,
-            ),
-            edgeGeometry: res.value.edgeGeometry,
-            faceGeometry: res.value.faceGeometry,
-            vertexPositions: res.value.vertexPositions,
+            brep: merged.brep,
+            ...(merged.occBrep !== undefined
+              ? { occBrep: merged.occBrep }
+              : {}),
+            position: merged.position,
+            edgeTags: registerEdges(merged.brep.edges.length, node.featureId),
+            faceTags: registerFaces(merged.brep.faces.length, node.featureId),
+            ...(merged.edgeGeometry !== undefined
+              ? { edgeGeometry: merged.edgeGeometry }
+              : {}),
+            ...(merged.faceGeometry !== undefined
+              ? { faceGeometry: merged.faceGeometry }
+              : {}),
+            ...(merged.vertexPositions !== undefined
+              ? { vertexPositions: merged.vertexPositions }
+              : {}),
           };
         }
-        const srcQ = listOf(node, "entities")[0];
-        const src = srcQ ? this.resolve(srcQ) : undefined;
+        const srcQs = listOf(node, "entities");
+        const srcList = srcQs
+          .map((q) => this.resolve(q))
+          .filter((o): o is BodyOutput => !!o);
+        const src = srcList[0];
         if (!src) {
           report[node.featureId] = {
             status: "ERROR",
@@ -1304,17 +1345,23 @@ export class ScadgenExecutor {
           position: THREE.Vector3;
           occBrep?: string | undefined;
         }[] = [];
-        for (let i = 1; i < count; i++) {
-          const target = src.position
-            .clone()
-            .add(dir.clone().multiplyScalar(spacing * i));
-          copies.push({
-            brep: transformBrepVertices(src.brep, src.position, target),
-            position: target,
-          });
+        for (const one of srcList) {
+          for (let i = 1; i < count; i++) {
+            const target = one.position
+              .clone()
+              .add(dir.clone().multiplyScalar(spacing * i));
+            copies.push({
+              brep: transformBrepVertices(one.brep, one.position, target),
+              position: target,
+            });
+          }
         }
-        if (!copies.length) return { ...src, featureId: node.featureId };
-        const merged = await this.sendBooleanOp("union", [src, ...copies]);
+        if (!copies.length && srcList.length === 1)
+          return { ...src, featureId: node.featureId };
+        const merged = await this.sendBooleanOp("union", [
+          ...srcList,
+          ...copies,
+        ]);
         return {
           featureId: node.featureId,
           kind: "body",

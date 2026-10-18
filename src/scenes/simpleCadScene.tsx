@@ -351,10 +351,18 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
           scadgenHistory.add(buildHoleNode(nf, "Hole", fid, centers, r, d));
           return nf;
         },
-        circPattern: (fid: string, count: number) => {
+        circPattern: (fid: string, count: number, extra?: string[]) => {
           const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
           scadgenHistory.add(
-            buildCircularPatternNode(nf, "Circular Pattern", fid, count),
+            buildCircularPatternNode(
+              nf,
+              "Circular Pattern",
+              fid,
+              count,
+              [0, 0, 1],
+              360,
+              extra ?? [],
+            ),
           );
           return nf;
         },

@@ -27,7 +27,8 @@ interface ScadgenDbg {
     r: number,
     d: number,
   ) => string;
-  circPattern: (fid: string, count: number) => string;
+  circPattern: (fid: string, count: number, extra?: string[]) => string;
+  mirror: (src: string, axis: "X" | "Y" | "Z") => string;
   curvePattern: (
     fid: string,
     pts: [number, number, number][],
@@ -152,10 +153,26 @@ test("hole and circular/curve pattern run on the real kernel", async ({
     await s.idle();
     const cf = s.circPattern(boxFid, 4);
     const st = await s.idle();
-    return { status: st[cf]?.status, detail: st[cf]?.detail, out: s.tags(cf) };
+    const mir = s.mirror(boxFid, "X");
+    await s.idle();
+    const gf = s.circPattern(boxFid, 3, [mir]);
+    const st2 = await s.idle();
+    return {
+      status: st[cf]?.status,
+      detail: st[cf]?.detail,
+      out: s.tags(cf),
+      groupStatus: st2[gf]?.status,
+      groupDetail: st2[gf]?.detail,
+      groupOut: s.tags(gf),
+      singleOut: st[cf]?.status === "OK" ? s.tags(cf) : null,
+    };
   });
   expect(circRes.status).toBe("OK");
   expect(circRes.out?.faces).toBeGreaterThanOrEqual(6);
+  expect(circRes.groupStatus).toBe("OK");
+  expect((circRes.groupOut?.faces ?? 0) > (circRes.singleOut?.faces ?? 0)).toBe(
+    true,
+  );
 
   const curveRes = await page.evaluate(async () => {
     const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })

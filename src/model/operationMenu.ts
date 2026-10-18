@@ -47,7 +47,7 @@ const READY_PATTERN = op(
   "Linear Pattern",
   "ready",
   "pattern",
-  "client-side translate + fuse; circular/curve route to worker",
+  "multi-entity group patterns; linear client-side, circular/curve via worker",
 );
 const READY_MIRROR = op("mirror", "Mirror", "ready", "mirror");
 const READY_SKETCH = op("new-sketch", "Sketch", "ready", "newSketch");
