@@ -36,6 +36,7 @@ describe("operation menu (Onshape port)", () => {
       "extrude",
       "revolve",
       "delete-face",
+      "section",
       "ruled-fill-surface",
       "measure",
     ]);

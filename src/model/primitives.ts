@@ -544,6 +544,40 @@ export function buildOffsetSurfaceNode(
   };
 }
 
+export function buildSectionNode(
+  featureId: string,
+  name: string,
+  bodyFeatureId: string,
+  planeOrigin: [number, number, number],
+  planeNormal: [number, number, number],
+): ScadgenFeatureNode {
+  return {
+    featureId,
+    featureType: "section",
+    name,
+    namespace: "",
+    parameters: [
+      {
+        kind: "queryList",
+        parameterId: "targets",
+        queries: [faceQ(bodyFeatureId, "*")],
+      },
+      {
+        kind: "string",
+        parameterId: "planeOrigin",
+        value: planeOrigin.join(","),
+      },
+      {
+        kind: "string",
+        parameterId: "planeNormal",
+        value: planeNormal.join(","),
+      },
+    ],
+    subFeatures: [],
+    suppressed: false,
+  };
+}
+
 export function buildSplitNode(
   featureId: string,
   name: string,

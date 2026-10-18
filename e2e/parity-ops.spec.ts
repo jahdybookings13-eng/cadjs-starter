@@ -67,6 +67,11 @@ interface ScadgenDbg {
     keep?: "positive" | "negative" | "both",
   ) => string;
   delFace: (fid: string, tag: string) => string;
+  section: (
+    fid: string,
+    origin: [number, number, number],
+    normal: [number, number, number],
+  ) => string;
   thicken: (fid: string, tag: string, t: number) => string;
   fillet: (fid: string, tags: string[], r: number, radii?: number[]) => string;
   modFillet: (fid: string, r?: number, tags?: string[]) => boolean;
@@ -293,6 +298,27 @@ test("ruled, fill, offset surfaces and projectCurves run on the real kernel", as
   });
   expect(thkRes.status).toBe("OK");
   expect(thkRes.out?.faces).toBeGreaterThanOrEqual(6);
+
+  const secRes = await page.evaluate(async () => {
+    const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      .__cadDebug.scadgen;
+    const boxFid = s.box(2, 2, 1);
+    await s.idle();
+    const sc = s.section(boxFid, [0, 0.5, 0.5], [0, 1, 0]);
+    const st = await s.idle();
+    const miss = s.section(boxFid, [0, 0, 50], [0, 0, 1]);
+    const st2 = await s.idle();
+    return {
+      status: st[sc]?.status,
+      detail: st[sc]?.detail,
+      out: s.tags(sc),
+      missStatus: st2[miss]?.status,
+    };
+  });
+  expect(secRes.status).toBe("OK");
+  expect(secRes.out?.faces).toBe(0);
+  expect(secRes.out?.edges).toBeGreaterThanOrEqual(4);
+  expect(secRes.missStatus).toBe("ERROR");
 
   const surfRes = await page.evaluate(async () => {
     const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })

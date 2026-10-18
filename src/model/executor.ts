@@ -22,6 +22,7 @@ import {
   patternBRep,
   deleteFaceBRep,
   splitBRep,
+  sectionBRep,
   thickenBRep,
   projectCurvesBRep,
   surfaceOpBRep,
@@ -1704,6 +1705,7 @@ export class ScadgenExecutor {
         report[node.featureId] = { status: "OK" };
         return null;
       }
+      case "section":
       case "split": {
         const bodyQ = listOf(node, "targets")[0];
         const src = bodyQ ? this.resolve(bodyQ) : undefined;
@@ -1718,6 +1720,37 @@ export class ScadgenExecutor {
           (raw ?? dflt.join(",")).split(",").map((x) => Number(x.trim()));
         const origin = parse3(stringOfParam(node, "planeOrigin"), [0, 0, 0]);
         const normal = parse3(stringOfParam(node, "planeNormal"), [1, 0, 0]);
+        if (node.featureType === "section") {
+          const sec = await sectionBRep(
+            src.brep,
+            src.position,
+            { x: origin[0] ?? 0, y: origin[1] ?? 0, z: origin[2] ?? 0 },
+            { x: normal[0] ?? 0, y: normal[1] ?? 0, z: normal[2] ?? 1 },
+            src.occBrep,
+          );
+          if (!sec.ok) {
+            report[node.featureId] = { status: "ERROR", detail: sec.reason };
+            return null;
+          }
+          return {
+            featureId: node.featureId,
+            kind: "body",
+            brep: sec.value.brep,
+            occBrep: sec.value.occBrep,
+            position: src.position,
+            edgeTags: registerEdges(
+              sec.value.brep.edges.length,
+              node.featureId,
+            ),
+            faceTags: registerFaces(
+              sec.value.brep.faces.length,
+              node.featureId,
+            ),
+            edgeGeometry: sec.value.edgeGeometry,
+            faceGeometry: sec.value.faceGeometry,
+            vertexPositions: sec.value.vertexPositions,
+          };
+        }
         const keepRaw = stringOfParam(node, "keep");
         const keep =
           keepRaw === "negative" || keepRaw === "both" ? keepRaw : "positive";

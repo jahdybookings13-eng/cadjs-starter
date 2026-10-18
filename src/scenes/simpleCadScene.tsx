@@ -19,6 +19,7 @@ import {
   buildCurvePatternNode,
   buildDeleteBodiesNode,
   buildDeleteFaceNode,
+  buildSectionNode,
   buildSplitNode,
   buildDraftNode,
   buildFillSurfaceNode,
@@ -466,6 +467,17 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
         thicken: (fid: string, tag: string, t: number) => {
           const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
           scadgenHistory.add(buildThickenNode(nf, "Thicken", fid, [tag], t));
+          return nf;
+        },
+        section: (
+          fid: string,
+          origin: [number, number, number],
+          normal: [number, number, number],
+        ) => {
+          const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          scadgenHistory.add(
+            buildSectionNode(nf, "Section", fid, origin, normal),
+          );
           return nf;
         },
         delFace: (fid: string, tag: string) => {

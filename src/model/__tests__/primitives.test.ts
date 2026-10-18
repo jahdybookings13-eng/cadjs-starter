@@ -9,6 +9,7 @@ import {
   buildOffsetSurfaceNode,
   buildProjectCurvesNode,
   buildRuledSurfaceNode,
+  buildSectionNode,
   buildThickenNode,
   buildMirrorNodes,
   buildLinearPatternNodes,
@@ -135,6 +136,20 @@ describe("primitive composite builders", () => {
       (x) => x.kind === "quantity" && x.parameterId === "distance",
     );
     expect(d?.kind === "quantity" && d.expression).toContain("m");
+  });
+  it("section node mirrors split params", () => {
+    const nd = buildSectionNode(
+      "Fsec",
+      "Section",
+      "Fbody",
+      [0, 0, 1],
+      [0, 0, 1],
+    );
+    expect(nd.featureType).toBe("section");
+    const o = nd.parameters.find(
+      (x) => x.kind === "string" && x.parameterId === "planeOrigin",
+    );
+    expect(o?.kind === "string" && o.value).toBe("0,0,1");
   });
   it("split node carries targets + plane origin/normal", () => {
     const nd = buildSplitNode("Fs", "Split", "Fbody", [1, 2, 3], [0, 0, 1]);

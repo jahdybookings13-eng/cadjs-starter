@@ -179,9 +179,9 @@ const P_PROJECT_CURVE = op(
 const P_SECTION = op(
   "section",
   "Section",
-  "planned",
-  null,
-  "requires split/section curves tier 3+",
+  "ready",
+  "section",
+  "BRepAlgoAPI_Section plane cut: section wires (edges, no faces)",
 );
 const P_SURFACE = op(
   "ruled-fill-surface",
