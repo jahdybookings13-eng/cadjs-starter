@@ -23,6 +23,12 @@ interface ScadgenDbg {
     d: number,
   ) => string;
   circPattern: (fid: string, count: number) => string;
+  curvePattern: (
+    fid: string,
+    pts: [number, number, number][],
+    count: number,
+    align?: boolean,
+  ) => string;
   tags: (fid: string) => { edges: number; faces: number } | null;
 }
 
@@ -116,4 +122,36 @@ test("shell, draft, hole, circular pattern run on the real kernel", async ({
   });
   expect(circRes.status).toBe("OK");
   expect(circRes.out?.faces).toBeGreaterThanOrEqual(6);
+
+  const curveRes = await page.evaluate(async () => {
+    const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      .__cadDebug.scadgen;
+    const boxFid = s.box(2, 2, 1);
+    await s.idle();
+    const cf = s.curvePattern(
+      boxFid,
+      [
+        [0, 0, 0],
+        [8, 0, 0],
+        [8, 8, 0],
+      ],
+      3,
+      true,
+    );
+    const st = await s.idle();
+    return { status: st[cf]?.status, detail: st[cf]?.detail, out: s.tags(cf) };
+  });
+  expect(curveRes.status).toBe("OK");
+  expect(curveRes.out?.faces).toBeGreaterThanOrEqual(18);
+
+  const badCurveRes = await page.evaluate(async () => {
+    const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      .__cadDebug.scadgen;
+    const boxFid = s.box(2, 2, 1);
+    await s.idle();
+    const bf = s.curvePattern(boxFid, [[0, 0, 0]], 3);
+    const st = await s.idle();
+    return { status: st[bf]?.status, detail: st[bf]?.detail };
+  });
+  expect(badCurveRes.status).toBe("ERROR");
 });

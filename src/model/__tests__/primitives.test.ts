@@ -3,6 +3,7 @@ import {
   buildBoxNodes,
   buildConeNodes,
   buildCylinderNodes,
+  buildCurvePatternNode,
   buildMirrorNodes,
   buildLinearPatternNodes,
   buildSphereNodes,
@@ -49,6 +50,33 @@ describe("primitive composite builders", () => {
       (x) => x.kind === "queryList" && x.parameterId === "axis",
     );
     expect(axis?.kind === "queryList" && axis.queries[0]?.entityTag).toBe("l3");
+  });
+  it("curve pattern node carries patternType=curve + pathPoints + align", () => {
+    const pat = buildCurvePatternNode(
+      "Fcp",
+      "CPat",
+      "Fbody",
+      [
+        [0, 0, 0],
+        [4, 0, 0],
+        [4, 4, 0],
+      ],
+      3,
+      true,
+    );
+    expect(pat.featureType).toBe("pattern");
+    const type = pat.parameters.find(
+      (x) => x.kind === "string" && x.parameterId === "patternType",
+    );
+    expect(type?.kind === "string" && type.value).toBe("curve");
+    const pts = pat.parameters.find(
+      (x) => x.kind === "string" && x.parameterId === "pathPoints",
+    );
+    expect(pts?.kind === "string" && JSON.parse(pts.value)).toHaveLength(3);
+    const align = pat.parameters.find(
+      (x) => x.kind === "string" && x.parameterId === "align",
+    );
+    expect(align?.kind === "string" && align.value).toBe("true");
   });
   it("pattern/mirror nodes carry source query + params", () => {
     const pat = buildLinearPatternNodes(

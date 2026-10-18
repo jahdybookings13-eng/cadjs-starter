@@ -16,6 +16,7 @@ import {
   buildSphereNodes,
   buildTorusNodes,
   buildCircularPatternNode,
+  buildCurvePatternNode,
   buildDraftNode,
   buildHoleNode,
   buildRectangleProfileNodes,
@@ -341,6 +342,25 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
           const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
           scadgenHistory.add(
             buildCircularPatternNode(nf, "Circular Pattern", fid, count),
+          );
+          return nf;
+        },
+        curvePattern: (
+          fid: string,
+          pts: [number, number, number][],
+          count: number,
+          align?: boolean,
+        ) => {
+          const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          scadgenHistory.add(
+            buildCurvePatternNode(
+              nf,
+              "Curve Pattern",
+              fid,
+              pts,
+              count,
+              !!align,
+            ),
           );
           return nf;
         },

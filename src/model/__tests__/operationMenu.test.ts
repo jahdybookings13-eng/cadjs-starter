@@ -16,6 +16,9 @@ describe("operation menu (Onshape port)", () => {
     expect(ids).toContain("boolean");
     expect(ids).toContain("shell");
     expect(ids).toContain("linear-pattern");
+    expect(allowedOperations("body").map((o) => o.id)).toContain(
+      "curve-pattern",
+    );
     expect(ids).not.toContain("sheet-metal");
     const shell = m.find((o) => o.id === "shell");
     expect(shell?.status).toBe("ready");

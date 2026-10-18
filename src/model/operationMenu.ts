@@ -40,7 +40,7 @@ const READY_PATTERN = op(
   "Linear Pattern",
   "ready",
   "pattern",
-  "mirror + translate; circular/curve pattern planned",
+  "client-side translate + fuse; circular/curve route to worker",
 );
 const READY_MIRROR = op("mirror", "Mirror", "ready", "mirror");
 const READY_SKETCH = op("new-sketch", "Sketch", "ready", "newSketch");
@@ -110,9 +110,9 @@ const P_CIRC_PATTERN = op(
 const P_CURVE_PATTERN = op(
   "curve-pattern",
   "Curve Pattern",
-  "planned",
-  null,
-  "tier 1",
+  "ready",
+  "pattern",
+  "patternType=curve: equal-arc path sampling, optional tangent align",
 );
 const P_FITNESS = op(
   "feature-pattern",

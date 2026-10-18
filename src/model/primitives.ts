@@ -407,6 +407,45 @@ export function buildHoleNode(
   };
 }
 
+export function buildCurvePatternNode(
+  featureId: string,
+  name: string,
+  bodyFeatureId: string,
+  pathPoints: [number, number, number][],
+  count: number,
+  align = false,
+): ScadgenFeatureNode {
+  return {
+    featureId,
+    featureType: "pattern",
+    name,
+    namespace: "",
+    parameters: [
+      {
+        kind: "queryList",
+        parameterId: "entities",
+        queries: [faceQ(bodyFeatureId, "*")],
+      },
+      { kind: "string", parameterId: "patternType", value: "curve" },
+      {
+        kind: "quantity",
+        parameterId: "count",
+        value: count,
+        units: "",
+        expression: String(count),
+      },
+      {
+        kind: "string",
+        parameterId: "pathPoints",
+        value: JSON.stringify(pathPoints.map(([x, y, z]) => ({ x, y, z }))),
+      },
+      { kind: "string", parameterId: "align", value: String(align) },
+    ],
+    subFeatures: [],
+    suppressed: false,
+  };
+}
+
 export function buildCircularPatternNode(
   featureId: string,
   name: string,

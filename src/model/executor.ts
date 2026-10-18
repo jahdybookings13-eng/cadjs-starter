@@ -1104,7 +1104,7 @@ export class ScadgenExecutor {
       }
       case "pattern": {
         const patternType = stringOfParam(node, "patternType");
-        if (patternType === "circular") {
+        if (patternType === "circular" || patternType === "curve") {
           const qs = listOf(node, "entities");
           const src = qs[0] ? this.resolve(qs[0]) : undefined;
           if (!src) {
@@ -1118,19 +1118,51 @@ export class ScadgenExecutor {
             2,
             Math.floor(quantityOf(node, "count", this.scope) ?? 2),
           );
-          const angle = quantityOf(node, "angle", this.scope) ?? Math.PI * 2;
-          const axisRaw = stringOfParam(node, "axisDir");
-          const axis = (axisRaw ?? "0,0,1")
-            .split(",")
-            .map((x) => Number(x.trim()));
-          const originRaw = stringOfParam(node, "axisOrigin");
-          const origin = (originRaw ?? "0,0,0")
-            .split(",")
-            .map((x) => Number(x.trim()));
-          const res = await patternBRep(
-            src.brep,
-            src.position,
-            {
+          let spec: Parameters<typeof patternBRep>[2];
+          if (patternType === "curve") {
+            const raw = stringOfParam(node, "pathPoints");
+            let pts: { x: number; y: number; z: number }[] = [];
+            try {
+              const parsed: unknown = JSON.parse(raw ?? "[]");
+              if (Array.isArray(parsed))
+                pts = parsed.filter(
+                  (p): p is { x: number; y: number; z: number } =>
+                    !!p &&
+                    typeof p === "object" &&
+                    "x" in p &&
+                    "y" in p &&
+                    "z" in p &&
+                    typeof (p as { x: unknown }).x === "number" &&
+                    typeof (p as { y: unknown }).y === "number" &&
+                    typeof (p as { z: unknown }).z === "number",
+                );
+            } catch {
+              pts = [];
+            }
+            if (pts.length < 2) {
+              report[node.featureId] = {
+                status: "ERROR",
+                detail: "pattern: curve needs >= 2 path points",
+              };
+              return null;
+            }
+            spec = {
+              kind: "curve",
+              count,
+              pathPoints: pts,
+              align: stringOfParam(node, "align") === "true",
+            };
+          } else {
+            const angle = quantityOf(node, "angle", this.scope) ?? Math.PI * 2;
+            const axisRaw = stringOfParam(node, "axisDir");
+            const axis = (axisRaw ?? "0,0,1")
+              .split(",")
+              .map((x) => Number(x.trim()));
+            const originRaw = stringOfParam(node, "axisOrigin");
+            const origin = (originRaw ?? "0,0,0")
+              .split(",")
+              .map((x) => Number(x.trim()));
+            spec = {
               kind: "circular",
               count,
               axisOrigin: {
@@ -1140,7 +1172,12 @@ export class ScadgenExecutor {
               },
               axisDir: { x: axis[0] ?? 0, y: axis[1] ?? 0, z: axis[2] ?? 1 },
               angleRad: angle,
-            },
+            };
+          }
+          const res = await patternBRep(
+            src.brep,
+            src.position,
+            spec,
             src.occBrep,
           );
           if (!res.ok) {
