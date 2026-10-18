@@ -463,11 +463,22 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
           );
           return nf;
         },
+        modBox: (fid: string, d: number) => {
+          scadgenHistory.updateParameter(fid, {
+            kind: "quantity",
+            parameterId: "depth",
+            value: d,
+            units: "m",
+            expression: `${Math.round(d * 1000)} mm`,
+          });
+          return fid;
+        },
         modFillet: (fid: string, r?: number, tags?: string[]) =>
           modifyFillet(scadgenHistory, fid, {
             ...(r !== undefined ? { radius: r } : {}),
             ...(tags ? { edgeTags: tags } : {}),
           }),
+        tagMap: (fid: string) => scadgenExecutor.stabilityOf(fid),
         etags: (fid: string) =>
           scadgenExecutor.outputs.get(fid)?.edgeTags ?? null,
         measPolyline: (fid: string) => {

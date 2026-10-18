@@ -37,6 +37,8 @@ interface ScadgenDbg {
   ) => string;
   tags: (fid: string) => { edges: number; faces: number } | null;
   etags: (fid: string) => string[] | null;
+  tagMap: (fid: string) => Record<string, string> | null;
+  modBox: (fid: string, d: number) => string;
   projectCurves: (
     srcFid: string,
     tgtFid: string,
@@ -382,6 +384,29 @@ test("extrude honors midplane and oppositeDirection", async ({ page }) => {
   // symmetric extrude sits on the profile plane; opposite grows downward
   expect(Math.abs(r.zMid ?? 99)).toBeLessThan(0.2);
   expect(r.zOpp ?? 99).toBeLessThan(-0.2);
+});
+
+test("face tags stay stable across a parameter rebuild", async ({ page }) => {
+  await boot(page);
+  const r = await page.evaluate(async () => {
+    const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      .__cadDebug.scadgen;
+    const boxFid = s.box(2, 2, 1);
+    await s.idle();
+    const before = s.ftags(boxFid) ?? [];
+    const map1 = s.tagMap(boxFid);
+    s.modBox(boxFid, 3);
+    await s.idle();
+    const after = s.ftags(boxFid) ?? [];
+    const map2 = s.tagMap(boxFid);
+    return { before: before.length, map1, after: after.length, map2 };
+  });
+  expect(r.before).toBeGreaterThanOrEqual(6);
+  expect(r.map1).toBeNull(); // first build: no predecessor
+  expect(r.after).toBe(r.before);
+  expect(r.map2).not.toBeNull();
+  // growing the box along z leaves the profile-plane cap untouched -> >=1 stable tag
+  expect(Object.keys(r.map2 ?? {}).length).toBeGreaterThanOrEqual(1);
 });
 
 test("modifyFillet re-specs radius on the real kernel", async ({ page }) => {

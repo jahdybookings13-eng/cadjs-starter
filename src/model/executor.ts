@@ -33,6 +33,7 @@ import {
   transformBrepVertices,
 } from "@vitekk02/cadjs";
 import { getImportAsset } from "./assets";
+import { matchFaceTags } from "./tagStability";
 import {
   DIM_ANGLE,
   DIM_LENGTH,
@@ -344,6 +345,8 @@ export function edgeOwnerOf(tag: string): string | null {
 
 export class ScadgenExecutor {
   readonly outputs = new Map<string, BodyOutput>();
+  private prevGeom = new Map<string, { brep: Brep; tags: string[] }>();
+  private stability = new Map<string, Map<string, string>>();
   private scope: Scope = {};
   lastReport: ExecReport = {};
   private rebuiltListeners: Array<(r: ExecReport) => void> = [];
@@ -432,6 +435,19 @@ export class ScadgenExecutor {
         const out = await this.execute(node, report);
         if (out) {
           this.outputs.set(node.featureId, out);
+          if (out.kind === "body" && out.faceTags.length) {
+            const prev = this.prevGeom.get(node.featureId);
+            const world = this.worldFaceBrep(out);
+            if (prev)
+              this.stability.set(
+                node.featureId,
+                matchFaceTags(prev.brep, prev.tags, world, out.faceTags),
+              );
+            this.prevGeom.set(node.featureId, {
+              brep: world,
+              tags: [...out.faceTags],
+            });
+          }
           report[node.featureId] = { status: "OK" };
           history.setState(node.featureId, {
             featureStatus: "OK",
@@ -459,6 +475,36 @@ export class ScadgenExecutor {
       }
     }
     return report;
+  }
+
+  private worldFaceBrep(out: BodyOutput): Brep {
+    const p = out.position;
+    const faces =
+      (
+        out.brep as unknown as {
+          faces: { vertices?: { x: number; y: number; z: number }[] }[];
+        }
+      ).faces ?? [];
+    return {
+      ...(out.brep as object),
+      faces: faces.map((f) => ({
+        ...f,
+        vertices: (f.vertices ?? []).map((v) => ({
+          x: v.x + p.x,
+          y: v.y + p.y,
+          z: v.z + p.z,
+        })),
+      })),
+    } as unknown as Brep;
+  }
+
+  stabilityOf(featureId: string): Record<string, string> | null {
+    const m = this.stability.get(featureId);
+    return m ? Object.fromEntries(m) : null;
+  }
+
+  tagForPrevious(featureId: string, oldTag: string): string | null {
+    return this.stability.get(featureId)?.get(oldTag) ?? null;
   }
 
   private resolve(query: ProvenanceQuery): BodyOutput | null {
