@@ -12,6 +12,7 @@ describe("operation menu (Onshape port)", () => {
       "fillet",
       "modify-fillet",
       "chamfer",
+      "move-face",
       "split",
       "measure",
       "variables",
@@ -30,11 +31,12 @@ describe("operation menu (Onshape port)", () => {
     const shell = m.find((o) => o.id === "shell");
     expect(shell?.status).toBe("ready");
   });
-  it("plane face offers sketch+extrude+revolve ready and move-face planned", () => {
+  it("plane face offers sketch+extrude+revolve+move-face+delete-face+section ready", () => {
     expect(allowedOperations("plane-face").map((o) => o.id)).toEqual([
       "new-sketch",
       "extrude",
       "revolve",
+      "move-face",
       "delete-face",
       "section",
       "ruled-fill-surface",
@@ -42,7 +44,7 @@ describe("operation menu (Onshape port)", () => {
     ]);
     expect(
       MENU_BY_SELECTION["plane-face"].find((o) => o.id === "move-face")?.status,
-    ).toBe("planned");
+    ).toBe("ready");
   });
   it("curved faces cannot start a sketch (Onshape forbids it)", () => {
     const ids = MENU_BY_SELECTION["curved-face"].map((o) => o.id);

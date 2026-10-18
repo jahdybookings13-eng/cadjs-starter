@@ -95,9 +95,9 @@ const P_THICKEN = op(
 const P_MOVEFACE = op(
   "move-face",
   "Move Face",
-  "planned",
-  null,
-  "tier 3: opMoveFace — the direct-edit flagship",
+  "ready",
+  "moveFace",
+  "planar trim (negative) + prism boss (positive); neighbor-follow extension deferred",
 );
 const P_DELETEFACE = op(
   "delete-face",

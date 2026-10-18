@@ -23,6 +23,7 @@ import {
   deleteFaceBRep,
   splitBRep,
   sectionBRep,
+  moveFaceBRep,
   thickenBRep,
   projectCurvesBRep,
   surfaceOpBRep,
@@ -1704,6 +1705,60 @@ export class ScadgenExecutor {
         for (const o of owners) this.deleted.add(o);
         report[node.featureId] = { status: "OK" };
         return null;
+      }
+      case "moveFace": {
+        const bodyQ = listOf(node, "targets")[0];
+        const src = bodyQ ? this.resolve(bodyQ) : undefined;
+        if (!src) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "moveFace: body not resolved",
+          };
+          return null;
+        }
+        const fi = this.tagIndex(
+          src,
+          "face",
+          stringOfParam(node, "faceTag") ?? "",
+        );
+        if (fi < 0) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "moveFace: face tag not resolved",
+          };
+          return null;
+        }
+        const dist = quantityOf(node, "distance", this.scope);
+        if (dist === null || Math.abs(dist) < 1e-12) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "moveFace: distance required",
+          };
+          return null;
+        }
+        const res = await moveFaceBRep(
+          src.brep,
+          src.position,
+          fi,
+          dist,
+          src.occBrep,
+        );
+        if (!res.ok) {
+          report[node.featureId] = { status: "ERROR", detail: res.reason };
+          return null;
+        }
+        return {
+          featureId: node.featureId,
+          kind: "body",
+          brep: res.value.brep,
+          occBrep: res.value.occBrep,
+          position: src.position,
+          edgeTags: registerEdges(res.value.brep.edges.length, node.featureId),
+          faceTags: registerFaces(res.value.brep.faces.length, node.featureId),
+          edgeGeometry: res.value.edgeGeometry,
+          faceGeometry: res.value.faceGeometry,
+          vertexPositions: res.value.vertexPositions,
+        };
       }
       case "section":
       case "split": {

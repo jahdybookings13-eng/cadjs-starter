@@ -8,6 +8,7 @@ import {
   buildFillSurfaceNode,
   buildOffsetSurfaceNode,
   buildProjectCurvesNode,
+  buildMoveFaceNode,
   buildRuledSurfaceNode,
   buildSectionNode,
   buildThickenNode,
@@ -136,6 +137,14 @@ describe("primitive composite builders", () => {
       (x) => x.kind === "quantity" && x.parameterId === "distance",
     );
     expect(d?.kind === "quantity" && d.expression).toContain("m");
+  });
+  it("move-face node carries faceTag + typed distance", () => {
+    const nd = buildMoveFaceNode("Fm", "Move", "Fbody", "Fbody_F4", -0.01);
+    expect(nd.featureType).toBe("moveFace");
+    const d = nd.parameters.find(
+      (x) => x.kind === "quantity" && x.parameterId === "distance",
+    );
+    expect(d?.kind === "quantity" && d.value).toBe(-0.01);
   });
   it("section node mirrors split params", () => {
     const nd = buildSectionNode(

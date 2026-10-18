@@ -67,6 +67,7 @@ interface ScadgenDbg {
     keep?: "positive" | "negative" | "both",
   ) => string;
   delFace: (fid: string, tag: string) => string;
+  moveFace: (fid: string, tag: string, d: number) => string;
   section: (
     fid: string,
     origin: [number, number, number],
@@ -280,6 +281,38 @@ test("delete-face and split run on the real kernel", async ({ page }) => {
   expect(splitRes.bothStatus).toBe("OK");
   expect(splitRes.bothBodies.length).toBe(2);
   expect(splitRes.bothBodies[1]?.endsWith("#1")).toBe(true);
+});
+
+test("move-face trims and bosses planar faces", async ({ page }) => {
+  await boot(page);
+  const r = await page.evaluate(async () => {
+    const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      .__cadDebug.scadgen;
+    const boxFid = s.box(2, 2, 1);
+    await s.idle();
+    const dirs = s.faceDirs(boxFid) ?? [];
+    const top = dirs.reduce((a, b) => (b.center.z > a.center.z ? b : a));
+    const cut = s.moveFace(boxFid, top.tag, -0.4);
+    const st = await s.idle();
+    const boxFid2 = s.box(2, 2, 1);
+    await s.idle();
+    const dirs2 = s.faceDirs(boxFid2) ?? [];
+    const top2 = dirs2.reduce((a, b) => (b.center.z > a.center.z ? b : a));
+    const boss = s.moveFace(boxFid2, top2.tag, 0.3);
+    const st2 = await s.idle();
+    const bad = s.moveFace(boxFid, "nope_F9", -0.1);
+    const st3 = await s.idle();
+    return {
+      cut: st[cut]?.status,
+      cutFaces: s.tags(cut)?.faces,
+      boss: st2[boss]?.status,
+      bad: st3[bad]?.status,
+    };
+  });
+  expect(r.cut).toBe("OK");
+  expect(r.cutFaces).toBeGreaterThanOrEqual(6);
+  expect(r.boss).toBe("OK");
+  expect(r.bad).toBe("ERROR");
 });
 
 test("ruled, fill, offset surfaces and projectCurves run on the real kernel", async ({

@@ -544,6 +544,38 @@ export function buildOffsetSurfaceNode(
   };
 }
 
+export function buildMoveFaceNode(
+  featureId: string,
+  name: string,
+  bodyFeatureId: string,
+  faceTag: string,
+  distance: number,
+): ScadgenFeatureNode {
+  return {
+    featureId,
+    featureType: "moveFace",
+    name,
+    namespace: "",
+    parameters: [
+      {
+        kind: "queryList",
+        parameterId: "targets",
+        queries: [faceQ(bodyFeatureId, "*")],
+      },
+      { kind: "string", parameterId: "faceTag", value: faceTag },
+      {
+        kind: "quantity",
+        parameterId: "distance",
+        value: distance,
+        units: "m",
+        expression: formatQuantityExpression(distance, "m"),
+      },
+    ],
+    subFeatures: [],
+    suppressed: false,
+  };
+}
+
 export function buildSectionNode(
   featureId: string,
   name: string,
