@@ -130,9 +130,9 @@ const P_CURVE_PATTERN = op(
 const P_FITNESS = op(
   "feature-pattern",
   "Pattern Features",
-  "planned",
-  null,
-  "applyPattern w/ feature list",
+  "ready",
+  "featurePattern",
+  "clones a serialized feature chain (id-remapped, plane-origin shifted), independent bodies; join-mode deferred",
 );
 const P_DIM = op(
   "dimension",

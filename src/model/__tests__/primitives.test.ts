@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildBoxNodes,
+  cloneFeatureNodes,
   buildConeNodes,
   buildCylinderNodes,
   buildCurvePatternNode,
@@ -245,3 +246,23 @@ function buildConeImport() {
   const nodes = buildConeNodes("Fc", "Cone", 0.04, 0.09);
   return [nodes[0]!, nodes[1]!] as const;
 }
+
+describe("cloneFeatureNodes (feature-pattern chain clone)", () => {
+  it("remaps ids, shifts plane origin, leaves originals untouched", () => {
+    const nodes = buildBoxNodes("F1", "box", 0.002, 0.002, 0.001);
+    const before = JSON.stringify(nodes);
+    const clones = cloneFeatureNodes(nodes, "_p1", [0.004, 0, 0]);
+    expect(JSON.stringify(nodes)).toBe(before);
+    expect(clones[0]!.featureId).toBe("F1_sk_p1");
+    expect(clones[1]!.featureId).toBe("F1_p1");
+    const snap = clones[0]!.extensions?.sketch as {
+      plane: { origin: number[] };
+    };
+    expect(snap.plane.origin[0]).toBeCloseTo(0.004, 6);
+    const ent = clones[1]!.parameters.find(
+      (q: { kind: string; parameterId: string }) =>
+        q.kind === "queryList" && q.parameterId === "entities",
+    ) as { queries: { creationFeatureId: string }[] };
+    expect(ent.queries[0]!.creationFeatureId).toBe("F1_sk_p1");
+  });
+});

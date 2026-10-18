@@ -40,6 +40,7 @@ import {
   type ParityResult,
 } from "@vitekk02/cadjs";
 import { getImportAsset } from "./assets";
+import { cloneFeatureNodes } from "./primitives";
 import {
   resolveThread,
   type ThreadSpec,
@@ -1763,6 +1764,84 @@ export class ScadgenExecutor {
         for (const o of owners) this.deleted.add(o);
         report[node.featureId] = { status: "OK" };
         return null;
+      }
+      case "featurePattern": {
+        let chain: ScadgenFeatureNode[] = [];
+        try {
+          const parsed: unknown = JSON.parse(
+            stringOfParam(node, "chain") ?? "[]",
+          );
+          if (Array.isArray(parsed)) chain = parsed as ScadgenFeatureNode[];
+        } catch {
+          chain = [];
+        }
+        if (!chain.length) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "featurePattern: empty chain",
+          };
+          return null;
+        }
+        const aRaw = (stringOfParam(node, "axis") ?? "1,0,0")
+          .split(",")
+          .map((x) => Number(x.trim()));
+        const alen = Math.hypot(aRaw[0] ?? 1, aRaw[1] ?? 0, aRaw[2] ?? 0) || 1;
+        const ax = {
+          x: (aRaw[0] ?? 1) / alen,
+          y: (aRaw[1] ?? 0) / alen,
+          z: (aRaw[2] ?? 0) / alen,
+        };
+        const spacing = quantityOf(node, "spacing", this.scope) ?? 0;
+        const count = Math.round(quantityOf(node, "count", this.scope) ?? 1);
+        if (!(spacing > 0 && count >= 2 && count <= 12)) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "featurePattern: spacing>0, count 2..12 required",
+          };
+          return null;
+        }
+        const bodies: BodyOutput[] = [];
+        for (let k = 1; k < count; k++) {
+          const clones = cloneFeatureNodes(chain, `_p${k}`, [
+            ax.x * spacing * k,
+            ax.y * spacing * k,
+            ax.z * spacing * k,
+          ]);
+          let last: BodyOutput | null = null;
+          for (const cn of clones) {
+            const out = await this.execute(cn, report);
+            if (out) {
+              this.outputs.set(out.featureId, out);
+              if (out.kind === "body") last = out;
+            }
+          }
+          if (last) bodies.push(last);
+        }
+        if (!bodies.length) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "featurePattern: no body produced",
+          };
+          return null;
+        }
+        const primary: BodyOutput = {
+          ...bodies[0]!,
+          featureId: node.featureId,
+          additionalBodies: bodies.slice(1).map((b, i) => ({
+            ...b,
+            featureId: `${node.featureId}#${i + 1}`,
+          })),
+        };
+        const owned = [
+          primary,
+          ...bodies.slice(1).map((b, i) => ({
+            ...b,
+            featureId: `${node.featureId}#${i + 1}`,
+          })),
+        ];
+        for (const b of owned) this.outputs.set(b.featureId, b);
+        this.bodySets.set(node.featureId, owned);
+        return primary;
       }
       case "thread": {
         const srcQ = listOf(node, "entities")[0];

@@ -68,6 +68,12 @@ interface ScadgenDbg {
   ) => string;
   delFace: (fid: string, tag: string) => string;
   moveFace: (fid: string, tag: string, d: number) => string;
+  featurePattern: (
+    srcFids: string[],
+    axis: [number, number, number],
+    spacing: number,
+    count: number,
+  ) => string;
   sketchOnDatum: (d: string, w: number, h: number, depth: number) => string;
   thread: (
     fid: string,
@@ -302,6 +308,29 @@ test("delete-face and split run on the real kernel", async ({ page }) => {
   expect(splitRes.bothStatus).toBe("OK");
   expect(splitRes.bothBodies.length).toBe(2);
   expect(splitRes.bothBodies[1]?.endsWith("#1")).toBe(true);
+});
+
+test("feature-pattern clones a sketch+extrude chain into bodies", async ({
+  page,
+}) => {
+  await boot(page);
+  const r = await page.evaluate(async () => {
+    const w = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      .__cadDebug.scadgen;
+    const b = w.box(0.002, 0.002, 0.001);
+    await w.idle();
+    const pat = w.featurePattern([`${b}_sk`, b], [1, 0, 0], 0.004, 3);
+    const st = await w.idle();
+    const bodies = w.bodiesOf(pat);
+    return {
+      pat: st[pat]?.status,
+      n: bodies.length,
+      faces: w.tags(pat)?.faces ?? 0,
+    };
+  });
+  expect(r.pat).toBe("OK");
+  expect(r.n).toBe(2);
+  expect(r.faces).toBeGreaterThan(3);
 });
 
 test("sketch-on-datum places a pad on a datum plane", async ({ page }) => {

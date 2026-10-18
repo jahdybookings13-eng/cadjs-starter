@@ -715,6 +715,92 @@ export function buildThreadNode(
   };
 }
 
+export function cloneFeatureNodes(
+  nodes: ScadgenFeatureNode[],
+  suffix: string,
+  shift: [number, number, number],
+): ScadgenFeatureNode[] {
+  const map = new Map(
+    nodes.map((n) => [n.featureId, `${n.featureId}${suffix}`]),
+  );
+  const walk = (val: unknown): unknown => {
+    if (Array.isArray(val)) return val.map(walk);
+    if (val && typeof val === "object") {
+      const o = val as Record<string, unknown>;
+      const out: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(o)) {
+        if (
+          (k === "featureId" ||
+            k === "creationFeatureId" ||
+            k === "planeRef") &&
+          typeof v === "string" &&
+          map.has(v)
+        )
+          out[k] = map.get(v);
+        else if (
+          k === "plane" &&
+          v &&
+          typeof v === "object" &&
+          Array.isArray((v as { origin?: unknown }).origin)
+        ) {
+          const p = v as { origin: number[] };
+          out[k] = {
+            ...p,
+            origin: [
+              (p.origin[0] ?? 0) + shift[0],
+              (p.origin[1] ?? 0) + shift[1],
+              (p.origin[2] ?? 0) + shift[2],
+            ],
+          };
+        } else out[k] = walk(v);
+      }
+      return out;
+    }
+    return val;
+  };
+  return nodes.map((n) => walk(n) as ScadgenFeatureNode);
+}
+
+export function buildFeaturePatternNode(
+  featureId: string,
+  name: string,
+  chainNodes: ScadgenFeatureNode[],
+  axis: [number, number, number],
+  spacing: number,
+  count: number,
+): ScadgenFeatureNode {
+  return {
+    featureId,
+    featureType: "featurePattern",
+    name,
+    namespace: "",
+    parameters: [
+      {
+        kind: "string",
+        parameterId: "chain",
+        value: JSON.stringify(chainNodes),
+      },
+      { kind: "string", parameterId: "axis", value: axis.join(",") },
+      {
+        kind: "quantity",
+        parameterId: "spacing",
+        value: spacing,
+        units: "m",
+        expression: formatQuantityExpression(spacing, "m"),
+      },
+      {
+        kind: "quantity",
+        parameterId: "count",
+        value: count,
+        units: "",
+        expression: String(count),
+      },
+    ],
+    subFeatures: [],
+    suppressed: false,
+  };
+}
+
 export function buildMoveFaceNode(
   featureId: string,
   name: string,
