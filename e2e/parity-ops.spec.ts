@@ -68,6 +68,13 @@ interface ScadgenDbg {
   ) => string;
   delFace: (fid: string, tag: string) => string;
   moveFace: (fid: string, tag: string, d: number) => string;
+  flange: (
+    fid: string,
+    edgeTag: string,
+    angleDeg: number,
+    thickness?: number,
+    relief?: number,
+  ) => string;
   featurePattern: (
     srcFids: string[],
     axis: [number, number, number],
@@ -308,6 +315,31 @@ test("delete-face and split run on the real kernel", async ({ page }) => {
   expect(splitRes.bothStatus).toBe("OK");
   expect(splitRes.bothBodies.length).toBe(2);
   expect(splitRes.bothBodies[1]?.endsWith("#1")).toBe(true);
+});
+
+test("flange bends a sheet edge up into an L-bracket", async ({ page }) => {
+  await boot(page);
+  const r = await page.evaluate(async () => {
+    const w = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      .__cadDebug.scadgen;
+    const plate = w.box(0.01, 0.01, 0.001);
+    await w.idle();
+    const et = w.etags(plate) ?? [];
+    const fl = w.flange(plate, et[0] ?? "", 90, 0.001, 0.0004);
+    const st = await w.idle();
+    const bad = w.flange(plate, "nope_E7", 90, 0.001);
+    const st2 = await w.idle();
+    return {
+      fl: st[fl]?.status,
+      detail: st[fl]?.detail,
+      faces: w.tags(fl)?.faces ?? 0,
+      plateFaces: w.tags(plate)?.faces ?? 0,
+      bad: st2[bad]?.status,
+    };
+  });
+  expect(r.fl).toBe("OK");
+  expect(r.faces).toBeGreaterThan(r.plateFaces);
+  expect(r.bad).toBe("ERROR");
 });
 
 test("feature-pattern clones a sketch+extrude chain into bodies", async ({

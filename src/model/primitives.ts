@@ -801,6 +801,54 @@ export function buildFeaturePatternNode(
   };
 }
 
+export function buildFlangeNode(
+  featureId: string,
+  name: string,
+  sourceFeatureId: string,
+  edgeTag: string,
+  angleRad: number,
+  thickness: number,
+  relief = 0,
+): ScadgenFeatureNode {
+  return {
+    featureId,
+    featureType: "flange",
+    name,
+    namespace: "",
+    parameters: [
+      {
+        kind: "queryList",
+        parameterId: "entities",
+        queries: [faceQ(sourceFeatureId, "*")],
+      },
+      { kind: "string", parameterId: "edgeTag", value: edgeTag },
+      {
+        kind: "quantity",
+        parameterId: "angle",
+        value: angleRad,
+        units: "rad",
+        expression: `${((angleRad * 180) / Math.PI).toFixed(0)} deg`,
+      },
+      {
+        kind: "quantity",
+        parameterId: "thickness",
+        value: thickness,
+        units: "m",
+        expression: formatQuantityExpression(thickness, "m"),
+      },
+      {
+        kind: "quantity",
+        parameterId: "relief",
+        value: relief,
+        units: "m",
+        expression: formatQuantityExpression(relief, "m"),
+      },
+    ],
+    subFeatures: [],
+    suppressed: false,
+  };
+}
+
 export function buildMoveFaceNode(
   featureId: string,
   name: string,

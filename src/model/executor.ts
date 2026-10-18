@@ -28,6 +28,7 @@ import {
   sectionBRep,
   moveFaceBRep,
   thickenBRep,
+  flangeBRep,
   threadBRep,
   projectCurvesBRep,
   surfaceOpBRep,
@@ -1764,6 +1765,113 @@ export class ScadgenExecutor {
         for (const o of owners) this.deleted.add(o);
         report[node.featureId] = { status: "OK" };
         return null;
+      }
+      case "flange": {
+        const srcQ = listOf(node, "entities")[0];
+        const src = srcQ ? this.resolve(srcQ) : undefined;
+        if (!src) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "flange: source not resolved",
+          };
+          return null;
+        }
+        const ei = this.tagIndex(
+          src,
+          "edge",
+          stringOfParam(node, "edgeTag") ?? "",
+        );
+        const json = src.brep.toJSON();
+        const edge = ei >= 0 ? json.edges[ei] : undefined;
+        if (!edge) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "flange: bend edge tag not resolved",
+          };
+          return null;
+        }
+        const pos = src.position;
+        const p1 = {
+          x: edge.start.x + pos.x,
+          y: edge.start.y + pos.y,
+          z: edge.start.z + pos.z,
+        };
+        const p2 = {
+          x: edge.end.x + pos.x,
+          y: edge.end.y + pos.y,
+          z: edge.end.z + pos.z,
+        };
+        const line = { x: p2.x - p1.x, y: p2.y - p1.y, z: p2.z - p1.z };
+        const ll = Math.hypot(line.x, line.y, line.z);
+        if (ll < 1e-9) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "flange: degenerate bend line",
+          };
+          return null;
+        }
+        const u = { x: line.x / ll, y: line.y / ll, z: line.z / ll };
+        const vs = json.vertices;
+        const c = vs.length
+          ? vs.reduce(
+              (acc, q) => ({
+                x: acc.x + q.x / vs.length,
+                y: acc.y + q.y / vs.length,
+                z: acc.z + q.z / vs.length,
+              }),
+              { x: 0, y: 0, z: 0 },
+            )
+          : { x: 0, y: 0, z: 0 };
+        const mid = {
+          x: (p1.x + p2.x) / 2,
+          y: (p1.y + p2.y) / 2,
+          z: (p1.z + p2.z) / 2,
+        };
+        const rx = mid.x - (c.x + pos.x),
+          ry = mid.y - (c.y + pos.y),
+          rz = mid.z - (c.z + pos.z);
+        const rd = rx * u.x + ry * u.y + rz * u.z;
+        let bx = rx - u.x * rd,
+          by = ry - u.y * rd,
+          bz = rz - u.z * rd;
+        const bl = Math.hypot(bx, by, bz) || 1;
+        bx /= bl;
+        by /= bl;
+        bz /= bl;
+        const angle = quantityOf(node, "angle", this.scope) ?? Math.PI / 2;
+        const thickness =
+          quantityOf(node, "thickness", this.scope) ?? 0.001;
+        const relief = quantityOf(node, "relief", this.scope) ?? 0;
+        const res = await flangeBRep(
+          src.brep,
+          pos,
+          {
+            origin: p1,
+            bendDir: { x: bx, y: by, z: bz },
+            bendLineDir: u,
+            angle,
+            thickness,
+            relief,
+          },
+          src.occBrep,
+        );
+        if (!res.ok) {
+          report[node.featureId] = { status: "ERROR", detail: res.reason };
+          return null;
+        }
+        return {
+          featureId: node.featureId,
+          kind: "body",
+          brep: res.value.brep,
+          occBrep: res.value.occBrep,
+          position: pos.clone(),
+          planeNormal: src.planeNormal,
+          edgeTags: registerEdges(res.value.brep.edges.length, node.featureId),
+          faceTags: registerFaces(res.value.brep.faces.length, node.featureId),
+          edgeGeometry: res.value.edgeGeometry,
+          faceGeometry: res.value.faceGeometry,
+          vertexPositions: res.value.vertexPositions,
+        };
       }
       case "featurePattern": {
         let chain: ScadgenFeatureNode[] = [];
