@@ -46,7 +46,7 @@ interface ScadgenDbg {
     normal: [number, number, number],
   ) => string;
   delFace: (fid: string, tag: string) => string;
-  fillet: (fid: string, tag: string, r: number) => string;
+  fillet: (fid: string, tags: string[], r: number, radii?: number[]) => string;
   modFillet: (fid: string, r?: number, tags?: string[]) => boolean;
   measEdge: (fid: string) => Promise<number[] | null>;
 }
@@ -291,7 +291,7 @@ test("modifyFillet re-specs radius on the real kernel", async ({ page }) => {
     const boxFid = s.box(2, 2, 1);
     await s.idle();
     const et = s.etags(boxFid) ?? [];
-    const ff = s.fillet(boxFid, et[0] ?? "", 0.3);
+    const ff = s.fillet(boxFid, [et[0] ?? ""], 0.3);
     const before = await s.idle();
     const lenBefore = await s.measEdge(ff);
     const applied = s.modFillet(ff, 0.6);
@@ -306,9 +306,7 @@ test("modifyFillet re-specs radius on the real kernel", async ({ page }) => {
         !!lenBefore &&
         !!lenAfter &&
         lenBefore.length === lenAfter.length &&
-        lenBefore.some(
-          (v, i) => Math.abs(v - (lenAfter[i] as number)) > 1e-4,
-        ),
+        lenBefore.some((v, i) => Math.abs(v - (lenAfter[i] as number)) > 1e-4),
     };
   });
   expect(modRes.statusBefore).toBe("OK");
@@ -317,13 +315,26 @@ test("modifyFillet re-specs radius on the real kernel", async ({ page }) => {
   expect(modRes.faces).toBeGreaterThanOrEqual(7);
   expect(modRes.changed).toBe(true);
 
+  const varFillet = await page.evaluate(async () => {
+    const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      .__cadDebug.scadgen;
+    const boxFid = s.box(2, 2, 1);
+    await s.idle();
+    const et = s.etags(boxFid) ?? [];
+    const vf = s.fillet(boxFid, [et[0] ?? "", et[1] ?? ""], 0.3, [0.15, 0.4]);
+    const st = await s.idle();
+    return { status: st[vf]?.status, detail: st[vf]?.detail, out: s.tags(vf) };
+  });
+  expect(varFillet.status).toBe("OK");
+  expect(varFillet.out?.faces).toBeGreaterThanOrEqual(8);
+
   const impossibleFillet = await page.evaluate(async () => {
     const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
       .__cadDebug.scadgen;
     const boxFid = s.box(2, 2, 1);
     await s.idle();
     const et = s.etags(boxFid) ?? [];
-    const ff = s.fillet(boxFid, et[0] ?? "", 0.2);
+    const ff = s.fillet(boxFid, [et[0] ?? ""], 0.2);
     await s.idle();
     s.modFillet(ff, 5);
     const st = await s.idle();

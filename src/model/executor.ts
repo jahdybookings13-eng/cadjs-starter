@@ -641,14 +641,38 @@ export class ScadgenExecutor {
           quantityOf(node, "radius", this.scope) ??
           quantityOf(node, "width", this.scope) ??
           0;
+        const perEdgeRaw = stringOfParam(
+          node,
+          node.featureType === "fillet" ? "radii" : "distances",
+        );
+        let radiusArg: number | number[] = radius;
+        if (perEdgeRaw) {
+          try {
+            const parsed: unknown = JSON.parse(perEdgeRaw);
+            if (
+              Array.isArray(parsed) &&
+              parsed.every((v) => typeof v === "number") &&
+              parsed.length === idx.length
+            )
+              radiusArg = parsed as number[];
+          } catch {
+            radiusArg = radius;
+          }
+        }
         const res =
           node.featureType === "fillet"
-            ? await filletBRep(src.brep, src.position, idx, radius, src.occBrep)
+            ? await filletBRep(
+                src.brep,
+                src.position,
+                idx,
+                radiusArg,
+                src.occBrep,
+              )
             : await chamferBRep(
                 src.brep,
                 src.position,
                 idx,
-                radius,
+                radiusArg,
                 src.occBrep,
               );
         if (!res.ok) {

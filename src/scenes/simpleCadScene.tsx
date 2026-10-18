@@ -427,9 +427,11 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
           );
           return nf;
         },
-        fillet: (fid: string, tag: string, r: number) => {
+        fillet: (fid: string, tags: string[], r: number, radii?: number[]) => {
           const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
-          scadgenHistory.add(buildEdgeFilletNode(nf, "Fillet", fid, [tag], r));
+          scadgenHistory.add(
+            buildEdgeFilletNode(nf, "Fillet", fid, tags, r, radii),
+          );
           return nf;
         },
         modFillet: (fid: string, r?: number, tags?: string[]) =>

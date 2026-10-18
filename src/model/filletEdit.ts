@@ -72,6 +72,7 @@ export function buildEdgeFilletNode(
   bodyFeatureId: string,
   edgeTags: string[],
   radius: number,
+  radii?: number[],
 ): ScadgenFeatureNode {
   return buildFilletNode(
     featureId,
@@ -82,5 +83,14 @@ export function buildEdgeFilletNode(
       units: "m",
       expression: formatQuantityExpression(radius, "m"),
     },
+    radii
+      ? [
+          {
+            kind: "string",
+            parameterId: "radii",
+            value: JSON.stringify(radii),
+          },
+        ]
+      : [],
   );
 }

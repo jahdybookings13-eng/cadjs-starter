@@ -44,6 +44,20 @@ describe("modifyFillet (history edit)", () => {
     expect(() => applyFilletEdit(box, { radius: 1 })).toThrow(/not a fillet/);
     expect(() => applyFilletEdit(node(), { radius: 0 })).toThrow(/must be > 0/);
   });
+  it("variable-radius builder stores radii JSON parameter", () => {
+    const nd = buildEdgeFilletNode(
+      "Fv",
+      "Fillet",
+      "Fbody",
+      ["Fbody_E0", "Fbody_E1"],
+      0.003,
+      [0.001, 0.005],
+    );
+    const p = nd.parameters.find(
+      (x) => x.kind === "string" && x.parameterId === "radii",
+    );
+    expect(p?.kind === "string" && JSON.parse(p.value)).toEqual([0.001, 0.005]);
+  });
   it("modifyFillet updates the stored node and reports misses", () => {
     const h = new ScadgenHistory();
     h.add(node());
