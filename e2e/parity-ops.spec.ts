@@ -68,6 +68,18 @@ interface ScadgenDbg {
   ) => string;
   delFace: (fid: string, tag: string) => string;
   moveFace: (fid: string, tag: string, d: number) => string;
+  createPlane: (
+    origin: [number, number, number],
+    normal: [number, number, number],
+    size?: number,
+  ) => string;
+  curveOnFace: (
+    srcFid: string,
+    tgtFid: string,
+    tags: string[],
+    faceTag: string,
+  ) => string;
+  scale: (fid: string, f: number, origin?: [number, number, number]) => string;
   section: (
     fid: string,
     origin: [number, number, number],
@@ -281,6 +293,45 @@ test("delete-face and split run on the real kernel", async ({ page }) => {
   expect(splitRes.bothStatus).toBe("OK");
   expect(splitRes.bothBodies.length).toBe(2);
   expect(splitRes.bothBodies[1]?.endsWith("#1")).toBe(true);
+});
+
+test("createPlane, curveOnFace, scale run on the real kernel", async ({
+  page,
+}) => {
+  await boot(page);
+  const r = await page.evaluate(async () => {
+    const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      .__cadDebug.scadgen;
+    const datum = s.createPlane([0, 0, 2], [0, 0, 1]);
+    const boxFid = s.box(2, 2, 1);
+    await s.idle();
+    const et = s.etags(boxFid) ?? [];
+    const ft = s.ftags(boxFid) ?? [];
+    const cof = s.curveOnFace(
+      boxFid,
+      boxFid,
+      [et[0] ?? "", et[1] ?? ""],
+      ft[0] ?? "",
+    );
+    const sc = s.scale(boxFid, 2);
+    const bad = s.curveOnFace(boxFid, boxFid, ["nope_E9"], ft[0] ?? "");
+    const st = await s.idle();
+    return {
+      datum: st[datum]?.status,
+      datumFaces: s.tags(datum)?.faces,
+      cof: st[cof]?.status,
+      cofDetail: st[cof]?.detail,
+      cofEdges: s.tags(cof)?.edges,
+      scale: st[sc]?.status,
+      bad: st[bad]?.status,
+    };
+  });
+  expect(r.datum).toBe("OK");
+  expect(r.datumFaces).toBe(1);
+  expect(r.cof).toBe("OK");
+  expect(r.cofEdges).toBeGreaterThanOrEqual(1);
+  expect(r.scale).toBe("OK");
+  expect(r.bad).toBe("ERROR");
 });
 
 test("move-face trims and bosses planar faces", async ({ page }) => {

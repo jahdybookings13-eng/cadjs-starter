@@ -544,6 +544,102 @@ export function buildOffsetSurfaceNode(
   };
 }
 
+export function buildCreatePlaneNode(
+  featureId: string,
+  name: string,
+  origin: [number, number, number],
+  normal: [number, number, number],
+  size: number,
+): ScadgenFeatureNode {
+  return {
+    featureId,
+    featureType: "createPlane",
+    name,
+    namespace: "",
+    parameters: [
+      { kind: "string", parameterId: "origin", value: origin.join(",") },
+      { kind: "string", parameterId: "normal", value: normal.join(",") },
+      {
+        kind: "quantity",
+        parameterId: "size",
+        value: size,
+        units: "m",
+        expression: formatQuantityExpression(size, "m"),
+      },
+    ],
+    subFeatures: [],
+    suppressed: false,
+  };
+}
+
+export function buildCurveOnFaceNode(
+  featureId: string,
+  name: string,
+  sourceFeatureId: string,
+  targetFeatureId: string,
+  edgeTags: string[],
+  faceTag: string,
+): ScadgenFeatureNode {
+  return {
+    featureId,
+    featureType: "curveOnFace",
+    name,
+    namespace: "",
+    parameters: [
+      {
+        kind: "queryList",
+        parameterId: "entities",
+        queries: [faceQ(sourceFeatureId, "*")],
+      },
+      {
+        kind: "queryList",
+        parameterId: "targets",
+        queries: [faceQ(targetFeatureId, "*")],
+      },
+      {
+        kind: "string",
+        parameterId: "edgeTags",
+        value: JSON.stringify(edgeTags),
+      },
+      { kind: "string", parameterId: "faceTag", value: faceTag },
+    ],
+    subFeatures: [],
+    suppressed: false,
+  };
+}
+
+export function buildScaleNode(
+  featureId: string,
+  name: string,
+  sourceFeatureId: string,
+  factor: number,
+  origin: [number, number, number],
+): ScadgenFeatureNode {
+  return {
+    featureId,
+    featureType: "scale",
+    name,
+    namespace: "",
+    parameters: [
+      {
+        kind: "queryList",
+        parameterId: "entities",
+        queries: [faceQ(sourceFeatureId, "*")],
+      },
+      {
+        kind: "quantity",
+        parameterId: "factor",
+        value: factor,
+        units: "",
+        expression: String(factor),
+      },
+      { kind: "string", parameterId: "origin", value: origin.join(",") },
+    ],
+    subFeatures: [],
+    suppressed: false,
+  };
+}
+
 export function buildMoveFaceNode(
   featureId: string,
   name: string,

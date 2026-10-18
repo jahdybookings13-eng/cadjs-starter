@@ -158,16 +158,16 @@ const P_TRIM = op(
 const P_CPLANE = op(
   "create-plane",
   "Plane",
-  "deferred",
-  null,
-  "datums-as-features tier 6",
+  "ready",
+  "createPlane",
+  "datum plane BODY (planar quad) for booleans/sections/extrude targets; sketch-on-datum wiring deferred",
 );
 const P_CURVE_ON_FACE = op(
   "curve-on-face",
   "Curve on Face",
-  "planned",
-  null,
-  "tier 4: opCreateCurvesOnFace",
+  "ready",
+  "curveOnFace",
+  "projects source edges along target face normal (projectCurves + heuristic normal)",
 );
 const P_PROJECT_CURVE = op(
   "project-curves",
@@ -221,10 +221,10 @@ const READY_VARIABLES = op(
 );
 const READY_TRANSFORM_SCALE = op(
   "scale",
-  "Scale (relative)",
-  "planned",
-  null,
-  "bridge #4: expression write, not baked matrix",
+  "Scale",
+  "ready",
+  "scale",
+  "uniform/local-origin vertex scale (expression factor), position-stable",
 );
 const P_COMPOSITE = op(
   "delete-bodies",

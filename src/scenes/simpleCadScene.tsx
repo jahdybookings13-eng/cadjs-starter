@@ -19,6 +19,8 @@ import {
   buildCurvePatternNode,
   buildDeleteBodiesNode,
   buildDeleteFaceNode,
+  buildCreatePlaneNode,
+  buildCurveOnFaceNode,
   buildMoveFaceNode,
   buildSectionNode,
   buildSplitNode,
@@ -29,6 +31,7 @@ import {
   buildProjectCurvesNode,
   buildRectangleProfileNodes,
   buildRuledSurfaceNode,
+  buildScaleNode,
   buildShellNode,
   buildThickenNode,
 } from "../model/primitives";
@@ -468,6 +471,43 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
         thicken: (fid: string, tag: string, t: number) => {
           const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
           scadgenHistory.add(buildThickenNode(nf, "Thicken", fid, [tag], t));
+          return nf;
+        },
+        createPlane: (
+          origin: [number, number, number],
+          normal: [number, number, number],
+          size?: number,
+        ) => {
+          const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          scadgenHistory.add(
+            buildCreatePlaneNode(nf, "Plane", origin, normal, size ?? 0.25),
+          );
+          return nf;
+        },
+        curveOnFace: (
+          srcFid: string,
+          tgtFid: string,
+          tags: string[],
+          faceTag: string,
+        ) => {
+          const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          scadgenHistory.add(
+            buildCurveOnFaceNode(
+              nf,
+              "Curve on Face",
+              srcFid,
+              tgtFid,
+              tags,
+              faceTag,
+            ),
+          );
+          return nf;
+        },
+        scale: (fid: string, f: number, origin?: [number, number, number]) => {
+          const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          scadgenHistory.add(
+            buildScaleNode(nf, "Scale", fid, f, origin ?? [0, 0, 0]),
+          );
           return nf;
         },
         moveFace: (fid: string, tag: string, d: number) => {

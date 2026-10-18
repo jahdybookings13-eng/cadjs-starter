@@ -5,6 +5,9 @@
 import * as THREE from "three";
 import {
   Brep,
+  Edge as BrepEdge,
+  Face as BrepFace,
+  Vertex as BrepVertex,
   chamferBRep,
   extrudeBRep,
   filletBRep,
@@ -1705,6 +1708,227 @@ export class ScadgenExecutor {
         for (const o of owners) this.deleted.add(o);
         report[node.featureId] = { status: "OK" };
         return null;
+      }
+      case "createPlane": {
+        const o = (stringOfParam(node, "origin") ?? "0,0,0")
+          .split(",")
+          .map((x) => Number(x.trim()));
+        const nRaw = (stringOfParam(node, "normal") ?? "0,0,1")
+          .split(",")
+          .map((x) => Number(x.trim()));
+        const nLen = Math.hypot(nRaw[0] ?? 0, nRaw[1] ?? 0, nRaw[2] ?? 0) || 1;
+        const n = {
+          x: (nRaw[0] ?? 0) / nLen,
+          y: (nRaw[1] ?? 0) / nLen,
+          z: (nRaw[2] ?? 0) / nLen,
+        };
+        const size = quantityOf(node, "size", this.scope) ?? 0.1;
+        const u =
+          Math.abs(n.z) < 0.9 ? { x: 0, y: 0, z: 1 } : { x: 1, y: 0, z: 0 };
+        let ux = {
+          x: n.y * u.z - n.z * u.y,
+          y: n.z * u.x - n.x * u.z,
+          z: n.x * u.y - n.y * u.x,
+        };
+        const ul = Math.hypot(ux.x, ux.y, ux.z) || 1;
+        ux = { x: ux.x / ul, y: ux.y / ul, z: ux.z / ul };
+        const vx = {
+          x: n.y * ux.z - n.z * ux.y,
+          y: n.z * ux.x - n.x * ux.z,
+          z: n.x * ux.y - n.y * ux.x,
+        };
+        const ox = o[0] ?? 0,
+          oy = o[1] ?? 0,
+          oz = o[2] ?? 0;
+        const pts = (
+          [
+            [1, 1],
+            [1, -1],
+            [-1, -1],
+            [-1, 1],
+          ] as const
+        ).map(([sa, sb]) => ({
+          x: ox + ux.x * size * sa + vx.x * size * sb,
+          y: oy + ux.y * size * sa + vx.y * size * sb,
+          z: oz + ux.z * size * sa + vx.z * size * sb,
+        }));
+        const brep = new Brep(
+          pts.map((q) => new BrepVertex(q.x, q.y, q.z)),
+          [0, 1, 2, 3].map((i) => {
+            const a = pts[i]!,
+              b = pts[(i + 1) % 4]!;
+            return new BrepEdge(
+              new BrepVertex(a.x, a.y, a.z),
+              new BrepVertex(b.x, b.y, b.z),
+            );
+          }),
+          [
+            {
+              vertices: pts.map((q) => new BrepVertex(q.x, q.y, q.z)),
+            } as unknown as BrepFace,
+          ],
+        );
+        return {
+          featureId: node.featureId,
+          kind: "body",
+          brep,
+          position: new THREE.Vector3(ox, oy, oz),
+          planeNormal: [n.x, n.y, n.z],
+          edgeTags: registerEdges(brep.edges.length, node.featureId),
+          faceTags: registerFaces(brep.faces.length, node.featureId),
+        };
+      }
+      case "scale": {
+        const srcQ = listOf(node, "entities")[0];
+        const src = srcQ ? this.resolve(srcQ) : undefined;
+        if (!src) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "scale: source not resolved",
+          };
+          return null;
+        }
+        const f = quantityOf(node, "factor", this.scope) ?? 1;
+        if (f <= 0) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "scale: factor must be > 0",
+          };
+          return null;
+        }
+        const oRaw = (stringOfParam(node, "origin") ?? "0,0,0")
+          .split(",")
+          .map((x) => Number(x.trim()));
+        const json = src.brep.toJSON();
+        const ox = oRaw[0] ?? 0,
+          oy = oRaw[1] ?? 0,
+          oz = oRaw[2] ?? 0;
+        const sp = (q: { x: number; y: number; z: number }) => ({
+          x: ox + (q.x - ox) * f,
+          y: oy + (q.y - oy) * f,
+          z: oz + (q.z - oz) * f,
+        });
+        const scaled: typeof json = {
+          ...json,
+          vertices: json.vertices.map(sp),
+          edges: json.edges.map((e) => ({
+            start: sp(e.start),
+            end: sp(e.end),
+          })),
+          faces: json.faces.map((fa) => ({
+            ...fa,
+            vertices: (fa.vertices ?? []).map(sp),
+          })),
+        };
+        const brep = Brep.fromJSON(scaled);
+        // scale about the given LOCAL-space origin point (the body's own
+        // coordinate frame; local bbox center is 0,0,0 by serialization)
+        return {
+          featureId: node.featureId,
+          kind: "body",
+          brep,
+          position: src.position.clone(),
+          planeNormal: src.planeNormal,
+          edgeTags: registerEdges(brep.edges.length, node.featureId),
+          faceTags: registerFaces(brep.faces.length, node.featureId),
+        };
+      }
+      case "curveOnFace": {
+        const srcQ = listOf(node, "entities")[0];
+        const src = srcQ ? this.resolve(srcQ) : undefined;
+        const tgtQ = listOf(node, "targets")[0];
+        const tgt = tgtQ ? this.resolve(tgtQ) : undefined;
+        if (!src || !tgt) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "curveOnFace: source or target not resolved",
+          };
+          return null;
+        }
+        let tags: string[] = [];
+        try {
+          const parsed: unknown = JSON.parse(
+            stringOfParam(node, "edgeTags") ?? "[]",
+          );
+          if (Array.isArray(parsed))
+            tags = parsed.filter((t): t is string => typeof t === "string");
+        } catch {
+          tags = [];
+        }
+        const idxs = tags
+          .map((t) => this.tagIndex(src, "edge", t) + 1)
+          .filter((i) => i > 0);
+        if (!idxs.length || idxs.length !== tags.length) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "curveOnFace: edge tags not resolved",
+          };
+          return null;
+        }
+        const fi = this.tagIndex(
+          tgt,
+          "face",
+          stringOfParam(node, "faceTag") ?? "",
+        );
+        if (fi < 0) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "curveOnFace: face tag not resolved",
+          };
+          return null;
+        }
+        const tjson = tgt.brep.toJSON();
+        const allV = tjson.vertices;
+        const solidC = allV.length
+          ? allV.reduce(
+              (a, q) => ({
+                x: a.x + q.x / allV.length,
+                y: a.y + q.y / allV.length,
+                z: a.z + q.z / allV.length,
+              }),
+              { x: 0, y: 0, z: 0 },
+            )
+          : { x: 0, y: 0, z: 0 };
+        const fv = tjson.faces[fi]?.vertices ?? [];
+        const raw = fv.length
+          ? fv.reduce(
+              (a, q) => ({
+                x: a.x + q.x / fv.length,
+                y: a.y + q.y / fv.length,
+                z: a.z + q.z / fv.length,
+              }),
+              { x: 0, y: 0, z: 0 },
+            )
+          : solidC;
+        let n = {
+          x: raw.x - solidC.x,
+          y: raw.y - solidC.y,
+          z: raw.z - solidC.z,
+        };
+        const nl = Math.hypot(n.x, n.y, n.z) || 1;
+        n = { x: n.x / nl, y: n.y / nl, z: n.z / nl };
+        const res = await projectCurvesBRep(
+          { brep: src.brep, position: src.position, occBrep: src.occBrep },
+          { brep: tgt.brep, position: tgt.position, occBrep: tgt.occBrep },
+          idxs,
+          n,
+        );
+        if (!res.ok) {
+          report[node.featureId] = { status: "ERROR", detail: res.reason };
+          return null;
+        }
+        return {
+          featureId: node.featureId,
+          kind: "body",
+          brep: res.value.brep,
+          occBrep: res.value.occBrep,
+          position: tgt.position,
+          edgeTags: registerEdges(res.value.brep.edges.length, node.featureId),
+          faceTags: registerFaces(res.value.brep.faces.length, node.featureId),
+          edgeGeometry: res.value.edgeGeometry,
+          faceGeometry: res.value.faceGeometry,
+          vertexPositions: res.value.vertexPositions,
+        };
       }
       case "moveFace": {
         const bodyQ = listOf(node, "targets")[0];
