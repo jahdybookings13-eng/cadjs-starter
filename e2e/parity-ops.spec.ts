@@ -403,8 +403,9 @@ test("face tags stay stable across a parameter rebuild", async ({ page }) => {
     // local bbox re-centering: faceDirs z is relative — the bottom cap is
     // the min-z face; it sits at world z=0 before AND after a depth edit.
     const dirs = s.faceDirs(boxFid) ?? [];
-    const bottomTag = dirs.reduce((a, b) => (b.center.z < a.center.z ? b : a))
-      .tag;
+    const bottomTag = dirs.reduce((a, b) =>
+      b.center.z < a.center.z ? b : a,
+    ).tag;
     s.modBox(boxFid, 3);
     await s.idle();
     const after = s.ftags(boxFid) ?? [];
