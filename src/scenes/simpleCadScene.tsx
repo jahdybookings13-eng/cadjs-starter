@@ -62,8 +62,7 @@ import {
 } from "../model/measure";
 import { scadgenHistory } from "../model/featureEngine";
 import { faceOwnerOf, scadgenExecutor } from "../model/executor";
-import type { ElementAppearance } from "../model/sceneSync";
-import { scadgenSceneSync } from "../model/sceneSync";
+import { scadgenSceneSync, type ElementAppearance } from "../model/sceneSync";
 import "../model/bootstrap";
 import { makeElementAuthor, pairNewElements } from "../model/elementAuthoring";
 
