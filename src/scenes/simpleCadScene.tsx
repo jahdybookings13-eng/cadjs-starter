@@ -64,6 +64,7 @@ import { scadgenHistory } from "../model/featureEngine";
 import { faceOwnerOf, scadgenExecutor } from "../model/executor";
 import { scadgenSceneSync, type ElementAppearance } from "../model/sceneSync";
 import { createSceneBus, type HookBag } from "../model/actionBus";
+import { loadProject, saveProject } from "../model/documentStore";
 import "../model/bootstrap";
 import { makeElementAuthor, pairNewElements } from "../model/elementAuthoring";
 
@@ -845,6 +846,8 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
               }
             : null;
         },
+        saveProject: () => saveProject(),
+        loadProject: (text?: string) => loadProject(text),
         idle: () =>
           scadgenExecutor.whenIdle().then(() => scadgenExecutor.lastReport),
       },

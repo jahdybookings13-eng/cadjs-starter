@@ -21,3 +21,15 @@ export function registerImportAsset(
 export function getImportAsset(assetId: string): ImportAsset | undefined {
   return registry.get(assetId);
 }
+
+export function allImportAssets(): ImportAsset[] {
+  return [...registry.values()];
+}
+
+export function restoreImportAsset(asset: ImportAsset): void {
+  registry.set(asset.assetId, asset);
+}
+
+export function clearImportAssets(): void {
+  registry.clear();
+}

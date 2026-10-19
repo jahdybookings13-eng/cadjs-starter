@@ -129,6 +129,8 @@ interface ScadgenDbg {
   measEdge: (fid: string) => Promise<number[] | null>;
   authoredIds: () => string[];
   configureSync: () => void;
+  saveProject: () => string;
+  loadProject: (text?: string) => number;
   bus: {
     run: (id: string, ...a: unknown[]) => unknown;
     ids: () => string[];
@@ -339,6 +341,33 @@ test("delete-face and split run on the real kernel", async ({ page }) => {
   expect(splitRes.bothBodies[1]?.endsWith("#1")).toBe(true);
 });
 
+test("project save/load round-trips the whole document", async ({ page }) => {
+  await boot(page);
+  const r = await page.evaluate(async () => {
+    const w = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      .__cadDebug.scadgen;
+    const b = w.box(0.01, 0.01, 0.01);
+    await w.idle();
+    w.setAppearance(b, { opacity: 0.5 });
+    const et = w.etags(b) ?? [];
+    w.fillet(b, [et[0] ?? ""], 0.002);
+    await w.idle();
+    const snap = w.saveProject();
+    const reloaded = w.loadProject(snap);
+    const st = await w.idle();
+    return {
+      reloaded,
+      box: st[b]?.status,
+      kept: w.appearanceOf(b),
+      len: snap.length,
+    };
+  });
+  expect(r.reloaded).toBeGreaterThanOrEqual(3);
+  expect(r.box).toBe("OK");
+  expect((r.kept as { opacity?: number } | null)?.opacity).toBe(0.5);
+  expect(r.len).toBeGreaterThan(500);
+});
+
 test("action bus is the single dispatcher for desk/VR/voice", async ({
   page,
 }) => {
@@ -346,7 +375,8 @@ test("action bus is the single dispatcher for desk/VR/voice", async ({
   const r = await page.evaluate(async () => {
     const w = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
       .__cadDebug.scadgen;
-    const idsOk = w.bus.has("fillet") && w.bus.has("thread") && w.bus.has("appearance");
+    const idsOk =
+      w.bus.has("fillet") && w.bus.has("thread") && w.bus.has("appearance");
     let threw = false;
     try {
       w.bus.run("undo");

@@ -129,6 +129,23 @@ export class ScadgenHistory {
     );
   }
 
+  serializeNodes(): ScadgenFeatureNode[] {
+    return JSON.parse(
+      JSON.stringify(this.records.map((r) => r.node)),
+    ) as ScadgenFeatureNode[];
+  }
+
+  restoreNodes(nodes: ScadgenFeatureNode[]): void {
+    this.records.length = 0;
+    this.rollbackIndex = null;
+    for (const n of nodes)
+      this.records.push({
+        node: n,
+        state: { featureStatus: "OK", inactive: false },
+      });
+    this.emit({ kind: "add", featureId: "*" });
+  }
+
   toListResponse(): FeatureListResponse {
     const states: Record<string, FeatureState> = {};
     for (const r of this.records) states[r.node.featureId] = { ...r.state };
