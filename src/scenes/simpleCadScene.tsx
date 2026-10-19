@@ -63,6 +63,7 @@ import {
 import { scadgenHistory } from "../model/featureEngine";
 import { faceOwnerOf, scadgenExecutor } from "../model/executor";
 import { scadgenSceneSync, type ElementAppearance } from "../model/sceneSync";
+import { createSceneBus, type HookBag } from "../model/actionBus";
 import "../model/bootstrap";
 import { makeElementAuthor, pairNewElements } from "../model/elementAuthoring";
 
@@ -848,6 +849,14 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
           scadgenExecutor.whenIdle().then(() => scadgenExecutor.lastReport),
       },
     };
+    {
+      const dbg = (
+        window as unknown as {
+          __cadDebug: { scadgen: Record<string, unknown> };
+        }
+      ).__cadDebug;
+      dbg.scadgen.bus = createSceneBus(dbg.scadgen as unknown as HookBag);
+    }
     return () => {
       delete (window as unknown as { __cadDebug?: object }).__cadDebug;
     };

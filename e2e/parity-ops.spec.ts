@@ -129,6 +129,12 @@ interface ScadgenDbg {
   measEdge: (fid: string) => Promise<number[] | null>;
   authoredIds: () => string[];
   configureSync: () => void;
+  bus: {
+    run: (id: string, ...a: unknown[]) => unknown;
+    ids: () => string[];
+    has: (id: string) => boolean;
+    log: Array<{ id: string; ok: boolean }>;
+  };
 }
 
 async function boot(page: import("@playwright/test").Page): Promise<void> {
@@ -331,6 +337,37 @@ test("delete-face and split run on the real kernel", async ({ page }) => {
   expect(splitRes.bothStatus).toBe("OK");
   expect(splitRes.bothBodies.length).toBe(2);
   expect(splitRes.bothBodies[1]?.endsWith("#1")).toBe(true);
+});
+
+test("action bus is the single dispatcher for desk/VR/voice", async ({
+  page,
+}) => {
+  await boot(page);
+  const r = await page.evaluate(async () => {
+    const w = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      .__cadDebug.scadgen;
+    const idsOk = w.bus.has("fillet") && w.bus.has("thread") && w.bus.has("appearance");
+    let threw = false;
+    try {
+      w.bus.run("undo");
+    } catch {
+      threw = true;
+    }
+    const fid = w.bus.run("createPlane", [0, 0, 1], [0, 0, 1]) as string;
+    const st = await w.idle();
+    return {
+      idsOk,
+      threw,
+      plane: st[fid]?.status,
+      logged: w.bus.log.filter((e) => e.id === "createPlane").at(-1)?.ok,
+      n: w.bus.ids().length,
+    };
+  });
+  expect(r.idsOk).toBe(true);
+  expect(r.threw).toBe(true);
+  expect(r.plane).toBe("OK");
+  expect(r.logged).toBe(true);
+  expect(r.n).toBeGreaterThan(30);
 });
 
 test("appearance is tree data: applies live and survives rebuild", async ({
