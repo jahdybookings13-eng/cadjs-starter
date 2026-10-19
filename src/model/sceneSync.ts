@@ -19,6 +19,11 @@ const COMMITTABLE = new Set([
   "insertedBody",
 ]);
 
+export interface ElementAppearance {
+  color?: string | undefined;
+  opacity?: number | undefined;
+}
+
 export interface SceneSyncCore {
   postCreate?: (nodeId: string, out: BodyOutput) => void;
   createElement?: (
@@ -26,6 +31,7 @@ export interface SceneSyncCore {
     position: THREE.Vector3,
   ) => string | null | undefined;
   setElementHidden?: (nodeId: string, hidden: boolean) => void;
+  setElementAppearance?: (nodeId: string, ap: ElementAppearance) => void;
   updateElementBrep: (
     nodeId: string,
     brep: Brep,
@@ -74,6 +80,46 @@ export class ScadgenSceneSync {
       if (id === from) this.authored.set(fid, to);
     }
     if (this.hiddenBySync.delete(from)) this.hiddenBySync.add(to);
+  }
+
+  applyAppearance(featureId: string, ap: ElementAppearance): number {
+    if (!this.core) return 0;
+    const id = this.elementOf(featureId);
+    if (!id) return 0;
+    this.core.setElementAppearance?.(id, ap);
+    return 1;
+  }
+
+  elementOf(featureId: string): string | null {
+    const node = this.history?.get(featureId);
+    return (
+      this.authored.get(featureId) ??
+      (node ? this.resolveTargetElementId(node) : undefined) ??
+      null
+    );
+  }
+
+  /**
+   * Appearance lives on the FEATURE NODE (tree data, node.extensions.
+   * appearance) and is re-applied to freshly-created meshes after every
+   * rebuild - Onshape semantics: appearances are model data, not view state.
+   */
+  applyAppearances(): void {
+    if (!this.core || !this.history) return;
+    for (const node of this.history.evaluatedNodes()) {
+      const ap = (
+        node.extensions as { appearance?: ElementAppearance } | undefined
+      )?.appearance;
+      if (!ap) continue;
+      const ids = [
+        this.resolveTargetElementId(node),
+        this.authored.get(node.featureId),
+        ...[...this.authored.entries()]
+          .filter(([k]) => k.startsWith(`${node.featureId}#`))
+          .map(([, v]) => v),
+      ].filter((v): v is string => typeof v === "string");
+      for (const id of new Set(ids)) this.core.setElementAppearance?.(id, ap);
+    }
   }
 
   forget(featureId: string): void {
@@ -158,6 +204,8 @@ export class ScadgenSceneSync {
         this.hiddenBySync.delete(id);
       }
     }
+
+    this.applyAppearances();
   };
 
   toolElementIds(node: ScadgenFeatureNode): string[] {

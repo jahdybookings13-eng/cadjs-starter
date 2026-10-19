@@ -1,4 +1,9 @@
 import React, { useRef, useEffect, useState, useMemo } from "react";
+import type {
+  Mesh as ThreeMesh,
+  MeshStandardMaterial as ThreeMat,
+  Object3D as ThreeObj,
+} from "three";
 import {
   HELPERS,
   SceneMode,
@@ -57,6 +62,7 @@ import {
 } from "../model/measure";
 import { scadgenHistory } from "../model/featureEngine";
 import { faceOwnerOf, scadgenExecutor } from "../model/executor";
+import type { ElementAppearance } from "../model/sceneSync";
 import { scadgenSceneSync } from "../model/sceneSync";
 import "../model/bootstrap";
 import { makeElementAuthor, pairNewElements } from "../model/elementAuthoring";
@@ -211,6 +217,31 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
               setElementHidden: (id, hidden) => {
                 const o = getObject(id);
                 if (o) o.visible = !hidden;
+              },
+              setElementAppearance: (id, ap) => {
+                const o = getObject(id) as ThreeObj | undefined;
+                if (!o) return;
+                o.traverse((child) => {
+                  const mesh = child as ThreeMesh & {
+                    isMesh?: boolean;
+                    material?: ThreeMat | ThreeMat[];
+                  };
+                  if (!mesh.isMesh) return;
+                  const mats = Array.isArray(mesh.material)
+                    ? mesh.material
+                    : [mesh.material];
+                  for (const mm of mats) {
+                    if (!mm) continue;
+                    if (ap.color !== undefined)
+                      (mm as ThreeMat).color.set(ap.color!);
+                    if (ap.opacity !== undefined) {
+                      mm.opacity = ap.opacity;
+                      mm.transparent = ap.opacity < 1;
+                      mm.depthWrite = ap.opacity >= 1;
+                    }
+                    mm.needsUpdate = true;
+                  }
+                });
               },
             },
             scadgenHistory,
@@ -502,6 +533,44 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
             ),
           );
           return nf;
+        },
+        setAppearance: (
+          fid: string,
+          ap: { color?: string; opacity?: number },
+        ) => {
+          const n = scadgenHistory.get(fid);
+          if (!n) return false;
+          n.extensions = {
+            ...(n.extensions as Record<string, unknown> | undefined),
+            appearance: ap,
+          };
+          scadgenHistory.touch(fid);
+          scadgenSceneSync.applyAppearance(fid, ap);
+          return true;
+        },
+        appearanceOf: (fid: string) => {
+          const n = scadgenHistory.get(fid);
+          return (
+            (n?.extensions as { appearance?: unknown } | undefined)
+              ?.appearance ?? null
+          );
+        },
+        materialOf: (fid: string) => {
+          const el = scadgenSceneSync.elementOf(fid);
+          if (!el) return null;
+          const o = getObject(el) as ThreeObj | undefined;
+          let out: { color: string; opacity: number } | null = null;
+          o?.traverse((c) => {
+            const mm = c as ThreeMesh & { isMesh?: boolean };
+            if (!out && mm.isMesh && !Array.isArray(mm.material)) {
+              const m2 = mm.material as ThreeMat;
+              out = {
+                color: `#${m2.color.getHexString()}`,
+                opacity: m2.opacity,
+              };
+            }
+          });
+          return out;
         },
         unfold: (sourceFid: string, foldFids: string[]) => {
           const folds = foldFids

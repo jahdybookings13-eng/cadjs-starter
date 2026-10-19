@@ -32,6 +32,8 @@ describe("operation menu (Onshape port)", () => {
     expect(fl?.status).toBe("ready");
     const shell = m.find((o) => o.id === "shell");
     expect(shell?.status).toBe("ready");
+    const app = m.find((o) => o.id === "appearance");
+    expect(app?.status).toBe("ready");
   });
   it("plane face offers sketch+extrude+revolve+move-face+delete-face+section ready", () => {
     expect(allowedOperations("plane-face").map((o) => o.id)).toEqual([

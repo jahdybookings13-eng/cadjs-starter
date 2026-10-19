@@ -68,6 +68,12 @@ interface ScadgenDbg {
   ) => string;
   delFace: (fid: string, tag: string) => string;
   moveFace: (fid: string, tag: string, d: number) => string;
+  setAppearance: (
+    fid: string,
+    ap: { color?: string; opacity?: number },
+  ) => boolean;
+  appearanceOf: (fid: string) => { color?: string; opacity?: number } | null;
+  materialOf: (fid: string) => { color: string; opacity: number } | null;
   unfold: (sourceFid: string, foldFids: string[]) => string;
   hem: (
     fid: string,
@@ -325,6 +331,35 @@ test("delete-face and split run on the real kernel", async ({ page }) => {
   expect(splitRes.bothStatus).toBe("OK");
   expect(splitRes.bothBodies.length).toBe(2);
   expect(splitRes.bothBodies[1]?.endsWith("#1")).toBe(true);
+});
+
+test("appearance is tree data: applies live and survives rebuild", async ({
+  page,
+}) => {
+  await boot(page);
+  const r = await page.evaluate(async () => {
+    const w = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      .__cadDebug.scadgen;
+    const b = w.box(0.01, 0.01, 0.01);
+    await w.idle();
+    const ok1 = w.setAppearance(b, { opacity: 0.4, color: "#ff3300" });
+    await w.idle();
+    const m1 = w.materialOf(b);
+    w.modBox(b, 0.02);
+    await w.idle();
+    const m2 = w.materialOf(b);
+    return {
+      ok1,
+      m1,
+      m2,
+      stored: w.appearanceOf(b),
+    };
+  });
+  expect(r.ok1).toBe(true);
+  expect(r.m1?.opacity).toBeCloseTo(0.4, 2);
+  expect(r.m1?.color).toBe("#ff3300");
+  expect(r.m2?.opacity).toBeCloseTo(0.4, 2);
+  expect((r.stored as { opacity?: number })?.opacity).toBe(0.4);
 });
 
 test("rounded flange + flat pattern unfold produce the net", async ({

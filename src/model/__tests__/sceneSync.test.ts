@@ -8,7 +8,7 @@ import {
   buildSketchNode,
   provenanceForFeature,
 } from "../onshapeHistory";
-import { scadgenSceneSync } from "../sceneSync";
+import { scadgenSceneSync, type ElementAppearance } from "../sceneSync";
 
 describe("sceneSync boolean consumption", () => {
   const calls: Array<[string, boolean]> = [];
@@ -150,5 +150,81 @@ describe("sceneSync boolean consumption", () => {
       Fbl: { status: "ERROR" },
     });
     expect(calls).toContainEqual(["NODE_Fsk_B", false]);
+  });
+});
+
+describe("appearance-as-tree-data", () => {
+  const applied: Array<[string, ElementAppearance]> = [];
+  const coreA = {
+    updateElementBrep: () => {},
+    setElementHidden: () => {},
+    setElementAppearance: (id: string, ap: ElementAppearance) => {
+      applied.push([id, ap]);
+    },
+  };
+  const h2 = new ScadgenHistory();
+  const mk2 = (fid: string) => {
+    const n = buildSketchNode(fid, fid, ["ln1"], null, {
+      id: fid,
+      plane: {
+        type: "XY" as const,
+        origin: [0, 0, 0],
+        normal: [0, 0, 1],
+        xAxis: [1, 0, 0],
+        yAxis: [0, 1, 0],
+      },
+      primitives: [],
+      constraints: [],
+    });
+    n.extensions = { elementNodeId: "NODE_" + fid };
+    return n;
+  };
+  it("re-appearance flows through rebuild onto the committed element", async () => {
+    await scadgenExecutor.whenIdle();
+    applied.length = 0;
+    h2.add(mk2("AF"));
+    const bodyNode = mk2("AB");
+    h2.add(bodyNode);
+    h2.add(
+      buildBooleanNode(
+        "AX",
+        "X",
+        [provenanceForFeature("AF", "FACE", "")],
+        [provenanceForFeature("AB", "FACE", "")],
+        "ADD",
+      ),
+    );
+    const xn = h2.get("AX")!;
+    xn.extensions = { appearance: { opacity: 0.4, color: "#ff0000" } };
+    scadgenSceneSync.configure(coreA, h2);
+    scadgenSceneSync.bindExecutor(scadgenExecutor);
+    scadgenExecutor.attach(h2);
+    scadgenExecutor.outputs.clear();
+    const b2 = new Brep([], [], []);
+    scadgenExecutor.outputs.set("AF", {
+      featureId: "AF",
+      kind: "body",
+      brep: b2,
+      position: new THREE.Vector3(),
+      edgeTags: [],
+      faceTags: [],
+    });
+    scadgenExecutor.outputs.set("AB", {
+      ...scadgenExecutor.outputs.get("AF")!,
+      featureId: "AB",
+    });
+    scadgenExecutor.outputs.set("AX", {
+      ...scadgenExecutor.outputs.get("AF")!,
+      featureId: "AX",
+    });
+    scadgenSceneSync.onRebuilt({
+      AF: { status: "OK" },
+      AB: { status: "OK" },
+      AX: { status: "OK" },
+    });
+    expect(applied).toContainEqual([
+      "NODE_AF",
+      { opacity: 0.4, color: "#ff0000" },
+    ]);
   });
 });

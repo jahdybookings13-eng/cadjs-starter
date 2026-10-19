@@ -127,6 +127,13 @@ const P_CURVE_PATTERN = op(
   "pattern",
   "patternType=curve: equal-arc path sampling, optional tangent align",
 );
+const P_APPEARANCE = op(
+  "appearance",
+  "Appearance",
+  "ready",
+  null,
+  "per-feature color/opacity stored on the feature node (tree data); re-applied after every rebuild",
+);
 const P_FITNESS = op(
   "feature-pattern",
   "Pattern Features",
@@ -264,6 +271,7 @@ export const MENU_BY_SELECTION: Record<SelectionKind, MenuOp[]> = {
     P_THREAD,
     P_SHEET,
     P_WRAP,
+    P_APPEARANCE,
   ],
   "plane-face": [
     READY_SKETCH,

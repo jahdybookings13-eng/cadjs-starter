@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import * as THREE from "three";
+import type { Mesh, MeshStandardMaterial } from "three";
 import { useCadVisualizer, useCadCore } from "@vitekk02/cadjs/react";
 import {
   SceneMode,
@@ -145,6 +146,31 @@ export function useVRSession() {
         setElementHidden: (nodeId, hidden) => {
           const obj = getObject(nodeId);
           if (obj) obj.visible = hidden ? false : true;
+        },
+        setElementAppearance: (nodeId, ap) => {
+          const obj = getObject(nodeId);
+          if (!obj) return;
+          obj.traverse((child) => {
+            const mesh = child as Mesh & {
+              isMesh?: boolean;
+              material?: MeshStandardMaterial | MeshStandardMaterial[];
+            };
+            if (!mesh.isMesh) return;
+            const mats = Array.isArray(mesh.material)
+              ? mesh.material
+              : [mesh.material];
+            for (const mmb of mats) {
+              if (!mmb) continue;
+              const mm = mmb as MeshStandardMaterial;
+              if (ap.color !== undefined) mm.color.set(ap.color);
+              if (ap.opacity !== undefined) {
+                mm.opacity = ap.opacity;
+                mm.transparent = ap.opacity < 1;
+                mm.depthWrite = ap.opacity >= 1;
+              }
+              mm.needsUpdate = true;
+            }
+          });
         },
       },
       scadgenHistory,
