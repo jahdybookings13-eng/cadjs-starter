@@ -849,6 +849,82 @@ export function buildFlangeNode(
   };
 }
 
+export function buildHemNode(
+  featureId: string,
+  name: string,
+  sourceFeatureId: string,
+  edgeTag: string,
+  thickness: number,
+  lip: number,
+  relief = 0,
+): ScadgenFeatureNode {
+  return {
+    featureId,
+    featureType: "hem",
+    name,
+    namespace: "",
+    parameters: [
+      {
+        kind: "queryList",
+        parameterId: "entities",
+        queries: [faceQ(sourceFeatureId, "*")],
+      },
+      { kind: "string", parameterId: "edgeTag", value: edgeTag },
+      {
+        kind: "quantity",
+        parameterId: "thickness",
+        value: thickness,
+        units: "m",
+        expression: formatQuantityExpression(thickness, "m"),
+      },
+      {
+        kind: "quantity",
+        parameterId: "lip",
+        value: lip,
+        units: "m",
+        expression: formatQuantityExpression(lip, "m"),
+      },
+      {
+        kind: "quantity",
+        parameterId: "relief",
+        value: relief,
+        units: "m",
+        expression: formatQuantityExpression(relief, "m"),
+      },
+    ],
+    subFeatures: [],
+    suppressed: false,
+  };
+}
+
+export function buildWrapNode(
+  featureId: string,
+  name: string,
+  targetFeatureId: string,
+  polylines: number[][][],
+): ScadgenFeatureNode {
+  return {
+    featureId,
+    featureType: "wrap",
+    name,
+    namespace: "",
+    parameters: [
+      {
+        kind: "queryList",
+        parameterId: "targets",
+        queries: [faceQ(targetFeatureId, "*")],
+      },
+      {
+        kind: "string",
+        parameterId: "polylines",
+        value: JSON.stringify(polylines),
+      },
+    ],
+    subFeatures: [],
+    suppressed: false,
+  };
+}
+
 export function buildMoveFaceNode(
   featureId: string,
   name: string,

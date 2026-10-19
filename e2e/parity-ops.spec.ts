@@ -68,6 +68,14 @@ interface ScadgenDbg {
   ) => string;
   delFace: (fid: string, tag: string) => string;
   moveFace: (fid: string, tag: string, d: number) => string;
+  hem: (
+    fid: string,
+    edgeTag: string,
+    thickness?: number,
+    lip?: number,
+    relief?: number,
+  ) => string;
+  wrap: (fid: string, polylines: number[][][]) => string;
   flange: (
     fid: string,
     edgeTag: string,
@@ -315,6 +323,45 @@ test("delete-face and split run on the real kernel", async ({ page }) => {
   expect(splitRes.bothStatus).toBe("OK");
   expect(splitRes.bothBodies.length).toBe(2);
   expect(splitRes.bothBodies[1]?.endsWith("#1")).toBe(true);
+});
+
+test("hem double-folds a sheet edge; wrap maps curves onto a cylinder", async ({
+  page,
+}) => {
+  await boot(page);
+  const r = await page.evaluate(async () => {
+    const w = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      .__cadDebug.scadgen;
+    const plate = w.box(0.02, 0.02, 0.002);
+    const cyl = w.cylinder(0.005, 0.02);
+    await w.idle();
+    const et = w.etags(plate) ?? [];
+    const hm = w.hem(plate, et[0] ?? "", 0.002, 0.008, 0.0008);
+    const half = Math.PI * 0.005;
+    const wr = w.wrap(cyl, [
+      [
+        [0, 0.004],
+        [half, 0.008],
+        [half * 2, 0.012],
+      ],
+    ]);
+    const bad = w.hem(plate, "nope_E7", 0.002);
+    const st = await w.idle();
+    return {
+      hem: st[hm]?.status,
+      hemFaces: w.tags(hm)?.faces ?? 0,
+      plateFaces: w.tags(plate)?.faces ?? 0,
+      wrap: st[wr]?.status,
+      wrapDetail: st[wr]?.detail,
+      wrapEdges: w.tags(wr)?.edges ?? 0,
+      bad: st[bad]?.status,
+    };
+  });
+  expect(r.hem).toBe("OK");
+  expect(r.hemFaces).toBeGreaterThan(r.plateFaces);
+  expect(r.wrap).toBe("OK");
+  expect(r.wrapEdges).toBeGreaterThanOrEqual(1);
+  expect(r.bad).toBe("ERROR");
 });
 
 test("flange bends a sheet edge up into an L-bracket", async ({ page }) => {

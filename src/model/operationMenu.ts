@@ -190,7 +190,13 @@ const P_SURFACE = op(
   "surface",
   "ThruSections-ruled, MakeFilling patches, planar normal-offset refill",
 );
-const P_WRAP = op("wrap", "Wrap", "deferred", null, "tier 6");
+const P_WRAP = op(
+  "wrap",
+  "Wrap",
+  "ready",
+  "wrap",
+  "curve mode v1: unfolded (arc,height) polylines mapped onto the target cylinder as on-surface wires; cut/emboss modes follow the helix rebuild",
+);
 const P_THREAD = op(
   "thread",
   "Thread",
@@ -200,10 +206,10 @@ const P_THREAD = op(
 );
 const P_SHEET = op(
   "sheet-metal",
-  "Sheet Metal",
-  "deferred",
-  null,
-  "tier 7 backlog",
+  "Flange",
+  "ready",
+  "flange",
+  "sheet-metal v1: flange + relief + two-stage Z-hem (unfold deferred)",
 );
 const P_DERIVED = op(
   "derived",

@@ -34,6 +34,8 @@ import {
   buildDatumSketchExtrudeNodes,
   buildFeaturePatternNode,
   buildFlangeNode,
+  buildHemNode,
+  buildWrapNode,
   buildThreadNode,
   buildScaleNode,
   buildShellNode,
@@ -475,6 +477,32 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
         thicken: (fid: string, tag: string, t: number) => {
           const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
           scadgenHistory.add(buildThickenNode(nf, "Thicken", fid, [tag], t));
+          return nf;
+        },
+        hem: (
+          fid: string,
+          edgeTag: string,
+          thickness?: number,
+          lip?: number,
+          relief?: number,
+        ) => {
+          const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          scadgenHistory.add(
+            buildHemNode(
+              nf,
+              "Hem",
+              fid,
+              edgeTag,
+              thickness ?? 0.001,
+              lip ?? 0.004,
+              relief ?? 0.0004,
+            ),
+          );
+          return nf;
+        },
+        wrap: (fid: string, polylines: number[][][]) => {
+          const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          scadgenHistory.add(buildWrapNode(nf, "Wrap", fid, polylines));
           return nf;
         },
         flange: (

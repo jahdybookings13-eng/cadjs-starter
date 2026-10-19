@@ -29,6 +29,8 @@ import {
   moveFaceBRep,
   thickenBRep,
   flangeBRep,
+  hemBRep,
+  wrapCurvesBRep,
   threadBRep,
   projectCurvesBRep,
   surfaceOpBRep,
@@ -1766,6 +1768,218 @@ export class ScadgenExecutor {
         report[node.featureId] = { status: "OK" };
         return null;
       }
+      case "hem": {
+        const srcQ = listOf(node, "entities")[0];
+        const src = srcQ ? this.resolve(srcQ) : undefined;
+        if (!src) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "hem: source not resolved",
+          };
+          return null;
+        }
+        const ei = this.tagIndex(
+          src,
+          "edge",
+          stringOfParam(node, "edgeTag") ?? "",
+        );
+        const json = src.brep.toJSON();
+        const edge = ei >= 0 ? json.edges[ei] : undefined;
+        if (!edge) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "hem: fold edge tag not resolved",
+          };
+          return null;
+        }
+        const pos = src.position;
+        const p1 = {
+          x: edge.start.x + pos.x,
+          y: edge.start.y + pos.y,
+          z: edge.start.z + pos.z,
+        };
+        const line = {
+          x: edge.end.x - edge.start.x,
+          y: edge.end.y - edge.start.y,
+          z: edge.end.z - edge.start.z,
+        };
+        const ll = Math.hypot(line.x, line.y, line.z);
+        if (ll < 1e-9) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "hem: degenerate fold line",
+          };
+          return null;
+        }
+        const u = { x: line.x / ll, y: line.y / ll, z: line.z / ll };
+        const vs = json.vertices;
+        const c = vs.length
+          ? vs.reduce(
+              (acc, q) => ({
+                x: acc.x + q.x / vs.length,
+                y: acc.y + q.y / vs.length,
+                z: acc.z + q.z / vs.length,
+              }),
+              { x: 0, y: 0, z: 0 },
+            )
+          : { x: 0, y: 0, z: 0 };
+        const mid = {
+          x: (edge.start.x + edge.end.x) / 2 + pos.x,
+          y: (edge.start.y + edge.end.y) / 2 + pos.y,
+          z: (edge.start.z + edge.end.z) / 2 + pos.z,
+        };
+        const rx = mid.x - (c.x + pos.x),
+          ry = mid.y - (c.y + pos.y),
+          rz = mid.z - (c.z + pos.z);
+        const rd = rx * u.x + ry * u.y + rz * u.z;
+        let bx = rx - u.x * rd,
+          by = ry - u.y * rd,
+          bz = rz - u.z * rd;
+        const bl = Math.hypot(bx, by, bz) || 1;
+        bx /= bl;
+        by /= bl;
+        bz /= bl;
+        const thickness = quantityOf(node, "thickness", this.scope) ?? 0.001;
+        const lip = quantityOf(node, "lip", this.scope) ?? thickness * 6;
+        const relief = quantityOf(node, "relief", this.scope) ?? 0;
+        const res = await hemBRep(
+          src.brep,
+          pos,
+          {
+            origin: p1,
+            bendDir: { x: bx, y: by, z: bz },
+            bendLineDir: u,
+            thickness,
+            lip,
+            relief,
+          },
+          src.occBrep,
+        );
+        if (!res.ok) {
+          report[node.featureId] = { status: "ERROR", detail: res.reason };
+          return null;
+        }
+        return {
+          featureId: node.featureId,
+          kind: "body",
+          brep: res.value.brep,
+          occBrep: res.value.occBrep,
+          position: pos.clone(),
+          planeNormal: src.planeNormal,
+          edgeTags: registerEdges(res.value.brep.edges.length, node.featureId),
+          faceTags: registerFaces(res.value.brep.faces.length, node.featureId),
+          edgeGeometry: res.value.edgeGeometry,
+          faceGeometry: res.value.faceGeometry,
+          vertexPositions: res.value.vertexPositions,
+        };
+      }
+      case "wrap": {
+        const tgtQ = listOf(node, "targets")[0];
+        const tgt = tgtQ ? this.resolve(tgtQ) : undefined;
+        if (!tgt) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "wrap: target not resolved",
+          };
+          return null;
+        }
+        let polys: number[][][] = [];
+        try {
+          const parsed: unknown = JSON.parse(
+            stringOfParam(node, "polylines") ?? "[]",
+          );
+          if (Array.isArray(parsed)) polys = parsed as number[][][];
+        } catch {
+          polys = [];
+        }
+        if (polys.length < 1) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "wrap: no polylines",
+          };
+          return null;
+        }
+        const tj = tgt.brep.toJSON();
+        const tpos = tgt.position;
+        const aRaw = tgt.planeNormal ?? [0, 0, 1];
+        const alen = Math.hypot(aRaw[0], aRaw[1], aRaw[2]) || 1;
+        const a = {
+          x: aRaw[0] / alen,
+          y: aRaw[1] / alen,
+          z: aRaw[2] / alen,
+        };
+        const proj = tj.vertices.map((q) => {
+          const wx = q.x + tpos.x,
+            wy = q.y + tpos.y,
+            wz = q.z + tpos.z;
+          const h = wx * a.x + wy * a.y + wz * a.z;
+          return {
+            h,
+            r: Math.hypot(wx - a.x * h, wy - a.y * h, wz - a.z * h),
+            px: wx - a.x * h,
+            py: wy - a.y * h,
+            pz: wz - a.z * h,
+          };
+        });
+        const bin = 2e-4;
+        const counts = new Map<number, number>();
+        for (const p of proj) {
+          const b = Math.round(p.r / bin);
+          counts.set(b, (counts.get(b) ?? 0) + 1);
+        }
+        let best: [number, number] = [0, 0];
+        for (const [b, cn] of counts) if (cn > best[1]) best = [b, cn];
+        if (best[1] < 6) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "wrap: no cylindrical surface on target",
+          };
+          return null;
+        }
+        const radius = best[0] * bin;
+        const band = proj.filter((p) => Math.abs(p.r - radius) < bin * 1.5);
+        const axisPt = {
+          x: band.reduce((acc, p) => acc + p.px, 0) / band.length,
+          y: band.reduce((acc, p) => acc + p.py, 0) / band.length,
+          z: band.reduce((acc, p) => acc + p.pz, 0) / band.length,
+        };
+        const hMin = Math.min(...band.map((p) => p.h));
+        const origin = {
+          x: axisPt.x + a.x * hMin,
+          y: axisPt.y + a.y * hMin,
+          z: axisPt.z + a.z * hMin,
+        };
+        const shifted = polys.map((pl) =>
+          pl.map((row) => [Number(row[0] ?? 0), Number(row[1] ?? 0) + hMin]),
+        );
+        const res = await wrapCurvesBRep(
+          tgt.brep,
+          tpos,
+          {
+            axisOrigin: origin,
+            axisDir: a,
+            radius,
+            polylines: shifted,
+          },
+          tgt.occBrep,
+        );
+        if (!res.ok) {
+          report[node.featureId] = { status: "ERROR", detail: res.reason };
+          return null;
+        }
+        return {
+          featureId: node.featureId,
+          kind: "body",
+          brep: res.value.brep,
+          occBrep: res.value.occBrep,
+          position: tpos.clone(),
+          edgeTags: registerEdges(res.value.brep.edges.length, node.featureId),
+          faceTags: registerFaces(res.value.brep.faces.length, node.featureId),
+          edgeGeometry: res.value.edgeGeometry,
+          faceGeometry: res.value.faceGeometry,
+          vertexPositions: res.value.vertexPositions,
+        };
+      }
       case "flange": {
         const srcQ = listOf(node, "entities")[0];
         const src = srcQ ? this.resolve(srcQ) : undefined;
@@ -1839,8 +2053,7 @@ export class ScadgenExecutor {
         by /= bl;
         bz /= bl;
         const angle = quantityOf(node, "angle", this.scope) ?? Math.PI / 2;
-        const thickness =
-          quantityOf(node, "thickness", this.scope) ?? 0.001;
+        const thickness = quantityOf(node, "thickness", this.scope) ?? 0.001;
         const relief = quantityOf(node, "relief", this.scope) ?? 0;
         const res = await flangeBRep(
           src.brep,
