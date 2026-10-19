@@ -809,6 +809,7 @@ export function buildFlangeNode(
   angleRad: number,
   thickness: number,
   relief = 0,
+  radius = 0,
 ): ScadgenFeatureNode {
   return {
     featureId,
@@ -857,6 +858,7 @@ export function buildHemNode(
   thickness: number,
   lip: number,
   relief = 0,
+  radius = 0,
 ): ScadgenFeatureNode {
   return {
     featureId,
@@ -891,6 +893,42 @@ export function buildHemNode(
         units: "m",
         expression: formatQuantityExpression(relief, "m"),
       },
+      {
+        kind: "quantity",
+        parameterId: "radius",
+        value: radius,
+        units: "m",
+        expression: formatQuantityExpression(radius, "m"),
+      },
+    ],
+    subFeatures: [],
+    suppressed: false,
+  };
+}
+
+export function buildUnfoldNode(
+  featureId: string,
+  name: string,
+  sourceFeatureId: string,
+  folds: {
+    angle: number;
+    length: number;
+    thickness: number;
+    radius?: number;
+  }[],
+): ScadgenFeatureNode {
+  return {
+    featureId,
+    featureType: "unfold",
+    name,
+    namespace: "",
+    parameters: [
+      {
+        kind: "queryList",
+        parameterId: "entities",
+        queries: [faceQ(sourceFeatureId, "*")],
+      },
+      { kind: "string", parameterId: "folds", value: JSON.stringify(folds) },
     ],
     subFeatures: [],
     suppressed: false,

@@ -209,7 +209,7 @@ const P_SHEET = op(
   "Flange",
   "ready",
   "flange",
-  "sheet-metal v1: flange + relief + two-stage Z-hem (unfold deferred)",
+  "sheet-metal v1: flange + radius + relief + two-stage Z-hem + flat pattern (unfold)",
 );
 const P_DERIVED = op(
   "derived",

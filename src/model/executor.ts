@@ -43,7 +43,7 @@ import {
   type ParityResult,
 } from "@vitekk02/cadjs";
 import { getImportAsset } from "./assets";
-import { cloneFeatureNodes } from "./primitives";
+import { buildBoxNodes, cloneFeatureNodes } from "./primitives";
 import {
   resolveThread,
   type ThreadSpec,
@@ -1852,6 +1852,7 @@ export class ScadgenExecutor {
             thickness,
             lip,
             relief,
+            radius: quantityOf(node, "radius", this.scope) ?? 0,
           },
           src.occBrep,
         );
@@ -1871,6 +1872,82 @@ export class ScadgenExecutor {
           edgeGeometry: res.value.edgeGeometry,
           faceGeometry: res.value.faceGeometry,
           vertexPositions: res.value.vertexPositions,
+        };
+      }
+      case "unfold": {
+        const srcQ = listOf(node, "entities")[0];
+        const src = srcQ ? this.resolve(srcQ) : undefined;
+        if (!src) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "unfold: source not resolved",
+          };
+          return null;
+        }
+        let folds: {
+          angle: number;
+          length: number;
+          thickness: number;
+          radius?: number;
+        }[] = [];
+        try {
+          const parsed: unknown = JSON.parse(
+            stringOfParam(node, "folds") ?? "[]",
+          );
+          if (Array.isArray(parsed)) folds = parsed as typeof folds;
+        } catch {
+          folds = [];
+        }
+        if (!folds.length) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "unfold: no fold parameters",
+          };
+          return null;
+        }
+        const verts = src.brep.toJSON().vertices;
+        const ys = verts.map((q) => q.y);
+        const xs = verts.map((q) => q.x);
+        const baseY = ys.length ? Math.max(...ys) - Math.min(...ys) : 0;
+        const baseX = xs.length ? Math.max(...xs) - Math.min(...xs) : 0;
+        // Flat length along the neutral axis: straight legs measured
+        // tangent-to-tangent plus neutral-fibre arcs. Sharp folds (r=0)
+        // keep the leg length (setback model documented).
+        let flat = baseY;
+        for (const f of folds) {
+          const th = Math.abs(f.angle);
+          const r = f.radius ?? 0;
+          const Rm = r + f.thickness / 2;
+          const bTan = Rm * Math.tan(th / 2);
+          const straight = Math.max(f.length - bTan, 0);
+          flat += straight + Rm * th;
+        }
+        const t0 = folds[0]!.thickness;
+        const plate = buildBoxNodes(
+          node.featureId,
+          "Flat pattern",
+          flat,
+          baseX,
+          t0,
+        );
+        let last: BodyOutput | null = null;
+        for (const cn of plate) {
+          const out = await this.execute(cn, report);
+          if (out) {
+            this.outputs.set(out.featureId, out);
+            if (out.kind === "body") last = out;
+          }
+        }
+        if (!last) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "unfold: flat plate build failed",
+          };
+          return null;
+        }
+        return {
+          ...last,
+          featureId: node.featureId,
         };
       }
       case "wrap": {
@@ -2065,6 +2142,7 @@ export class ScadgenExecutor {
             angle,
             thickness,
             relief,
+            radius: quantityOf(node, "radius", this.scope) ?? 0,
           },
           src.occBrep,
         );

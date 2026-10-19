@@ -35,6 +35,7 @@ import {
   buildFeaturePatternNode,
   buildFlangeNode,
   buildHemNode,
+  buildUnfoldNode,
   buildWrapNode,
   buildThreadNode,
   buildScaleNode,
@@ -485,6 +486,7 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
           thickness?: number,
           lip?: number,
           relief?: number,
+          radius?: number,
         ) => {
           const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
           scadgenHistory.add(
@@ -496,7 +498,34 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
               thickness ?? 0.001,
               lip ?? 0.004,
               relief ?? 0.0004,
+              radius ?? 0,
             ),
+          );
+          return nf;
+        },
+        unfold: (sourceFid: string, foldFids: string[]) => {
+          const folds = foldFids
+            .map((f) => scadgenHistory.get(f))
+            .filter((n): n is NonNullable<typeof n> => !!n)
+            .map((n) => {
+              const q = (id: string, dflt = 0) => {
+                const p0 = n.parameters.find(
+                  (pp) => pp.kind === "quantity" && pp.parameterId === id,
+                ) as { value?: number } | undefined;
+                return typeof p0?.value === "number" ? p0.value : dflt;
+              };
+              const isHem = n.featureType === "hem";
+              return {
+                angle: isHem ? Math.PI / 2 : q("angle", Math.PI / 2),
+                length: isHem ? q("lip", 0.004) * 1.8 : q("length", 0),
+                thickness: q("thickness", 0.001),
+                radius: q("radius", 0),
+              };
+            });
+          if (!folds.length) return "";
+          const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          scadgenHistory.add(
+            buildUnfoldNode(nf, "Flat Pattern", sourceFid, folds),
           );
           return nf;
         },
@@ -511,6 +540,7 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
           angleDeg: number,
           thickness?: number,
           relief?: number,
+          radius?: number,
         ) => {
           const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
           scadgenHistory.add(
@@ -522,6 +552,7 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
               (angleDeg * Math.PI) / 180,
               thickness ?? 0.001,
               relief ?? 0,
+              radius ?? 0,
             ),
           );
           return nf;

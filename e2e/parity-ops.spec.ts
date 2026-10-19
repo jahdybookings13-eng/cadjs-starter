@@ -68,6 +68,7 @@ interface ScadgenDbg {
   ) => string;
   delFace: (fid: string, tag: string) => string;
   moveFace: (fid: string, tag: string, d: number) => string;
+  unfold: (sourceFid: string, foldFids: string[]) => string;
   hem: (
     fid: string,
     edgeTag: string,
@@ -82,6 +83,7 @@ interface ScadgenDbg {
     angleDeg: number,
     thickness?: number,
     relief?: number,
+    radius?: number,
   ) => string;
   featurePattern: (
     srcFids: string[],
@@ -323,6 +325,33 @@ test("delete-face and split run on the real kernel", async ({ page }) => {
   expect(splitRes.bothStatus).toBe("OK");
   expect(splitRes.bothBodies.length).toBe(2);
   expect(splitRes.bothBodies[1]?.endsWith("#1")).toBe(true);
+});
+
+test("rounded flange + flat pattern unfold produce the net", async ({
+  page,
+}) => {
+  await boot(page);
+  const r = await page.evaluate(async () => {
+    const w = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      .__cadDebug.scadgen;
+    const plate = w.box(0.02, 0.01, 0.002);
+    await w.idle();
+    const et = w.etags(plate) ?? [];
+    const ft = w.flange(plate, et[0] ?? "", 90, 0.002, 0, 0.001);
+    const st0 = await w.idle();
+    const fl = w.unfold(plate, [ft]);
+    const st = await w.idle();
+    return {
+      rounded: st0[ft]?.status,
+      unfold: st[fl]?.status,
+      detail: st[fl]?.detail,
+      faces: w.tags(fl)?.faces ?? 0,
+      edges: w.tags(fl)?.edges ?? 0,
+    };
+  });
+  expect(r.rounded).toBe("OK");
+  expect(r.unfold).toBe("OK");
+  expect(r.faces).toBeGreaterThanOrEqual(6);
 });
 
 test("hem double-folds a sheet edge; wrap maps curves onto a cylinder", async ({
