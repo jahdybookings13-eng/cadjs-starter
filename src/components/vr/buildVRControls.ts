@@ -1,17 +1,35 @@
 import * as THREE from "three";
+import { FEATURE_MAP } from "../../model/featureMap";
 
-const DEFAULT_ACTIONS = [
-  "Sketch",
-  "Extrude",
-  "Loft",
-  "Sweep",
-  "Revolve",
-  "Fillet",
-  "Shell",
-  "Measure",
+// Legacy belt order is pinned by e2e/vr-bridge.spec.ts (beltSeg[7] == Measure).
+const LEGACY_FIRST: { name: string; featureType: string }[] = [
+  { name: "Sketch", featureType: "newSketch" },
+  { name: "Extrude", featureType: "extrude" },
+  { name: "Loft", featureType: "loft" },
+  { name: "Sweep", featureType: "sweep" },
+  { name: "Revolve", featureType: "revolve" },
+  { name: "Fillet", featureType: "fillet" },
+  { name: "Shell", featureType: "shell" },
+  { name: "Measure", featureType: "measure" },
+];
+const legacyKeys = new Set(LEGACY_FIRST.map((a) => a.featureType));
+const seen = new Set<string>();
+const DEFAULT_ACTIONS: { name: string; featureType: string }[] = [
+  ...LEGACY_FIRST,
+  ...FEATURE_MAP.filter(
+    (e) =>
+      e.status === "implemented" &&
+      !legacyKeys.has(e.featureType) &&
+      (seen.has(e.featureType) ? false : (seen.add(e.featureType), true)),
+  ).map((e) => ({ name: e.label, featureType: e.featureType })),
 ];
 
-export function buildVRControls(actions: string[] = DEFAULT_ACTIONS) {
+export interface VRAction {
+  name: string;
+  featureType: string;
+}
+
+export function buildVRControls(actions: VRAction[] = DEFAULT_ACTIONS) {
   const group = new THREE.Group();
   group.name = "vr-controls";
 
@@ -42,7 +60,7 @@ export function buildVRControls(actions: string[] = DEFAULT_ACTIONS) {
     mctx.fillStyle = "rgba(60, 80, 120, 0.5)";
     mctx.fillRect(20, y - 20, 472, 44);
     mctx.fillStyle = "rgba(220, 230, 255, 0.95)";
-    mctx.fillText(action, 256, y + 8);
+    mctx.fillText(action.name, 256, y + 8);
   });
 
   const menuTex = new THREE.CanvasTexture(menuCanvas);
@@ -139,7 +157,8 @@ export function buildVRControls(actions: string[] = DEFAULT_ACTIONS) {
 
     const buttonGroup = new THREE.Group();
     buttonGroup.name = `carousel-button-${i}`;
-    buttonGroup.userData.actionName = action;
+    buttonGroup.userData.actionName = action.name;
+    buttonGroup.userData.featureType = action.featureType;
 
     const arcGeo = buildArcGeometry(
       CAROUSEL_RADIUS - RING_THICKNESS / 2,
@@ -171,7 +190,7 @@ export function buildVRControls(actions: string[] = DEFAULT_ACTIONS) {
     tctx.font = "bold 28px monospace";
     tctx.textAlign = "center";
     tctx.textBaseline = "middle";
-    tctx.fillText(action, 128, 32);
+    tctx.fillText(action.name, 128, 32);
 
     const textTex = new THREE.CanvasTexture(textCanvas);
     textTex.needsUpdate = true;

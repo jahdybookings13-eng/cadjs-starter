@@ -548,6 +548,56 @@ export function buildFillSurfaceNode(
   };
 }
 
+export function buildBoundarySurfaceNode(
+  featureId: string,
+  name: string,
+  bodyFeatureId: string,
+  faceTag: string,
+): ScadgenFeatureNode {
+  return {
+    featureId,
+    featureType: "boundarySurface",
+    name,
+    namespace: "",
+    parameters: [
+      {
+        kind: "queryList",
+        parameterId: "targets",
+        queries: [faceQ(bodyFeatureId, "*")],
+      },
+      { kind: "string", parameterId: "kind", value: "boundary" },
+      { kind: "string", parameterId: "faceTag", value: faceTag },
+    ],
+    subFeatures: [],
+    suppressed: false,
+  };
+}
+
+export function buildConstrainedSurfaceNode(
+  featureId: string,
+  name: string,
+  bodyFeatureId: string,
+  faceTag: string,
+): ScadgenFeatureNode {
+  return {
+    featureId,
+    featureType: "constrainedSurface",
+    name,
+    namespace: "",
+    parameters: [
+      {
+        kind: "queryList",
+        parameterId: "targets",
+        queries: [faceQ(bodyFeatureId, "*")],
+      },
+      { kind: "string", parameterId: "kind", value: "constrained" },
+      { kind: "string", parameterId: "faceTag", value: faceTag },
+    ],
+    subFeatures: [],
+    suppressed: false,
+  };
+}
+
 export function buildOffsetSurfaceNode(
   featureId: string,
   name: string,

@@ -247,6 +247,63 @@ const P_COMPOSITE = op(
   "body-set filter: removes selected owners (fid or fid#k) from output",
 );
 
+const P_PRIM_BOX = op(
+  "primitive-box",
+  "Box",
+  "ready",
+  "primitive.box",
+  "sketch+extrude via library",
+);
+const P_PRISM_PRISM = op(
+  "primitive-prism",
+  "Prism",
+  "ready",
+  "primitive.prism",
+  "polygon extrude via library",
+);
+const P_PRISM_PYRAMID = op(
+  "primitive-pyramid",
+  "Pyramid",
+  "ready",
+  "primitive.pyramid",
+  "loft via library",
+);
+const P_PRISM_WEDGE = op(
+  "primitive-wedge",
+  "Wedge",
+  "ready",
+  "primitive.wedge",
+  "tri-slab extrude via library",
+);
+const P_PRISM_CYL = op(
+  "primitive-cylinder",
+  "Cylinder",
+  "ready",
+  "primitive.cylinder",
+  "revolve via library",
+);
+const P_PRISM_CONE = op(
+  "primitive-cone",
+  "Cone",
+  "ready",
+  "primitive.cone",
+  "revolve via library",
+);
+const P_PRISM_TORUS = op(
+  "primitive-torus",
+  "Torus",
+  "ready",
+  "primitive.torus",
+  "revolve via library",
+);
+const P_PRISM_PIPE = op(
+  "primitive-pipe",
+  "Pipe",
+  "ready",
+  "primitive.pipe",
+  "sweep via library",
+);
+
 export const MENU_BY_SELECTION: Record<SelectionKind, MenuOp[]> = {
   empty: [
     READY_SKETCH,
@@ -254,6 +311,14 @@ export const MENU_BY_SELECTION: Record<SelectionKind, MenuOp[]> = {
     READY_VARIABLES,
     READY_MEASURE,
     P_CPLANE,
+    P_PRIM_BOX,
+    P_PRISM_PRISM,
+    P_PRISM_PYRAMID,
+    P_PRISM_WEDGE,
+    P_PRISM_CYL,
+    P_PRISM_CONE,
+    P_PRISM_TORUS,
+    P_PRISM_PIPE,
     P_DERIVED,
   ],
   body: [

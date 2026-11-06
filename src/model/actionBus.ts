@@ -107,12 +107,22 @@ const OP_TO_HOOK: Record<string, string> = {
   hem: "hem",
   flange: "flange",
   thread: "thread",
+  fastener: "fastener",
+  "screw-hole": "screwHole",
   "sketch-on-datum": "sketchOnDatum",
   appearance: "setAppearance",
   insert: "insertStl",
   measure: "measEdge",
   "export-stl": "exportSceneStl",
   "export-step": "exportSceneStep",
+  "primitive-box": "primBox",
+  "primitive-prism": "primPrism",
+  "primitive-pyramid": "primPyramid",
+  "primitive-wedge": "primWedge",
+  "primitive-cylinder": "primCyl",
+  "primitive-cone": "primCone",
+  "primitive-torus": "primTorus",
+  "primitive-pipe": "primPipe",
 };
 
 const PLACEHOLDER = (label: string) => (): unknown => {

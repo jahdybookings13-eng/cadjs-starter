@@ -14,6 +14,13 @@ import { ToastProvider, useToast } from "./contexts/ToastContext";
 // node_modules. To override (CDN, custom path, exotic bundler), call
 // configureCadjs({ occWasmUrl, planegcsWasmUrl }) explicitly.
 
+// Headless VR harness hook: lets e2e/vr-fake-xr.js enable debugLog at runtime.
+(
+  window as unknown as { __cadjs?: { configureCadjs: typeof configureCadjs } }
+).__cadjs = {
+  configureCadjs,
+};
+
 // Bridge: forward library notifications into our toast UI. Must live inside
 // <ToastProvider> (so it can call useToast) and outside the cadjs providers
 // (so notify is registered before any hook fires).

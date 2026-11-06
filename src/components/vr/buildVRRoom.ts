@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 export interface VRRoomOptions {
   deskWidth?: number;
@@ -189,6 +190,68 @@ export function buildVRRoom(opts: VRRoomOptions = {}): THREE.Group {
   deskGroup.add(bp1);
 
   room.add(deskGroup);
+
+  // === SECOND DESK (side station) ===
+  const desk2Group = new THREE.Group();
+  desk2Group.name = "desk2";
+  desk2Group.position.set(-1.85, 0, -0.3);
+  desk2Group.rotation.y = 0.12;
+
+  const top2 = new THREE.Mesh(
+    new THREE.BoxGeometry(deskWidth, 0.04, deskDepth),
+    woodMat,
+  );
+  top2.position.y = deskHeight;
+  top2.castShadow = true;
+  top2.receiveShadow = true;
+  desk2Group.add(top2);
+  for (const pos of legPositions) {
+    const leg = new THREE.Mesh(legGeo, woodMat);
+    leg.position.set(pos[0]!, pos[1]!, pos[2]!);
+    leg.castShadow = true;
+    desk2Group.add(leg);
+  }
+
+  room.add(desk2Group);
+
+  // === BLUEPRINT MAT (green) on the second desk ===
+  const matGroup = new THREE.Group();
+  matGroup.name = "blueprint-mat";
+  matGroup.position.set(-1.85, deskHeight + 0.024, -0.3);
+  matGroup.rotation.y = 0.12;
+  const matGeo = new THREE.PlaneGeometry(0.9, 0.55);
+  const matTex = new THREE.TextureLoader().load("/vr/blueprint_texture.jpg");
+  matTex.anisotropy = 4;
+  const matMesh = new THREE.Mesh(
+    matGeo,
+    new THREE.MeshStandardMaterial({
+      map: matTex,
+      color: 0x2f7a3a, // green multiplier on the blueprint grid
+      roughness: 0.9,
+    }),
+  );
+  matMesh.rotation.x = -Math.PI / 2;
+  matMesh.receiveShadow = true;
+  matGroup.add(matMesh);
+  room.add(matGroup);
+
+  // === FNAF SB ENDO BLUEPRINT BOARD (flat picture, lies on the mat) ===
+  void new GLTFLoader().load(
+    "/vr/scene.gltf",
+    (gltf) => {
+      const board = gltf.scene;
+      board.name = "fnaf-endo-board";
+      board.scale.setScalar(0.47);
+      board.position.set(-1.85, deskHeight + 0.028, -0.3);
+      board.rotation.y = 0.12 + 0.35; // angled on the mat
+      room.add(board);
+      (window as unknown as { __vrBoardReady?: boolean }).__vrBoardReady = true;
+    },
+    undefined,
+    () => {
+      /* board asset missing — mat stands alone */
+    },
+  );
 
   // === MEASURING PAD (green cutting mat with 3 perspectives) ===
   const padGroup = new THREE.Group();
