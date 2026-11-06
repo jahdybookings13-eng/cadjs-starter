@@ -82,6 +82,29 @@ export default [
       "no-restricted-syntax": "off",
     },
   },
+  // Fake-WebXR init script runs in the browser page context.
+  {
+    files: ["e2e/**/*.js"],
+    languageOptions: {
+      globals: {
+        window: "readonly",
+        document: "readonly",
+        navigator: "readonly",
+        requestAnimationFrame: "readonly",
+        cancelAnimationFrame: "readonly",
+        setTimeout: "readonly",
+        console: "readonly",
+      },
+    },
+  },
+  // Node scripts (headless probes) run outside the app bundle.
+  {
+    files: ["scripts/**/*.mjs"],
+    languageOptions: {
+      globals: { process: "readonly", console: "readonly" },
+    },
+    rules: { "no-undef": "off" },
+  },
   prettierRecommended,
   { files: ["**/*.d.ts"], rules: { "spaced-comment": "off" } },
 ];

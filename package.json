@@ -18,6 +18,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:e2e": "playwright test",
+    "test:vr": "playwright test e2e/vr-bridge.spec.ts",
+    "vr:probe": "node scripts/vr-probe.mjs",
+    "vr:view": "node scripts/vr-viewer.mjs",
     "test:e2e:ui": "playwright test --ui",
     "test:unit": "vitest run"
   },
@@ -26,6 +29,7 @@
     "@salusoft89/planegcs": "^1.1.7",
     "@tailwindcss/vite": "^4.0.9",
     "@vitekk02/cadjs": "file:../cadjs",
+    "avr8js": "^0.21.1",
     "opencascade.js": "2.0.0-beta.b5ff984",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

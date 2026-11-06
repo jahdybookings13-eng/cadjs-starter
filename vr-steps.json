@@ -1,0 +1,18 @@
+[
+  { "enter": true },
+  { "do": "lookDown" },
+  { "wait": 8 },
+  { "do": "beltSeg", "args": [6] },
+  { "wait": 4 },
+  { "do": "press", "args": ["left", 2] },
+  { "wait": 3 },
+  { "do": "press", "args": ["left", 2, false] },
+  { "wait": 6 },
+  { "do": "mode" },
+  { "do": "selection" },
+  { "do": "spawnTriad" },
+  { "wait": 5 },
+  { "do": "selectPlane", "args": ["XZ"] },
+  { "wait": 5 },
+  { "do": "triad" }
+]
