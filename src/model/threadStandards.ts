@@ -16,7 +16,7 @@ export interface ThreadSpec {
   taperPerLength: number;
 }
 
-const ISO_COARSE: Record<string, [number, number]> = {
+export const ISO_COARSE: Record<string, [number, number]> = {
   "M1.6": [0.35, 1.6],
   M2: [0.4, 2],
   "M2.5": [0.45, 2.5],
@@ -35,7 +35,7 @@ const ISO_COARSE: Record<string, [number, number]> = {
   M22: [2.5, 22],
   M24: [3, 24],
 };
-const ISO_FINE: Record<string, [number, number]> = {
+export const ISO_FINE: Record<string, [number, number]> = {
   ...ISO_COARSE,
   M8: [1, 8],
   M10: [1.25, 10],
@@ -49,7 +49,7 @@ const ISO_FINE: Record<string, [number, number]> = {
   M5: [0.5, 5],
   M6: [0.75, 6],
 };
-const UNIFIED: Record<string, [number, number]> = {
+export const UNIFIED: Record<string, [number, number]> = {
   "1/4-20": [1 / 20, 0.25],
   "5/16-18": [1 / 18, 0.3125],
   "3/8-16": [1 / 16, 0.375],
@@ -63,7 +63,7 @@ const UNIFIED: Record<string, [number, number]> = {
   "3/8-24": [1 / 24, 0.375],
   "1/2-20": [1 / 20, 0.5],
 };
-const NPT: Record<string, [number, number]> = {
+export const NPT: Record<string, [number, number]> = {
   '1/8"': [27, 0.37],
   '1/4"': [18, 0.533],
   '3/8"': [18, 0.675],
@@ -73,32 +73,120 @@ const NPT: Record<string, [number, number]> = {
 };
 const H_OVER_P = 0.866025;
 
+/**
+ * Pitch (m) of a single-engage thread. ISO/unified = mm or inch pitch; NPT is
+ * threads-per-inch (so pitch = 1 / threadsPerInch inch), already stored in
+ * inch-pitch units in the tables.
+ */
+export function pitchOf(
+  standard: ThreadStandard,
+  size: string,
+  mode: "coarse" | "fine",
+): number {
+  const row = rowOf(standard, size, mode);
+  if (!row) throw new Error(`thread: unknown ${standard} size "${size}"`);
+  return row[0] * (standard === "iso" ? MM : IN);
+}
+
+/**
+ * Basic thread cut depth in meters, following the published formulas:
+ *   metric ISO 68-1         : d = 5H/8 = 0.541275 · P
+ *   ASME B1.1 unified       : same as ISO (the V-groove depth)
+ *   NPT (B1.20.1)           : d ≈ 0.1407 · D_major  (≈ 0.8 · P at the typical
+ *                             fit, easier to remember)
+ * `engagement` scales the depth multiplicatively (multi-engage = deeper cut).
+ */
+export function depthFor(
+  standard: ThreadStandard,
+  size: string,
+  mode: "coarse" | "fine",
+  engagement = 1,
+): number {
+  const row = rowOf(standard, size, mode);
+  if (!row) throw new Error(`thread: unknown ${standard} size "${size}"`);
+  const pitch = row[0] * (standard === "iso" ? MM : IN);
+  const major = row[1] * (standard === "iso" ? MM : IN);
+  const base = standard === "npt" ? 0.141 * major : 0.541275 * pitch;
+  return base * engagement;
+}
+
+function rowOf(
+  standard: ThreadStandard,
+  size: string,
+  mode: "coarse" | "fine",
+): [number, number] | undefined {
+  return standard === "iso"
+    ? (mode === "fine" ? ISO_FINE : ISO_COARSE)[size]
+    : standard === "unified"
+      ? UNIFIED[size]
+      : NPT[size];
+}
+
+/** All valid (standard, mode) size lists — the preset index. */
+export const THREAD_SIZES: Record<
+  ThreadStandard,
+  { coarse: string[]; fine: string[] }
+> = {
+  iso: { fine: Object.keys(ISO_FINE), coarse: Object.keys(ISO_COARSE) },
+  unified: { coarse: Object.keys(UNIFIED), fine: [] },
+  npt: { coarse: Object.keys(NPT), fine: [] },
+};
+
+/** ISO 273 clearance / tapping hole fits, as a hole-diameter multiplier. */
+export interface ClearanceFit {
+  id: string;
+  label: string;
+  /** holeD = multiplier · majorD */
+  multiplier: number;
+  /** true = the hole also has a thread op applied (tapped, not cleared). */
+  tapped: boolean;
+}
+export const CLEARANCE_FITS: ClearanceFit[] = [
+  { id: "none", label: "Raw bore", multiplier: 1, tapped: false },
+  {
+    id: "m1",
+    label: "M1 clearance (1.111d)",
+    multiplier: 1.111,
+    tapped: false,
+  },
+  {
+    id: "m2",
+    label: "M2 clearance (1.113d)",
+    multiplier: 1.113,
+    tapped: false,
+  },
+  { id: "m3", label: "M3 clearance (1.12d)", multiplier: 1.12, tapped: false },
+  {
+    id: "m4",
+    label: "M4 clearance (1.125d)",
+    multiplier: 1.125,
+    tapped: false,
+  },
+  { id: "tapped", label: "Tapped (0.75d·60°)", multiplier: 0.75, tapped: true },
+];
+export function clearanceOf(id: string): ClearanceFit | undefined {
+  return CLEARANCE_FITS.find((f) => f.id === id);
+}
+
 export function resolveThread(
   standard: ThreadStandard,
   size: string,
   mode: "coarse" | "fine",
   engagement = 1,
 ): ThreadSpec {
-  const row =
-    standard === "iso"
-      ? (mode === "fine" ? ISO_FINE : ISO_COARSE)[size]
-      : standard === "unified"
-        ? UNIFIED[size]
-        : NPT[size];
+  const row = rowOf(standard, size, mode);
   if (!row) throw new Error(`thread: unknown ${standard} size "${size}"`);
   const unit = standard === "iso" ? MM : IN;
   const pitch = row[0] * unit;
   const major = row[1] * unit;
-  const depth =
-    (standard === "npt" ? 0.8 : (0.541275 * H_OVER_P) / 0.866025) *
-    pitch *
-    engagement;
   return {
     pitch,
     majorD: major,
-    depth,
+    depth: depthFor(standard, size, mode, engagement),
     taperPerLength: standard === "npt" ? 0.0155 : 0,
   };
 }
 
 export const ISO_SIZES = Object.keys(ISO_COARSE);
+export const UNIFIED_SIZES = Object.keys(UNIFIED);
+export const NPT_SIZES = Object.keys(NPT);
