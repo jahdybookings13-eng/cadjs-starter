@@ -33,3 +33,6 @@ yarn-error.log*
 
 # mkcert TLS keys for WebXR HTTPS dev server (never commit)
 *.pem
+
+# VR probe screenshots (debug artifacts)
+vr-shots/
