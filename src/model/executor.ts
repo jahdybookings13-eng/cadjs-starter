@@ -45,6 +45,13 @@ import {
 import { getImportAsset } from "./assets";
 import { buildBoxNodes, cloneFeatureNodes } from "./primitives";
 import {
+  facePredicates,
+  queryFaces,
+  queryEdges,
+  type FaceQuery,
+  type EdgeQuery,
+} from "./predicates";
+import {
   resolveThread,
   type ThreadSpec,
   type ThreadStandard,
@@ -417,7 +424,7 @@ export class ScadgenExecutor {
     this.bodySets.clear();
     this.deleted.clear();
     this.scope = {};
-    for (const node of history.evaluatedNodes()) {
+    for (const node of this.flattenNodes(history.evaluatedNodes())) {
       if (node.featureType === "variable") {
         const name = stringOf(node, "varName");
         const q = node.parameters.find(
@@ -509,6 +516,23 @@ export class ScadgenExecutor {
       }
     }
     return report;
+  }
+
+  private flattenNodes(nodes: ScadgenFeatureNode[]): ScadgenFeatureNode[] {
+    const out: ScadgenFeatureNode[] = [];
+    const seen = new Set<string>();
+    const visit = (n: ScadgenFeatureNode, inFastener: boolean) => {
+      if (seen.has(n.featureId)) return;
+      seen.add(n.featureId);
+      if (inFastener && n.featureType === "thread") return;
+      const isFastenerParent =
+        n.featureType === "fastener" || n.featureType === "screwHole";
+      for (const c of n.subFeatures ?? [])
+        visit(c, isFastenerParent || inFastener);
+      out.push(n);
+    };
+    for (const n of nodes) visit(n, false);
+    return out;
   }
 
   private trackStability(b: BodyOutput): void {
@@ -1664,18 +1688,32 @@ export class ScadgenExecutor {
           vertexPositions: res.value.vertexPositions,
         };
       }
-      case "surface": {
+      case "surface":
+      case "boundarySurface":
+      case "constrainedSurface": {
         const bodyQ = listOf(node, "targets")[0];
         const src = bodyQ ? this.resolve(bodyQ) : undefined;
         if (!src) {
           report[node.featureId] = {
             status: "ERROR",
-            detail: "surface: body not resolved",
+            detail: `${node.featureType}: body not resolved`,
           };
           return null;
         }
-        const kind = stringOfParam(node, "kind");
-        if (kind !== "ruled" && kind !== "fill" && kind !== "offset") {
+        const kind =
+          stringOfParam(node, "kind") ??
+          (node.featureType === "boundarySurface"
+            ? "boundary"
+            : node.featureType === "constrainedSurface"
+              ? "constrained"
+              : "fill");
+        if (
+          kind !== "ruled" &&
+          kind !== "fill" &&
+          kind !== "offset" &&
+          kind !== "boundary" &&
+          kind !== "constrained"
+        ) {
           report[node.featureId] = {
             status: "ERROR",
             detail: "surface: unknown kind",
@@ -1683,6 +1721,15 @@ export class ScadgenExecutor {
           return null;
         }
         const opts: Parameters<typeof surfaceOpBRep>[3] = {};
+        const entityQueries = kind !== "ruled" ? listOf(node, "entities") : [];
+        const edgeIndicesFromQueries = (qs: ProvenanceQuery[]): number[] => {
+          const out: number[] = [];
+          for (const q of qs) {
+            const i = this.tagIndex(src, "edge", q.entityTag);
+            if (i >= 0) out.push(i + 1);
+          }
+          return out;
+        };
         if (kind === "ruled") {
           let tags: string[] = [];
           try {
@@ -1706,19 +1753,37 @@ export class ScadgenExecutor {
           }
           opts.edgeIndices = idxs;
         } else {
+          const edgeIdxs = edgeIndicesFromQueries(entityQueries);
+          let tagsFromJson: string[] = [];
+          try {
+            const parsed: unknown = JSON.parse(
+              stringOfParam(node, "edgeTags") ?? "[]",
+            );
+            if (Array.isArray(parsed))
+              tagsFromJson = parsed.filter(
+                (t): t is string => typeof t === "string",
+              );
+          } catch {
+            tagsFromJson = [];
+          }
+          const jsonIdxs = tagsFromJson
+            .map((t) => this.tagIndex(src, "edge", t) + 1)
+            .filter((i) => i > 0);
+          const allEdgeIdxs = [...new Set([...edgeIdxs, ...jsonIdxs])];
           const faceIdx = this.tagIndex(
             src,
             "face",
             stringOfParam(node, "faceTag") ?? "",
           );
-          if (faceIdx < 0) {
+          if (allEdgeIdxs.length) opts.edgeIndices = allEdgeIdxs;
+          else if (faceIdx >= 0) opts.faceIndex = faceIdx;
+          else {
             report[node.featureId] = {
               status: "ERROR",
-              detail: "surface: face tag not resolved",
+              detail: "surface: no edges or face selected",
             };
             return null;
           }
-          opts.faceIndex = faceIdx;
           if (kind === "offset")
             opts.distance = quantityOf(node, "distance", this.scope) ?? 0.001;
         }
@@ -2365,6 +2430,175 @@ export class ScadgenExecutor {
           vertexPositions: res.value.vertexPositions,
         };
       }
+      case "fastener":
+      case "screwHole": {
+        // Fastener: one sketch profile -> revolve 360deg -> optional thread.
+        // The sketch carries the merged head+shank (or bore) outline in the
+        // (x=radial, y=axial) plane. The revolve axis is the line `axl`
+        // (x=0, spanning the profile). We revolve around that axis (the bolt
+        // axis) to produce the body, then, if the node has a `thread` child
+        // in subFeatures, apply it to the top surface band.
+        const srcQ = listOf(node, "entities")[0];
+        const axisQ = listOf(node, "axis")[0];
+        const src = srcQ ? this.resolve(srcQ) : undefined;
+        if (!src?.snapshot) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "fastener: profile not resolved",
+          };
+          return null;
+        }
+        const axis = axisFromSnapshot(src.snapshot, axisQ?.entityTag ?? "axl");
+        if (!axis) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "fastener: axis unresolvable",
+          };
+          return null;
+        }
+        // Revolve the merged profile 360deg around the bolt axis.
+        const rev = await revolveBRep(
+          src.brep,
+          src.position,
+          axis.origin,
+          axis.dir,
+          Math.PI * 2,
+          src.occBrep,
+        );
+        if (!rev.ok) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: `fastener: ${rev.reason}`,
+          };
+          return null;
+        }
+        const primary: BodyOutput = {
+          featureId: node.featureId,
+          kind: "body",
+          brep: rev.value.brep,
+          occBrep: rev.value.occBrep,
+          position: src.position
+            .clone()
+            .add(
+              new THREE.Vector3(
+                rev.value.positionOffset.x,
+                rev.value.positionOffset.y,
+                rev.value.positionOffset.z,
+              ),
+            ),
+          planeNormal: [axis.dir.x, axis.dir.y, axis.dir.z],
+          edgeTags: registerEdges(rev.value.brep.edges.length, node.featureId),
+          faceTags: registerFaces(rev.value.brep.faces.length, node.featureId),
+          edgeGeometry: rev.value.edgeGeometry,
+          faceGeometry: rev.value.faceGeometry,
+          vertexPositions: rev.value.vertexPositions,
+        };
+
+        // If a thread child (sub-features "thread") is present, apply it.
+        const threadChild = node.subFeatures.find(
+          (c) => c.featureType === "thread",
+        );
+        if (threadChild) {
+          const standard = (stringOfParam(threadChild, "standard") ??
+            "iso") as ThreadStandard;
+          const size = stringOfParam(threadChild, "size") ?? "M6";
+          const mode = (stringOfParam(threadChild, "mode") ?? "coarse") as
+            | "coarse"
+            | "fine";
+          const kind = (stringOfParam(threadChild, "kind") ?? "external") as
+            | "external"
+            | "internal";
+          const eng = quantityOf(threadChild, "engagement", this.scope) ?? 1;
+          let spec: ThreadSpec;
+          try {
+            spec = resolveThread(standard, size, mode, eng);
+          } catch (e) {
+            report[node.featureId] = {
+              status: "ERROR",
+              detail: `fastener: thread ${e}`,
+            };
+            return null;
+          }
+          const aRaw = primary.planeNormal ?? [0, 0, 0];
+          const alen = Math.hypot(aRaw[0], aRaw[1], aRaw[2]) || 1;
+          const a = {
+            x: aRaw[0] / alen,
+            y: aRaw[1] / alen,
+            z: aRaw[2] / alen,
+          };
+          const pos = primary.position;
+          const worldV = primary.brep.toJSON().vertices.map((q) => ({
+            x: q.x + pos.x,
+            y: q.y + pos.y,
+            z: q.z + pos.z,
+          }));
+          const proj = worldV.map((q) => {
+            const h = q.x * a.x + q.y * a.y + q.z * a.z;
+            const px = q.x - a.x * h,
+              py = q.y - a.y * h,
+              pz = q.z - a.z * h;
+            return { h, r: Math.hypot(px, py, pz), px, py, pz };
+          });
+          const bin = Math.max(1e-5, spec.pitch * 0.15);
+          const counts = new Map<number, number>();
+          for (const { r } of proj) {
+            const b = Math.round(r / bin);
+            counts.set(b, (counts.get(b) ?? 0) + 1);
+          }
+          let best: [number, number] = [0, 0];
+          for (const [b, c] of counts) if (c > best[1]) best = [b, c];
+          if (best[1] >= Math.max(6, proj.length * 0.2)) {
+            const radius = best[0] * bin;
+            const band = proj.filter((p) => Math.abs(p.r - radius) < bin * 1.5);
+            const hMin = Math.min(...band.map((p) => p.h));
+            const hMax = Math.max(...band.map((p) => p.h));
+            const base = {
+              x: band.reduce((acc, p) => acc + p.px, 0) / band.length,
+              y: band.reduce((acc, p) => acc + p.py, 0) / band.length,
+              z: band.reduce((acc, p) => acc + p.pz, 0) / band.length,
+            };
+            const runout = spec.pitch * 0.75;
+            const tHeight = hMax - hMin - 2 * runout;
+            if (tHeight >= spec.pitch) {
+              const tr = await threadBRep(
+                primary.brep,
+                pos,
+                {
+                  origin: {
+                    x: base.x + a.x * (hMin + runout),
+                    y: base.y + a.y * (hMin + runout),
+                    z: base.z + a.z * (hMin + runout),
+                  },
+                  axisDir: a,
+                  radius,
+                  pitch: spec.pitch,
+                  height: tHeight,
+                  depth: spec.depth,
+                  kind,
+                  taperPerLength: spec.taperPerLength,
+                },
+                primary.occBrep,
+              );
+              if (tr.ok) {
+                primary.brep = tr.value.brep;
+                primary.occBrep = tr.value.occBrep;
+                primary.edgeTags = registerEdges(
+                  tr.value.brep.edges.length,
+                  node.featureId,
+                );
+                primary.faceTags = registerFaces(
+                  tr.value.brep.faces.length,
+                  node.featureId,
+                );
+                primary.edgeGeometry = tr.value.edgeGeometry;
+                primary.faceGeometry = tr.value.faceGeometry;
+                primary.vertexPositions = tr.value.vertexPositions;
+              }
+            }
+          }
+        }
+        return primary;
+      }
       case "createPlane": {
         const o = (stringOfParam(node, "origin") ?? "0,0,0")
           .split(",")
@@ -2763,6 +2997,67 @@ export class ScadgenExecutor {
           faceTags: registerFaces(mirrored.faces.length, node.featureId),
         };
       }
+      case "queryFaces":
+      case "queryEdges": {
+        const srcQ = listOf(node, "targets")[0];
+        const src = srcQ ? this.resolve(srcQ) : undefined;
+        if (!src) {
+          report[node.featureId] = {
+            status: "ERROR",
+            detail: "query: body not resolved",
+          };
+          return null;
+        }
+        const kind = stringOfParam(node, "queryKind") ?? "planar";
+        const axisRaw = stringOfParam(node, "axis") ?? "z";
+        const signRaw = Number(stringOfParam(node, "sign") ?? "1");
+        const rawValue = Number(stringOfParam(node, "value") ?? "0");
+        const rawCount = Number(stringOfParam(node, "count") ?? "4");
+
+        if (node.featureType === "queryFaces") {
+          let query: FaceQuery = { kind: "planar" };
+          if (kind === "area-gt") query = { kind: "area-gt", value: rawValue };
+          else if (kind === "at-least-vertices")
+            query = { kind: "at-least-vertices", count: rawCount };
+          else if (kind === "normal-alignment")
+            query = {
+              kind: "normal-alignment",
+              axis: axisRaw as "x" | "y" | "z",
+              sign: (signRaw >= 0 ? 1 : -1) as 1 | -1,
+            };
+          const indices = queryFaces(src.brep, query);
+          const tags = indices.map((i) => `${node.featureId}_F${i}`);
+          return {
+            featureId: node.featureId,
+            kind: "profile",
+            brep: src.brep,
+            position: src.position.clone(),
+            planeNormal: src.planeNormal,
+            edgeTags: src.edgeTags,
+            faceTags: tags,
+            ...(src.snapshot ? { snapshot: src.snapshot } : {}),
+          };
+        }
+
+        let eq: EdgeQuery = { kind: "length-gt", value: rawValue };
+        if (kind === "equal-length")
+          eq = { kind: "equal-length", length: rawValue };
+        else if (kind === "parallel") eq = { kind: "parallel" };
+        else if (kind === "parallel-axis")
+          eq = { kind: "parallel-axis", axis: axisRaw as "x" | "y" | "z" };
+        const indices = queryEdges(src.brep, eq);
+        const tags = indices.map((i) => `${node.featureId}_E${i}`);
+        return {
+          featureId: node.featureId,
+          kind: "profile",
+          brep: src.brep,
+          position: src.position.clone(),
+          planeNormal: src.planeNormal,
+          edgeTags: tags,
+          faceTags: src.faceTags,
+          ...(src.snapshot ? { snapshot: src.snapshot } : {}),
+        };
+      }
       case "insertedBody": {
         const assetId = stringOfParam(node, "assetId");
         const asset = assetId ? getImportAsset(assetId) : undefined;
@@ -2798,15 +3093,26 @@ export class ScadgenExecutor {
             ...(first.occBrep !== undefined ? { occBrep: first.occBrep } : {}),
           };
         }
-        const merged = await this.sendBooleanOp("union", imported);
+        // Multi-solid import (e.g. an STL with disconnected shells): keep the
+        // bodies SEPARATE like Onshape does — boolean-unioning raw mesh shells
+        // fails in OCC (no pcurves/tolerances) and would fuse distinct parts.
+        const owned: BodyOutput[] = imported.map((b, i) => {
+          const fid = i === 0 ? node.featureId : `${node.featureId}#${i}`;
+          return {
+            featureId: fid,
+            kind: "body",
+            brep: b.brep,
+            position: b.position,
+            edgeTags: registerEdges(b.brep.edges.length, fid),
+            faceTags: registerFaces(b.brep.faces.length, fid),
+            ...(b.occBrep !== undefined ? { occBrep: b.occBrep } : {}),
+          };
+        });
+        for (const b of owned) this.outputs.set(b.featureId, b);
+        this.bodySets.set(node.featureId, owned);
         return {
-          featureId: node.featureId,
-          kind: "body",
-          brep: merged.brep,
-          position: merged.position,
-          edgeTags: registerEdges(merged.brep.edges.length, node.featureId),
-          faceTags: registerFaces(merged.brep.faces.length, node.featureId),
-          ...(merged.occBrep !== undefined ? { occBrep: merged.occBrep } : {}),
+          ...owned[0]!,
+          additionalBodies: owned.slice(1),
         };
       }
       default:
