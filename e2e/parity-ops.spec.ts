@@ -60,6 +60,8 @@ interface ScadgenDbg {
   ruledSurface: (fid: string, tagA: string, tagB: string) => string;
   fillSurface: (fid: string, faceTag: string) => string;
   offsetSurface: (fid: string, faceTag: string, d: number) => string;
+  boundarySurface: (fid: string, faceTag: string) => string;
+  constrainedSurface: (fid: string, faceTag: string) => string;
   split: (
     fid: string,
     origin: [number, number, number],
@@ -105,6 +107,8 @@ interface ScadgenDbg {
     standard?: "iso" | "unified" | "npt",
     mode?: "coarse" | "fine",
   ) => string;
+  fastener: (spec: Partial<Record<string, unknown>>) => string;
+  screwHole: (spec: Partial<Record<string, unknown>>) => string;
   cylinder: (r: number, h: number) => string;
   createPlane: (
     origin: [number, number, number],
@@ -703,6 +707,8 @@ test("ruled, fill, offset surfaces and projectCurves run on the real kernel", as
     const ru = s.ruledSurface(boxFid, et[0] ?? "", et[1] ?? "");
     const fi = s.fillSurface(boxFid, ft[0] ?? "");
     const of = s.offsetSurface(boxFid, ft[0] ?? "", 0.5);
+    const bu = s.boundarySurface(boxFid, ft[0] ?? "");
+    const co = s.constrainedSurface(boxFid, ft[0] ?? "");
     const bad = s.ruledSurface(boxFid, "nope_1", "nope_2");
     const st = await s.idle();
     return {
@@ -713,6 +719,12 @@ test("ruled, fill, offset surfaces and projectCurves run on the real kernel", as
       fillFaces: s.tags(fi)?.faces,
       offset: st[of]?.status,
       offsetFaces: s.tags(of)?.faces,
+      boundary: st[bu]?.status,
+      boundaryDetail: st[bu]?.detail,
+      boundaryFaces: s.tags(bu)?.faces,
+      constrained: st[co]?.status,
+      constrainedDetail: st[co]?.detail,
+      constrainedFaces: s.tags(co)?.faces,
       bad: st[bad]?.status,
     };
   });
@@ -723,6 +735,10 @@ test("ruled, fill, offset surfaces and projectCurves run on the real kernel", as
   expect(surfRes.offset).toBe("OK");
   expect(surfRes.offsetFaces).toBeGreaterThanOrEqual(1);
   expect(surfRes.bad).toBe("ERROR");
+  expect(surfRes.boundary).toBe("OK");
+  expect(surfRes.boundaryFaces).toBeGreaterThanOrEqual(1);
+  expect(surfRes.constrained).toBe("OK");
+  expect(surfRes.constrainedFaces).toBeGreaterThanOrEqual(1);
 
   const projRes = await page.evaluate(async () => {
     const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
@@ -946,4 +962,81 @@ test("modifyFillet re-specs radius on the real kernel", async ({ page }) => {
     return { status: st[ff]?.status };
   });
   expect(impossibleFillet.status).toBe("ERROR");
+});
+
+test("fastener + screwHole hooks emit revolved bodies through the kernel", async ({
+  page,
+}) => {
+  page.on("console", (m) => {
+    if (m.text().includes("fastener") || m.text().includes("screwHole"))
+      console.log("PAGE:", m.text());
+  });
+  await boot(page);
+  const r = await page.evaluate(async () => {
+    const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      .__cadDebug.scadgen;
+    const bolt = s.fastener({
+      family: "bolt",
+      standard: "iso",
+      size: "M6",
+      mode: "coarse",
+      head: "hex",
+      tip: "threaded",
+      length: 0.02,
+    });
+    const hole = s.screwHole({
+      standard: "iso",
+      size: "M6",
+      mode: "coarse",
+      length: 0.015,
+      clearance: "m2",
+    });
+    const badFid = `Fgen_${Date.now().toString(36)}_${Math.random()}`;
+    let bad: string | undefined;
+    try {
+      bad = s.fastener({
+        id: badFid,
+        family: "bolt",
+        standard: "iso",
+        size: "M99",
+        mode: "coarse",
+        head: "hex",
+        tip: "threaded",
+      });
+    } catch {
+      /* expected */
+    }
+    const st = await s.idle();
+    const boltFaces = s.tags(bolt)?.faces ?? 0;
+    const holeFaces = s.tags(hole)?.faces ?? 0;
+    const boltSkFid = `${bolt}#profile_sk`;
+    const holeSkFid = `${hole}#profile_sk`;
+    const boltThFid = `${bolt}#thread`;
+    const holeThFid = `${hole}#thread`;
+    return {
+      bolt: st[bolt]?.status,
+      boltDetail: st[bolt]?.detail,
+      boltFaces,
+      boltSk: st[boltSkFid]?.status,
+      boltSkDetail: st[boltSkFid]?.detail,
+      boltTh: st[boltThFid]?.status,
+      boltThDetail: st[boltThFid]?.detail,
+      hole: st[hole]?.status,
+      holeDetail: st[hole]?.detail,
+      holeFaces,
+      holeSk: st[holeSkFid]?.status,
+      holeSkDetail: st[holeSkFid]?.detail,
+      holeTh: st[holeThFid]?.status,
+      holeThDetail: st[holeThFid]?.detail,
+      badStatus: bad ? (st[bad]?.status ?? "NOT_IN_REPORT") : "HOOK_THREW",
+    };
+  });
+  console.log("FASTENER RESULT:", JSON.stringify(r, null, 2));
+  expect(r.bolt).toBe("OK");
+  expect(r.boltFaces).toBeGreaterThan(3);
+  expect(r.hole).toBe("OK");
+  expect(r.holeFaces).toBeGreaterThan(2);
+  // Bad size must not produce a body: the node is not added to the tree,
+  // so the fid will not appear in the executor report.
+  expect(r.badStatus).toBe("NOT_IN_REPORT");
 });

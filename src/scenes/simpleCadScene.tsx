@@ -1,4 +1,10 @@
-import React, { useRef, useEffect, useState, useMemo } from "react";
+import React, {
+  useRef,
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+} from "react";
 import type {
   Mesh as ThreeMesh,
   MeshStandardMaterial as ThreeMat,
@@ -9,6 +15,7 @@ import {
   SceneMode,
   buildBrowserSections,
   buildElementHelpers,
+  debugLog,
   ImportExportService,
 } from "@vitekk02/cadjs";
 import { buildInsertNode } from "../model/onshapeHistory";
@@ -31,6 +38,8 @@ import {
   buildSplitNode,
   buildDraftNode,
   buildFillSurfaceNode,
+  buildBoundarySurfaceNode,
+  buildConstrainedSurfaceNode,
   buildHoleNode,
   buildOffsetSurfaceNode,
   buildProjectCurvesNode,
@@ -47,6 +56,12 @@ import {
   buildShellNode,
   buildThickenNode,
 } from "../model/primitives";
+import {
+  buildFastenerPresetNode,
+  buildScrewHolePresetNode,
+} from "../model/fasteners";
+import type { FastenerSpec } from "../model/fastenerPresets";
+import { buildShape, type ShapeKind } from "../model/primitiveLibrary";
 import {
   buildConstraintNode,
   extendSnapshot,
@@ -67,6 +82,16 @@ import { createSceneBus, type HookBag } from "../model/actionBus";
 import { loadProject, saveProject } from "../model/documentStore";
 import "../model/bootstrap";
 import { makeElementAuthor, pairNewElements } from "../model/elementAuthoring";
+import {
+  AssemblyNode,
+  buildTree,
+  identity,
+  placeObject,
+  solve,
+  type Assembly,
+  type Mate,
+  type RefMap,
+} from "../assemblies";
 
 let scadgenIdCounter = 0;
 import {
@@ -83,12 +108,29 @@ import { SketchPropertiesSidePanel } from "../components/SketchPropertiesSidePan
 import { useLineMaterialResize } from "../hooks/useLineMaterialResize";
 import { useOriginHelpers } from "../hooks/useOriginHelpers";
 import { StatusBar } from "../components/StatusBar";
+import { AssemblyPanel } from "../components/AssemblyPanel";
+import { PrintWizard } from "../components/PrintWizard";
+import { EcadPanel } from "../components/EcadPanel";
+import { installEcad } from "../ecad/install";
+import { registerEcadAgent } from "../ecad/agent";
+import {
+  exportSelectionStl,
+  selectionBboxMM,
+  type SelectionStl,
+} from "../printers/exportSelection";
 import { PrimaryToolbar } from "../components/PrimaryToolbar";
 import { SceneOverlays } from "../components/SceneOverlays";
 import { useSceneKeyboardBindings } from "../hooks/useSceneKeyboardBindings";
 import { MODE_COMPONENTS } from "./modes";
 import { useVRSession } from "../components/vr/useVRSession";
 import { VRButton } from "../components/vr/VRButton";
+import {
+  OrchestratorView,
+  makeFluxSession,
+  registerFluxBus,
+  type FluxSession,
+  type SelectedPart,
+} from "../flux";
 interface SimpleCadSceneProps {
   initialMode?: SceneMode;
 }
@@ -174,6 +216,19 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
     gridSnapEnabled,
     setGridSnapEnabled,
   } = useCadVisualizer();
+  const [printOpen, setPrintOpen] = useState(false);
+  // ECAD: virtual microcontrollers + screens (desk/VR/voice/AI share one bus).
+  // The sim/layer persist app-wide; installEcad re-registers actions whenever
+  // this effect rebuilds the ActionBus, and the flux effect wires the AI agent.
+  const [ecadOpen, setEcadOpen] = useState(false);
+  const ecadRef = useRef<import("../ecad/install").Ecad | null>(null);
+
+  // In-scene assembly state (driven by the action bus: assembly.*).
+  const assemblyRef = useRef<{ asm: Assembly; refs: RefMap | undefined }>({
+    asm: { id: "root", instances: [], mates: [] },
+    refs: undefined,
+  });
+  const busRef = useRef<import("../model/actionBus").ActionBus | null>(null);
 
   // E2E test hook: only mounted in dev/test builds. Tree-shaken from production.
   useEffect(() => {
@@ -188,6 +243,26 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
           )(el.nodeId)?.visible,
         })),
       getMode: () => mode,
+      getSelection: () =>
+        selectedElements.map((id) => {
+          const el = elements.find((e) => e.nodeId === id);
+          return {
+            nodeId: id,
+            position: el ? [el.position.x, el.position.y, el.position.z] : null,
+          };
+        }),
+      selectElement: (id: string) => selectElement(id),
+      deselectElement: (id: string) => deselectElement(id),
+      getSelectionContext: () => {
+        if (selectedElements.length === 0)
+          return { kind: "none", ids: [], position: null };
+        const el = elements.find((e) => e.nodeId === selectedElements[0]);
+        return {
+          kind: selectedElements.length > 1 ? "bodies" : "body",
+          ids: [...selectedElements],
+          position: el ? [el.position.x, el.position.y, el.position.z] : null,
+        };
+      },
       getFeatureTree: () => featureTree,
       getCameraQuat: () =>
         camera
@@ -263,6 +338,15 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
           for (const n of buildCylinderNodes(fid, "Cyl", r, h))
             scadgenHistory.add(n);
           return fid;
+        },
+        primitive: (kind: ShapeKind, opts: Record<string, unknown> = {}) => {
+          const fid = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          const r = buildShape(fid, kind, opts);
+          for (const n of r.nodes) scadgenHistory.add(n);
+          return {
+            featureId: r.bodyFeatureId,
+            profileFeatureId: r.profileFeatureId,
+          };
         },
         sphere: (r: number) => {
           const fid = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
@@ -481,6 +565,25 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
           );
           return nf;
         },
+        boundarySurface: (fid: string, faceTag: string) => {
+          const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          scadgenHistory.add(
+            buildBoundarySurfaceNode(nf, "Boundary Surface", fid, faceTag),
+          );
+          return nf;
+        },
+        constrainedSurface: (fid: string, faceTag: string) => {
+          const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          scadgenHistory.add(
+            buildConstrainedSurfaceNode(
+              nf,
+              "Constrained Surface",
+              fid,
+              faceTag,
+            ),
+          );
+          return nf;
+        },
         offsetSurface: (fid: string, faceTag: string, d: number) => {
           const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
           scadgenHistory.add(
@@ -689,6 +792,71 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
           );
           return nf;
         },
+        fastener: (spec: Partial<FastenerSpec>) => {
+          const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          const full: FastenerSpec = {
+            id: spec.id ?? `fastener-${nf}`,
+            family: spec.family ?? "bolt",
+            standard: spec.standard ?? "iso",
+            size: spec.size ?? "M6",
+            mode: spec.mode ?? "coarse",
+            head: spec.head ?? "hex",
+            tip: spec.tip ?? "threaded",
+            length: spec.length ?? 0.02,
+            label: spec.label ?? `Fastener ${spec.size}`,
+            ...(spec.engagement !== undefined
+              ? { engagement: spec.engagement }
+              : {}),
+            ...(spec.clearance !== undefined
+              ? { clearance: spec.clearance }
+              : {}),
+          };
+          try {
+            const node =
+              full.family === "screwHole"
+                ? buildScrewHolePresetNode(full, nf)
+                : buildFastenerPresetNode(full, nf);
+            debugLog(
+              `fastener hook: adding ${nf} family=${full.family} size=${full.size}`,
+            );
+            scadgenHistory.add(node);
+          } catch (e) {
+            console.error(
+              "fastener hook:",
+              e instanceof Error ? e.message : String(e),
+            );
+          }
+          return nf;
+        },
+        screwHole: (spec: Partial<FastenerSpec>) => {
+          const nf = `Fgen_${Date.now().toString(36)}_${++scadgenIdCounter}`;
+          const full: FastenerSpec = {
+            id: spec.id ?? `screwHole-${nf}`,
+            family: "screwHole",
+            standard: spec.standard ?? "iso",
+            size: spec.size ?? "M6",
+            mode: spec.mode ?? "coarse",
+            head: "none",
+            tip: "none",
+            length: spec.length ?? 0.02,
+            label: spec.label ?? `Screw hole ${spec.size}`,
+            ...(spec.engagement !== undefined
+              ? { engagement: spec.engagement }
+              : {}),
+            ...(spec.clearance !== undefined
+              ? { clearance: spec.clearance }
+              : {}),
+          };
+          try {
+            scadgenHistory.add(buildScrewHolePresetNode(full, nf));
+          } catch (e) {
+            console.error(
+              "screwHole hook:",
+              e instanceof Error ? e.message : String(e),
+            );
+          }
+          return nf;
+        },
         createPlane: (
           origin: [number, number, number],
           normal: [number, number, number],
@@ -813,6 +981,92 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
         varRows: () => variablesPanelRows(scadgenHistory.evaluatedNodes()),
         varsFor: (fid: string) =>
           variablesForFeature(scadgenHistory.evaluatedNodes(), fid),
+        describeScene: () => {
+          const authored = new Map<string, string>();
+          for (const pair of scadgenSceneSync.authoredIds()) {
+            const i = pair.indexOf("->");
+            if (i > 0) authored.set(pair.slice(0, i), pair.slice(i + 2));
+          }
+          const states = scadgenHistory.toListResponse()
+            .featureStates as unknown as Record<
+            string,
+            { featureStatus?: string }
+          >;
+          const nodes = scadgenHistory.evaluatedNodes();
+          const bodies = [];
+          for (const n of nodes) {
+            const fid = n.featureId;
+            const out = scadgenExecutor.outputs.get(fid);
+            const elId = authored.get(fid);
+            const el = elId
+              ? elements.find((e) => e.nodeId === elId)
+              : undefined;
+            const faces = out?.faceTags.length ?? 0;
+            const edges = out?.edgeTags.length ?? 0;
+            if (!out && !elId) continue;
+            let bbox = null;
+            const vp = out?.vertexPositions;
+            if (vp && vp.length >= 3) {
+              const mn = [Infinity, Infinity, Infinity];
+              const mx = [-Infinity, -Infinity, -Infinity];
+              for (let i = 0; i + 2 < vp.length; i += 3) {
+                for (let k = 0; k < 3; k++) {
+                  const v = vp[i + k];
+                  const lo = mn[k];
+                  const hi = mx[k];
+                  if (v === undefined || lo === undefined || hi === undefined)
+                    continue;
+                  if (v < lo) mn[k] = v;
+                  if (v > hi) mx[k] = v;
+                }
+              }
+              bbox = [...mn, ...mx];
+            }
+            bodies.push({
+              fid,
+              type: n.featureType,
+              name: n.name,
+              state: states[fid]?.featureStatus ?? "UNKNOWN",
+              suppressed: !!n.suppressed,
+              elementId: elId ?? null,
+              visible: elId
+                ? ((
+                    getObject as (
+                      id: string,
+                    ) => { visible?: boolean } | undefined
+                  )(elId)?.visible ?? true)
+                : null,
+              position: el
+                ? [el.position.x, el.position.y, el.position.z]
+                : null,
+              faces,
+              edges,
+              faceTags: out?.faceTags ?? [],
+              bbox,
+            });
+          }
+          return {
+            mode,
+            selection: {
+              ids: [...selectedElements],
+              kind:
+                selectedElements.length === 0
+                  ? "none"
+                  : selectedElements.length > 1
+                    ? "bodies"
+                    : "body",
+            },
+            camera: camera
+              ? [
+                  camera.quaternion.x,
+                  camera.quaternion.y,
+                  camera.quaternion.z,
+                  camera.quaternion.w,
+                ]
+              : null,
+            bodies,
+          };
+        },
         exportSceneStl: () =>
           ImportExportService.getInstance()
             .export(elements)
@@ -850,15 +1104,228 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
         loadProject: (text?: string) => loadProject(text),
         idle: () =>
           scadgenExecutor.whenIdle().then(() => scadgenExecutor.lastReport),
+        assembly: {
+          addInstance: (inst: {
+            id: string;
+            partId?: string;
+            transform?: number[];
+          }) => {
+            const a = assemblyRef.current.asm;
+            const next = {
+              ...a,
+              instances: [
+                ...a.instances,
+                {
+                  id: inst.id,
+                  partId: inst.partId ?? "p",
+                  transform: inst.transform ?? identity(),
+                },
+              ],
+            };
+            assemblyRef.current = { asm: next, refs: assemblyRef.current.refs };
+            return inst.id;
+          },
+          addMate: (mate: Mate) => {
+            const a = assemblyRef.current.asm;
+            assemblyRef.current = {
+              ...assemblyRef.current,
+              asm: { ...a, mates: [...a.mates, mate] },
+            };
+            return mate.id;
+          },
+          register: (asm: Assembly) => {
+            assemblyRef.current = { asm, refs: assemblyRef.current.refs };
+            return asm;
+          },
+          setRef: (instId: string, refName: string, transform: number[]) => {
+            const a = assemblyRef.current.asm;
+            const base: RefMap = {};
+            for (const i of a.instances)
+              base[i.id] = { body: { transform: identity() } };
+            (base[instId] ??= {})[refName] = { transform };
+            assemblyRef.current = { ...assemblyRef.current, refs: base };
+            return true;
+          },
+          solve: (): {
+            ok: boolean;
+            dof: number;
+            issues: string[];
+            residual: number;
+            placed: number;
+            instances: { id: string; transform: number[] }[];
+          } => {
+            const { asm, refs } = assemblyRef.current;
+            const r = solve(asm, refs ?? undefined);
+            if (!r.assembly)
+              return {
+                ok: false,
+                dof: r.dof,
+                issues: r.issues,
+                residual: r.residual,
+                placed: 0,
+                instances: [],
+              };
+            let placed = 0;
+            const listing: { id: string; transform: number[] }[] = [];
+            for (const inst of r.assembly.instances) {
+              const fid = inst.id;
+              const el = scadgenSceneSync.elementOf(fid);
+              const obj = el
+                ? (getObject as (id: string) => ThreeObj | undefined)(el)
+                : undefined;
+              if (obj && placeObject(obj, inst.transform)) placed++;
+              listing.push({ id: inst.id, transform: inst.transform });
+            }
+            return {
+              ok: r.ok,
+              dof: r.dof,
+              issues: r.issues,
+              residual: r.residual,
+              placed,
+              instances: listing,
+            };
+          },
+          state: (): Assembly => assemblyRef.current.asm,
+          tree: () => {
+            const t = buildTree(assemblyRef.current.asm);
+            if (!t) return [];
+            const toPlaintext = (
+              n: AssemblyNode,
+            ): {
+              instanceId: string;
+              children: {
+                instanceId: string;
+                children: { instanceId: string; children: never[] }[];
+              }[];
+            } => {
+              const kids = n.children.map((c: AssemblyNode) => ({
+                instanceId: c.instanceId,
+                children: c.children.map((gc: AssemblyNode) => ({
+                  instanceId: gc.instanceId,
+                  children: [] as never[],
+                })),
+              }));
+              return { instanceId: n.instanceId, children: kids };
+            };
+            return [toPlaintext(t)];
+          },
+        },
       },
     };
     {
       const dbg = (
         window as unknown as {
-          __cadDebug: { scadgen: Record<string, unknown> };
+          __cadDebug: {
+            scadgen: Record<string, unknown> & {
+              bus?: import("../model/actionBus").ActionBus;
+            };
+          };
         }
       ).__cadDebug;
       dbg.scadgen.bus = createSceneBus(dbg.scadgen as unknown as HookBag);
+      busRef.current = dbg.scadgen
+        .bus as import("../model/actionBus").ActionBus;
+      // ECAD subsystem: same bus for desk/VR/voice/AI (exit-ramp rule).
+      const ecad = installEcad({
+        scene,
+        bus: dbg.scadgen.bus as import("../model/actionBus").ActionBus,
+      });
+      ecadRef.current = ecad;
+      dbg.scadgen.ecad = ecad;
+      (window as unknown as { __ecad?: unknown }).__ecad = ecad;
+      dbg.scadgen.bus.register({
+        id: "ecad.openPanel",
+        kind: "command",
+        aliases: [],
+        run: () => setEcadOpen(true),
+      });
+      dbg.scadgen.bus.register({
+        id: "ecad.closePanel",
+        kind: "command",
+        aliases: [],
+        run: () => setEcadOpen(false),
+      });
+      // Assembly actions: registered here (solve + insert + addMate) so
+      // desk/VR/voice dispatch to the same solver through the bus
+      // (exit-ramp rule).
+      const asmApi = (
+        dbg.scadgen as unknown as {
+          assembly?: {
+            addInstance: (i: {
+              id: string;
+              partId?: string;
+              transform?: number[];
+            }) => string;
+            addMate: (m: Mate) => string;
+            register: (a: Assembly) => Assembly;
+            setRef: (inst: string, name: string, t: number[]) => boolean;
+            solve: () => unknown;
+            state: () => Assembly;
+            tree: () => unknown;
+          };
+        }
+      ).assembly;
+      const bus = dbg.scadgen.bus as import("../model/actionBus").ActionBus;
+      bus.register({
+        id: "assembly.solve",
+        kind: "command",
+        aliases: [],
+        run: () => asmApi?.solve(),
+      });
+      bus.register({
+        id: "assembly.insert",
+        kind: "command",
+        aliases: ["assembly.addInstance"],
+        run: (i: unknown) =>
+          asmApi?.addInstance(
+            i as { id: string; partId?: string; transform?: number[] },
+          ),
+      });
+      bus.register({
+        id: "assembly.addMate",
+        kind: "command",
+        aliases: [],
+        run: (m: unknown) => asmApi?.addMate(m as Mate),
+      });
+      (
+        [
+          ["primitive-box", "box"],
+          ["primitive-prism", "prism"],
+          ["primitive-pyramid", "pyramid"],
+          ["primitive-wedge", "wedge"],
+          ["primitive-cylinder", "cylinder"],
+          ["primitive-cone", "cone"],
+          ["primitive-torus", "torus"],
+          ["primitive-pipe", "pipe"],
+        ] as [string, ShapeKind][]
+      ).forEach(([id, kind]) => {
+        bus.register({
+          id,
+          kind: "op",
+          aliases: [],
+          run: (opts: unknown) =>
+            (
+              dbg.scadgen as {
+                primitive: (
+                  k: ShapeKind,
+                  o: Record<string, unknown>,
+                ) => { featureId: string; profileFeatureId: string };
+              }
+            ).primitive(kind, (opts as Record<string, unknown>) ?? {}),
+        });
+      });
+      bus.register({
+        id: "printer.openWizard",
+        kind: "op",
+        aliases: [],
+        run: () => setPrintOpen(true),
+      });
+      bus.register({
+        id: "printer.closeWizard",
+        kind: "op",
+        aliases: [],
+        run: () => setPrintOpen(false),
+      });
     }
     return () => {
       delete (window as unknown as { __cadDebug?: object }).__cadDebug;
@@ -872,6 +1339,7 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
     addElement,
     getObject,
     idCounter,
+    setPrintOpen,
   ]);
 
   useEffect(() => {
@@ -909,7 +1377,32 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
     }
   }, [elements, updateElementBrep]);
 
-  const { inVR, vrSupported, enterVR, exitVR } = useVRSession();
+  const { inVR, vrSupported, enterVR, exitVR, assemblyBridgeRef } =
+    useVRSession();
+
+  // Wire the VR grip → assembly bridge so grabbing an assembled instance in VR
+  // mirrors the selection into the assembly subsystem (and vice-versa).
+  useEffect(() => {
+    assemblyBridgeRef.current = {
+      onGrab: (instanceId: string) => {
+        const a = assemblyRef.current.asm;
+        if (a.instances.some((i) => i.id === instanceId)) {
+          // Future: highlight / grab-lock the instance.
+          // For now, the selection already went through selectElement above.
+          debugLog(`[assembly] VR grabbed: ${instanceId}`);
+        }
+      },
+      onRelease: () => {
+        // Future: release grab-lock, restore solver position.
+      },
+      onHover: (instanceId: string | null) => {
+        // Future: highlight hovered instance.
+      },
+    };
+    return () => {
+      assemblyBridgeRef.current = null;
+    };
+  }, [assemblyBridgeRef]);
 
   const {
     api: selectOtherApi,
@@ -950,6 +1443,42 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
   const [undoDropdownOpen, setUndoDropdownOpen] = useState(false);
   const [redoDropdownOpen, setRedoDropdownOpen] = useState(false);
   const [planeOffset, setPlaneOffset] = useState(0);
+  const elementsRef = useRef(elements);
+  elementsRef.current = elements;
+  const selectedElementsRef = useRef(selectedElements);
+  selectedElementsRef.current = selectedElements;
+  const pickExport = useCallback(() => selectedElementsRef.current ?? [], []);
+  const onGetStl = useCallback(async () => {
+    const ids = pickExport();
+    const els = elementsRef.current;
+    const r = await exportSelectionStl(els, ids, (subset) =>
+      ImportExportService.getInstance().export(subset as never),
+    );
+    return r.stlBytes;
+  }, [pickExport]);
+  const onGetBbox = useCallback(async (): Promise<{
+    min: [number, number, number];
+    max: [number, number, number];
+  }> => {
+    const els = elementsRef.current;
+    const ids = pickExport();
+    const bbox = selectionBboxMM(els, ids);
+    if (!bbox) throw new Error("no vertex data for selection bbox");
+    return {
+      min: [bbox[0]!, bbox[1]!, bbox[2]!] as [number, number, number],
+      max: [bbox[3]!, bbox[4]!, bbox[5]!] as [number, number, number],
+    };
+  }, [pickExport]);
+  const onGetSelectionStl = useCallback(async (): Promise<SelectionStl> => {
+    const ids = pickExport();
+    const els = elementsRef.current;
+    return exportSelectionStl(els, ids, (subset) =>
+      ImportExportService.getInstance().export(subset as never),
+    );
+  }, [pickExport]);
+
+  const busRun = (action: string, payload?: unknown) =>
+    busRef.current?.run(action, payload);
   const undoDropdownRef = useRef<HTMLDivElement>(null);
   const redoDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -1100,6 +1629,34 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
 
   const isBooleanMode = mode === "combine";
 
+  // Assembly side panel — re-renders when instance/mate counts change
+  const asm = assemblyRef.current.asm;
+  const [asmTick, setAsmTick] = useState(0);
+  void asmTick;
+
+  const assemblyPanel = (
+    <AssemblyPanel
+      asm={asm}
+      onAddInstance={(i) => {
+        busRun("assembly.insert", i);
+        setAsmTick((t) => t + 1);
+      }}
+      onAddMate={(m) => {
+        busRun("assembly.addMate", m);
+        setAsmTick((t) => t + 1);
+      }}
+      onSolve={() =>
+        busRun("assembly.solve") as {
+          ok: boolean;
+          dof: number;
+          issues: string[];
+          residual: number;
+          placed: number;
+        } | null
+      }
+    />
+  );
+
   // Lock UI during active sketch or async operations
   const inActiveSketch = mode === "sketch" && !!activeSketch;
   const isLocked = inActiveSketch || isOperationPending;
@@ -1113,6 +1670,68 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
     mode === "loft" ||
     mode === "revolve" ||
     mode === "measure";
+
+  // Flux copilot: one session (the master orchestrator + its trace) per open
+  // project file. The same session backs the desk OrchestratorView, the VR
+  // chat panel, voice, and the ActionBus — one thread, four entry points
+  // (exit-ramp rule). Created once per mount; projectRef = the file/project id.
+  const [fluxOpen, setFluxOpen] = useState(false);
+  const fluxSessionRef = useRef<FluxSession | null>(null);
+  if (fluxSessionRef.current === null) {
+    fluxSessionRef.current = makeFluxSession({
+      projectRef: "scadgen-file",
+      projectName: "Current project",
+      brain: { provider: "local" },
+    });
+  }
+  const fluxSession = fluxSessionRef.current;
+  useEffect(() => {
+    const bus = busRef.current;
+    if (!bus) return;
+    registerFluxBus(bus, fluxSession.orchestrator);
+    if (ecadRef.current) registerEcadAgent(fluxSession, ecadRef.current);
+  }, [fluxSession]);
+  // Per-frame ECAD sync: LEDs, servos, screens, hex-tier emulator clock.
+  useEffect(() => {
+    if (!scene) return;
+    let raf = 0;
+    let last = performance.now();
+    const loop = (t: number) => {
+      ecadRef.current?.layer.update(Math.min(64, t - last));
+      last = t;
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [scene]);
+  // Keep the VR chat panel fed with the live orchestrator trace. The scene
+  // pushes a session getter (one per file) into __vrMechanics; useVRSession's
+  // render loop reads it each frame. No per-frame allocation, no polling —
+  // the getter is the live thread.
+  useEffect(() => {
+    const win = window as unknown as {
+      __vrMechanics?: {
+        setFluxSession?: (
+          g: () => {
+            ref: string;
+            rows: import("../flux/agent/trace").TraceRow[];
+          },
+        ) => void;
+      };
+    };
+    win.__vrMechanics?.setFluxSession?.(() => {
+      const t = fluxSession.orchestrator.trace;
+      return { ref: fluxSession.ref, rows: t.rows };
+    });
+  }, [fluxSession]);
+  // Selection → flux designators: each selected CAD element's nodeId becomes a
+  // flux designator so the copilot can reference what the user picked. Design-
+  // a-tive actions (addResistor, runErcDrc, …) carry their own PCB context; the
+  // nodeId just tags the current selection for brain-context prompts.
+  const fluxSelection = useMemo<SelectedPart[]>(
+    () => selectedElements.map((id) => ({ designator: id })),
+    [selectedElements],
+  );
 
   return (
     <div className="w-full h-screen flex overflow-hidden">
@@ -1148,6 +1767,17 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
           showGroundPlane={showGroundPlane}
           toggleGroundPlane={toggleGroundPlane}
           onFitAll={handleFitAll}
+          onSelectFastener={(spec) => {
+            const dbg = (
+              window as unknown as {
+                __cadDebug: { scadgen: Record<string, unknown> };
+              }
+            ).__cadDebug;
+            const hook = dbg?.scadgen?.fastener as
+              | ((s: Partial<FastenerSpec>) => string)
+              | undefined;
+            if (hook) hook(spec);
+          }}
           inSketch={mode === "sketch" && !!activeSketch}
           canUndoSketch={canUndoSketch}
           canRedoSketch={canRedoSketch}
@@ -1212,6 +1842,28 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
               />
             )}
 
+            {/* Flux copilot — the master orchestrator window (desk surface).
+                One thread per file; sub-agents post rows into this same panel.
+                Toggled by the "⚡ Flux" button below. */}
+            {fluxOpen && (
+              <OrchestratorView
+                projectRef={fluxSession.ref}
+                projectName={fluxSession.name}
+                orchestrator={fluxSession.orchestrator}
+                selection={fluxSelection}
+                brain={{ provider: "local" }}
+              />
+            )}
+
+            {/* Flux toggle — the copilot entry point on the desk. */}
+            <button
+              onClick={() => setFluxOpen((v) => !v)}
+              title="Toggle the Flux copilot (⚡)"
+              className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 px-3 py-1.5 rounded bg-gray-800/95 border border-gray-700 hover:border-blue-500 text-xs text-gray-200"
+            >
+              {fluxOpen ? "✕ Flux" : "⚡ Flux"}
+            </button>
+
             {/* Projection toggle */}
             <button
               onClick={toggleProjection}
@@ -1262,6 +1914,21 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
               selectedPrimitives={sketchSelectedPrimitives}
               onUpdatePoint={updatePrimitivesAndSolve}
               onUpdatePrimitiveProperty={updatePrimitivePropertyAndSolve}
+            />
+          )}
+          {assemblyPanel}
+          {ecadOpen && ecadRef.current && (
+            <EcadPanel
+              ecad={ecadRef.current}
+              onClose={() => setEcadOpen(false)}
+            />
+          )}
+          {printOpen && (
+            <PrintWizard
+              onClose={() => setPrintOpen(false)}
+              onGetStl={onGetStl}
+              onGetBbox={onGetBbox}
+              onGetSelectionStl={onGetSelectionStl}
             />
           )}
         </div>
