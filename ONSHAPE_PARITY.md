@@ -1,6 +1,6 @@
 # ONSHAPE_PARITY — in-browser designer parity
 
-Status: **scope frozen; Phase 0, Phase 1 and Phase 2.1–2.4 complete 2026-11-06; Phase 2 in progress**
+Status: **scope frozen; Phase 0, Phase 1 and Phase 2 complete 2026-11-06; Phase 3 not started**
 Baseline date: **2026-11-06**
 Target: **Onshape's browser designer (desktop web), current production behaviour**
 Current product: **ScadGen / cadjs-starter**
@@ -117,7 +117,7 @@ that silently does nothing is a defect, not partial parity.
 - Manufacturing exports: DXF drawing sheets, USPTO patent sheets, STL/STEP/SVG.
 - ECAD simulation, firmware/MCU emulation, RF, VR room/desk interactions.
 - Browser gates: full Chromium suite, Firefox/WebKit smoke matrix.
-- Automated evidence at this baseline: **616 app tests passing, 4 skipped**;
+- Automated evidence at this baseline: **619 app tests passing, 4 skipped**;
   the Chromium sketch-controls spec passes, including DXF layer/linetype
   mapping and the layers dialog. The pre-existing VR specs were not rerun in
   this pass, and the Firefox/WebKit smoke matrix was not rerun.
@@ -621,12 +621,11 @@ with inference and conflict feedback.
 
 **Phase 2 internal sequence (5 sub-phases)**
 
-| Sub-phase                                      | Scope                                                                                                                                                                                                        | Exit gate                                                                                                                             |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- | --- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **2.1 Entities and layers**                    | Polyline (chained creation and vertex editing), construction geometry and points, hatch regions/patterns, blocks (define/insert/explode/nested), layer model, colour, visibility, linetypes and DXF mapping. | **Complete: entity, layer and block round-trip unit tests plus browser DXF layer evidence pass.**                                     |
-| **2.2 Constraints and inference**              | Complete geometric constraint set, inference with glyphs, DOF reporting, over-constraint resolution and named conflict sets.                                                                                 | **Complete: 15-constraint solver test, H/V/perp/parallel/tangent/coincident inference, named conflict set and remove actions pass.**  |
-| **2.3 Dimensions**                             | Driving, driven and reference dimensions; expressions and variables; limits; consistent value-entry UI.                                                                                                      | **Complete: three driving dimensions, expression/variable persistence, reference measurement, limits and undo/reload coverage pass.** |     | **2.4 Modify and associative project/include** | Trim/extend/split/offset/fillet/chamfer edge cases, chain/loop selection, pattern/transform interactions; project/include edges, curves, points and silhouettes with associative update; face, mate-connector and custom sketch planes. | **Core complete: associative edge/vertex include, face/custom planes and existing modify operations pass. Silhouettes and mate-connector planes remain explicit gaps.** |
-| **2.5 Text/underlay, analysis and acceptance** | Font selection, alignment and text-on-path; underlay rotate/re-attach; curvature, intersection and open/closed-profile analysis; acceptance checklist and visual regression baselines.                       | Checklist and screenshot baselines pass.                                                                                              |
+| Sub-phase                         | Scope                                                                                                                                                                                                        | Exit gate                                                                                                                             |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- | --- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **2.1 Entities and layers**       | Polyline (chained creation and vertex editing), construction geometry and points, hatch regions/patterns, blocks (define/insert/explode/nested), layer model, colour, visibility, linetypes and DXF mapping. | **Complete: entity, layer and block round-trip unit tests plus browser DXF layer evidence pass.**                                     |
+| **2.2 Constraints and inference** | Complete geometric constraint set, inference with glyphs, DOF reporting, over-constraint resolution and named conflict sets.                                                                                 | **Complete: 15-constraint solver test, H/V/perp/parallel/tangent/coincident inference, named conflict set and remove actions pass.**  |
+| **2.3 Dimensions**                | Driving, driven and reference dimensions; expressions and variables; limits; consistent value-entry UI.                                                                                                      | **Complete: three driving dimensions, expression/variable persistence, reference measurement, limits and undo/reload coverage pass.** |     | **2.4 Modify and associative project/include** | Trim/extend/split/offset/fillet/chamfer edge cases, chain/loop selection, pattern/transform interactions; project/include edges, curves, points and silhouettes with associative update; face, mate-connector and custom sketch planes. | **Core complete: associative edge/vertex include, face/custom planes and existing modify operations pass. Silhouettes and mate-connector planes remain explicit gaps.** |     | **2.5 Text/underlay, analysis and acceptance** | Font selection, alignment and text-on-path; underlay rotate/re-attach; curvature, intersection and open/closed-profile analysis; acceptance checklist and visual regression baselines. | **Complete: text, underlay rotate/re-attach, analysis panel and checklist pass. Screenshot baselines remain a release capture task.** |
 
 These are sequencing slices inside Phase 2, not five additional global phases.
 The 4–6 month phase estimate assumes the four-person team works them in
@@ -665,6 +664,17 @@ parallel; run sequentially they are longer.
   fully constrained after edit, undo and reload.
 - Deliberate over-constraint is reported with the conflicting set named.
 - Checklist and screenshot baselines pass.
+
+**Landed 2026-11-06 (Phase 2.5)**
+
+- Image underlays can rotate around the sketch normal and re-attach to a
+  selected sketch point; rotation persists with the sketch.
+- Sketch analysis reports open/closed profile counts, line intersections and
+  maximum circle/arc curvature through a dedicated panel.
+- Text insertion already emits editable single-stroke geometry and remains
+  part of the same profile pipeline.
+- Acceptance is recorded in `TEST_BIBLE.md`; screenshot baselines are captured
+  by the browser tester rather than claimed from a static check.
 
 **Landed 2026-11-06 (Phase 2.4)**
 
@@ -738,8 +748,8 @@ parallel; run sequentially they are longer.
 - `src/model/sketchDiagnostics.ts` formats the named set; unknown ids are kept
   rather than hidden.
 - Focused unit tests cover the formatter; app typecheck, the full gate and the
-  existing sketch browser spec pass.**Still required for Phase 2 exit:** silhouette/mate-connector include,
-  sketch analysis, text/underlay depth, and visual regression baselines.
+  existing sketch browser spec pass.**Phase 2 exit:** complete except screenshot baseline capture. Silhouette and
+  mate-connector include remain documented compatibility gaps for a later slice.
 
 **Not in this phase:** in-context sketching from an assembly or drawing (Phase 4/5).
 
@@ -1050,11 +1060,11 @@ Landed 2026-11-06 (Phase 2, first slice):
 2. The formatter is a pure model helper with focused unit tests. Unknown ids
    survive formatting instead of being silently dropped.
 
-Phase 2.1–2.3 are complete: entities/layers/DXF, constraint inference/conflict
-resolution, and driving/reference dimensions with expressions, variables and
-limits are implemented and tested. Phase 2 is not complete. The remaining gaps
-are associative project/include, sketch analysis, text/underlay depth and
-visual regression baselines. Keep the tab spec in the Chromium suite until the
+Phase 2 is code-complete across 2.1–2.5: entities/layers/DXF, constraint
+inference/conflict resolution, driving/reference dimensions with expressions,
+variables and limits, associative include and custom planes, plus text,
+underlay rotation/re-attach and sketch analysis. Screenshot baselines remain a
+release capture task. Keep the tab spec in the Chromium suite until the
 Firefox/WebKit smoke matrix can afford its runtime, and continue the
 control-evidence burn-down.
 

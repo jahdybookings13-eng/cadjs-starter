@@ -38,6 +38,7 @@ import {
   type SketchCommand,
 } from "../../model/sketchControls";
 import { describeConstraintIds } from "../../model/sketchDiagnostics";
+import { analyzeSketch } from "../../model/sketchAnalysis";
 import { mirrorSelectedPrimitives } from "../../model/sketchMirror";
 import {
   cornerModifyArcArc,
@@ -217,6 +218,7 @@ const SketchModeContent: FC<ModeContentProps> = ({
   } | null>(null);
   const [textDialogOpen, setTextDialogOpen] = useState(false);
   const [underlayEditorOpen, setUnderlayEditorOpen] = useState(false);
+  const [analysisOpen, setAnalysisOpen] = useState(false);
   const dxfInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
@@ -1953,6 +1955,7 @@ const SketchModeContent: FC<ModeContentProps> = ({
             onAddImage={handleAddImage}
             onEditUnderlay={handleEditUnderlay}
             onInclude={() => void handleInclude()}
+            onAnalyze={() => setAnalysisOpen(true)}
           />,
           panelSlot,
         )}
@@ -2008,10 +2011,57 @@ const SketchModeContent: FC<ModeContentProps> = ({
         >
           <ImageUnderlayModal
             underlays={activeSketch.imageUnderlays ?? []}
+            attachPoint={(() => {
+              const point = activeSketch.primitives.find(
+                (primitive) =>
+                  primitive.type === "point" &&
+                  selectedPrimitives.includes(primitive.id),
+              );
+              return point?.type === "point"
+                ? { x: point.x, y: point.y }
+                : null;
+            })()}
             onUpdate={updateUnderlay}
             onDelete={deleteUnderlay}
             onClose={() => setUnderlayEditorOpen(false)}
           />
+        </div>
+      )}
+
+      {analysisOpen && activeSketch && (
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setAnalysisOpen(false);
+          }}
+        >
+          <div className="w-80 rounded border border-gray-600 bg-gray-800 p-4 text-gray-200 shadow-xl">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold">Sketch analysis</h2>
+              <button
+                className="text-gray-400 hover:text-white"
+                onClick={() => setAnalysisOpen(false)}
+                aria-label="Close sketch analysis"
+              >
+                ✕
+              </button>
+            </div>
+            {(() => {
+              const analysis = analyzeSketch(activeSketch);
+              return (
+                <dl className="grid grid-cols-2 gap-2 text-xs">
+                  <dt className="text-gray-400">Closed profiles</dt>
+                  <dd>{analysis.closedProfiles}</dd>
+                  <dt className="text-gray-400">Open profiles</dt>
+                  <dd>{analysis.openProfiles}</dd>
+                  <dt className="text-gray-400">Intersections</dt>
+                  <dd>{analysis.intersections}</dd>
+                  <dt className="text-gray-400">Max curvature</dt>
+                  <dd>{analysis.maxCurvature.toFixed(3)} 1/unit</dd>
+                </dl>
+              );
+            })()}
+          </div>
         </div>
       )}
 

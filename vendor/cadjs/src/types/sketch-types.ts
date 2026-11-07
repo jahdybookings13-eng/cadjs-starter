@@ -318,6 +318,8 @@ export interface SketchImageUnderlay {
   width: number;
   height: number;
   opacity?: number | undefined;
+  /** Rotation in radians around the sketch normal. */
+  rotation?: number | undefined;
 }
 
 // Main Sketch interface

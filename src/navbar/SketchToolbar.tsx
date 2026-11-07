@@ -63,6 +63,7 @@ interface SketchToolbarProps {
   onAddImage: () => void;
   onEditUnderlay: () => void;
   onInclude: () => void;
+  onAnalyze: () => void;
 }
 
 const GEOMETRIC_CONSTRAINTS: GeometricConstraintType[] = [
@@ -136,6 +137,7 @@ const SketchToolbar: FC<SketchToolbarProps> = ({
   onAddImage,
   onEditUnderlay,
   onInclude,
+  onAnalyze,
 }) => {
   const [pendingConstraint, setPendingConstraint] =
     useState<ConstraintType | null>(null);
@@ -435,9 +437,16 @@ const SketchToolbar: FC<SketchToolbarProps> = ({
         }`}
         disabled={isOperationPending}
         onClick={onInclude}
-        title="Project selected 3D BRep edges into this sketch"
+        title="Project selected 3D BRep edges and vertices into this sketch"
       >
         Include
+      </button>
+      <button
+        className="flex-none rounded bg-gray-700 px-2 py-1 text-sm text-gray-200 hover:bg-gray-600"
+        onClick={onAnalyze}
+        title="Analyze open/closed profiles, intersections and curvature"
+      >
+        Analyze
       </button>
       {toolBtn("dimension", "Dim", "D / DIM")}
       {toolBtn("select", "Select", "S / SELECT")}

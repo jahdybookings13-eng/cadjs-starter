@@ -3,6 +3,7 @@ import type { SketchImageUnderlay } from "@vitekk02/cadjs";
 
 interface ImageUnderlayModalProps {
   underlays: SketchImageUnderlay[];
+  attachPoint?: { x: number; y: number } | null | undefined;
   onUpdate: (id: string, updates: Partial<SketchImageUnderlay>) => void;
   onDelete: (id: string) => void;
   onClose: () => void;
@@ -10,6 +11,7 @@ interface ImageUnderlayModalProps {
 
 const ImageUnderlayModal: React.FC<ImageUnderlayModalProps> = ({
   underlays,
+  attachPoint,
   onUpdate,
   onDelete,
   onClose,
@@ -34,7 +36,7 @@ const ImageUnderlayModal: React.FC<ImageUnderlayModalProps> = ({
 
   const field = (
     label: string,
-    key: "x" | "y" | "width" | "height" | "opacity",
+    key: "x" | "y" | "width" | "height" | "opacity" | "rotation",
     step: number,
   ) => (
     <label className="flex items-center justify-between gap-3 text-xs text-gray-300">
@@ -84,7 +86,18 @@ const ImageUnderlayModal: React.FC<ImageUnderlayModalProps> = ({
         {field("Width", "width", 1)}
         {field("Height", "height", 1)}
         {field("Opacity", "opacity", 0.05)}
+        {field("Rotation°", "rotation", 1)}
       </div>
+      {attachPoint && (
+        <button
+          className="mt-2 w-full rounded bg-gray-700 px-2 py-1 text-xs text-gray-200 hover:bg-blue-600"
+          onClick={() =>
+            onUpdate(selected.id, { x: attachPoint.x, y: attachPoint.y })
+          }
+        >
+          Re-attach to selected point
+        </button>
+      )}
       <div className="mt-3 flex justify-end">
         <button
           className="px-2 py-1 text-xs rounded bg-red-700 hover:bg-red-600 text-white"

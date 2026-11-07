@@ -218,6 +218,14 @@ export function useSketchRender({
           activeSketch.plane.normal,
         ),
       );
+      if (underlay.rotation) {
+        mesh.quaternion.multiply(
+          new THREE.Quaternion().setFromAxisAngle(
+            new THREE.Vector3(0, 0, 1),
+            underlay.rotation,
+          ),
+        );
+      }
       mesh.renderOrder = -1;
       scene.add(mesh);
       newObjects.push(mesh);
