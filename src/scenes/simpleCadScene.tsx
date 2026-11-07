@@ -80,6 +80,45 @@ import { faceOwnerOf, scadgenExecutor } from "../model/executor";
 import { scadgenSceneSync, type ElementAppearance } from "../model/sceneSync";
 import { createSceneBus, type HookBag } from "../model/actionBus";
 import { loadProject, saveProject } from "../model/documentStore";
+import {
+  activeTab as activeDocumentTab,
+  addTab as addDocumentTab,
+  deleteTab as deleteDocumentTab,
+  duplicateTab as duplicateDocumentTab,
+  ensureDocument,
+  moveTab as moveDocumentTab,
+  newDocumentTab,
+  renameTab as renameDocumentTab,
+  saveDocument,
+  setActiveTab as setActiveDocumentTab,
+  writeTabDesign,
+  type CadDocument,
+  type DocumentTab,
+  type DocumentTabKind,
+} from "../document";
+import { DocumentTabBar } from "../components/DocumentTabBar";
+import {
+  canRoleEdit,
+  getAccount,
+  getProject,
+  resolveBootProject,
+  resolveSettings,
+  getOverlay,
+  saveProject as saveProjectDoc,
+  type ProjectDoc,
+  type ShareRole,
+} from "../project";
+import { isEcadSnapshot } from "../ecad/persist";
+import {
+  canEditSession,
+  getSessionSnapshot,
+  onRemoteDoc,
+  announceDocSaved,
+  publishSelection,
+  startSession,
+  stopSession,
+  subscribeSession,
+} from "../project/sessionRuntime";
 import "../model/bootstrap";
 import { makeElementAuthor, pairNewElements } from "../model/elementAuthoring";
 import {
@@ -104,6 +143,10 @@ import {
 import { useToast } from "../contexts/ToastContext";
 import ViewCube from "../components/ViewCube";
 import { BrowserSidePanel } from "../components/BrowserSidePanel";
+import { CollaborationPanel } from "../components/CollaborationPanel";
+import { SessionPresenceStrip } from "../components/SessionPresenceStrip";
+import { ShareGate } from "../components/ShareGate";
+import { ViewerToolbar } from "../components/ViewerToolbar";
 import { SketchPropertiesSidePanel } from "../components/SketchPropertiesSidePanel";
 import { useLineMaterialResize } from "../hooks/useLineMaterialResize";
 import { useOriginHelpers } from "../hooks/useOriginHelpers";
@@ -199,6 +242,7 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
     renderer,
     camera,
     scene,
+    sceneReady,
     unhighlightElement,
     unmountRenderer,
     showGroundPlane,
@@ -217,6 +261,36 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
     setGridSnapEnabled,
   } = useCadVisualizer();
   const [printOpen, setPrintOpen] = useState(false);
+
+  // Resolve the URL once. A share link selects its project and role before the
+  // scene ever hydrates; a bad/revoked link keeps the design behind the gate.
+  const bootAccessRef = useRef<ReturnType<typeof resolveBootProject> | null>(
+    null,
+  );
+  if (bootAccessRef.current === null) {
+    try {
+      bootAccessRef.current = resolveBootProject(
+        window.location.pathname,
+        window.location.search,
+      );
+    } catch {
+      bootAccessRef.current = {
+        doc: null,
+        role: "view",
+        allowVr: false,
+        denied: true,
+        share: null,
+      };
+    }
+  }
+  const bootAccess = bootAccessRef.current;
+  const [sessionRole, setSessionRole] = useState<ShareRole>(bootAccess.role);
+  const [shareDenied] = useState(bootAccess.denied);
+  const [vrGateOpen, setVrGateOpen] = useState(Boolean(bootAccess.share?.vr));
+  const [collabOpen, setCollabOpen] = useState(false);
+  const [, setShareRevision] = useState(0);
+  const canEdit = canRoleEdit(sessionRole);
+
   // ECAD: virtual microcontrollers + screens (desk/VR/voice/AI share one bus).
   // The sim/layer persist app-wide; installEcad re-registers actions whenever
   // this effect rebuilds the ActionBus, and the flux effect wires the AI agent.
@@ -229,6 +303,203 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
     refs: undefined,
   });
   const busRef = useRef<import("../model/actionBus").ActionBus | null>(null);
+
+  // Document tabs: one persisted CadDocument per project. The active tab owns
+  // the serialized design blob, so a reload (and every tab switch) restores
+  // the Part Studio the user was actually in. View-only shares can open tabs
+  // but not mutate the document.
+  const documentRef = useRef<CadDocument | null>(null);
+  if (documentRef.current === null && bootAccess.doc) {
+    try {
+      documentRef.current = ensureDocument(bootAccess.doc);
+    } catch {
+      documentRef.current = null;
+    }
+  }
+  const [cadDocument, setCadDocument] = useState<CadDocument | null>(
+    documentRef.current,
+  );
+  const setDocument = useCallback((next: CadDocument) => {
+    documentRef.current = next;
+    setCadDocument(next);
+    try {
+      saveDocument(next);
+    } catch {
+      /* quota — the in-memory document is still authoritative */
+    }
+  }, []);
+  // Boot hydration is one-shot: restoring a tab must not re-run every time a
+  // tab edit updates the document object.
+  const hydratedTabRef = useRef(false);
+
+  /**
+   * Replace the whole scene with a serialized design. Dropping the authored
+   * bodies and feature→element map is required: restoring an empty tab over an
+   * existing design would otherwise leave the other tab's geometry behind.
+   */
+  const applyDesign = useCallback(
+    (text?: string) => {
+      for (const el of elementsRef.current) removeElement(el.nodeId);
+      scadgenSceneSync.reset();
+      scadgenHistory.clear();
+      loadProject(text);
+      forceSceneUpdate();
+    },
+    [removeElement, forceSceneUpdate],
+  );
+
+  // Restore the active tab once the scene exists. Deferred a tick so the
+  // scene-sync bridge (mounted by the visualizer/VR hooks) is configured
+  // before the restored feature history rebuilds.
+  useEffect(() => {
+    if (!sceneReady || hydratedTabRef.current || !cadDocument) return;
+    const tab = activeDocumentTab(cadDocument);
+    if (!tab || !tab.design) return;
+    const timer = window.setTimeout(() => {
+      if (hydratedTabRef.current) return;
+      hydratedTabRef.current = true;
+      try {
+        applyDesign(tab.design);
+      } catch {
+        /* corrupt tab blob: keep the empty scene rather than crash */
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [sceneReady, cadDocument, applyDesign]);
+
+  /**
+   * One save path for the whole project: CAD nodes + the ECAD scene and its
+   * firmware. The desk save action, the ECAD panel after a deploy/run, and any
+   * surface dispatching `project.save` all land here, so code written in the
+   * studio survives a reload instead of dying with the session.
+   */
+  const persistProject = useCallback((): string => {
+    if (!canEditSession()) return "";
+    const snap = ecadRef.current?.sim.snapshot();
+    const doc = scadgenProjectRef.current;
+    const text = saveProject(snap);
+    // Keep the project doc and the active tab on the same serialized design.
+    if (doc) {
+      try {
+        const saved = JSON.parse(text) as {
+          savedAt?: number;
+          nodes?: unknown[];
+          assets?: unknown[];
+          ecad?: unknown;
+        };
+        doc.design = {
+          savedAt: saved.savedAt ?? Date.now(),
+          nodes: saved.nodes ?? [],
+          assets: saved.assets ?? [],
+          ...(saved.ecad !== undefined ? { ecad: saved.ecad } : {}),
+        };
+        doc.updatedAt = Date.now();
+        saveProjectDoc(doc);
+      } catch {
+        /* keep the last good project doc */
+      }
+    }
+    const current = documentRef.current;
+    if (current) {
+      setDocument(writeTabDesign(current, current.activeTabId, text));
+    }
+    // Let the other surface reload instead of rendering stale bodies.
+    announceDocSaved();
+    return text;
+  }, [setDocument]);
+
+  /* ---------------------------------------------------------------------- */
+  /* Document tab operations                                                */
+  /* ---------------------------------------------------------------------- */
+
+  // Switching mid-sketch (or during an async rebuild) would discard work, so
+  // the bar is disabled then; this is the matching guard for direct calls.
+  const tabsLocked = () =>
+    !canEdit || isOperationPending || (mode === "sketch" && !!activeSketch);
+
+  /** Serialize the live scene into the active tab. */
+  const captureTabs = (): CadDocument | null => {
+    const current = documentRef.current;
+    if (!current) return null;
+    if (!canEditSession()) return current;
+    try {
+      return writeTabDesign(
+        current,
+        current.activeTabId,
+        saveProject(ecadRef.current?.sim.snapshot()),
+      );
+    } catch {
+      return current;
+    }
+  };
+
+  const loadTabDesign = (tab: DocumentTab) => {
+    hydratedTabRef.current = true;
+    try {
+      applyDesign(tab.design);
+    } catch {
+      /* corrupt tab blob: keep the tab, leave the current scene as-is */
+    }
+  };
+
+  const handleTabSelect = (tabId: string) => {
+    if (tabsLocked()) return;
+    const current = captureTabs();
+    if (!current || current.activeTabId === tabId) return;
+    const next = setActiveDocumentTab(current, tabId);
+    const tab = activeDocumentTab(next);
+    if (!tab || tab.id !== tabId) return;
+    setDocument(next);
+    loadTabDesign(tab);
+  };
+
+  const handleTabCreate = (kind: DocumentTabKind) => {
+    // Only Part Studios are authorable in this build; the menu states that.
+    if (tabsLocked() || kind !== "partstudio") return;
+    const current = captureTabs();
+    if (!current) return;
+    const tab = newDocumentTab(kind);
+    setDocument(addDocumentTab(current, tab));
+    loadTabDesign(tab);
+  };
+
+  const handleTabRename = (tabId: string, name: string) => {
+    if (!canEdit) return;
+    const current = documentRef.current;
+    if (!current) return;
+    setDocument(renameDocumentTab(current, tabId, name));
+  };
+
+  const handleTabDuplicate = (tabId: string) => {
+    if (tabsLocked()) return;
+    const current = captureTabs();
+    if (!current) return;
+    const result = duplicateDocumentTab(current, tabId);
+    if (!result) return;
+    setDocument(result.document);
+    loadTabDesign(result.tab);
+  };
+
+  const handleTabMove = (tabId: string, toIndex: number) => {
+    if (tabsLocked()) return;
+    const current = documentRef.current;
+    if (!current) return;
+    setDocument(moveDocumentTab(current, tabId, toIndex));
+  };
+
+  const handleTabDelete = (tabId: string) => {
+    if (tabsLocked()) return;
+    const current = captureTabs();
+    if (!current) return;
+    const wasActive = current.activeTabId === tabId;
+    const next = deleteDocumentTab(current, tabId);
+    if (!next) return;
+    setDocument(next);
+    if (wasActive) {
+      const tab = activeDocumentTab(next);
+      if (tab) loadTabDesign(tab);
+    }
+  };
 
   // E2E test hook: only mounted in dev/test builds. Tree-shaken from production.
   useEffect(() => {
@@ -1100,7 +1371,7 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
               }
             : null;
         },
-        saveProject: () => saveProject(),
+        saveProject: () => persistProject(),
         loadProject: (text?: string) => loadProject(text),
         idle: () =>
           scadgenExecutor.whenIdle().then(() => scadgenExecutor.lastReport),
@@ -1231,14 +1502,44 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
         bus: dbg.scadgen.bus as import("../model/actionBus").ActionBus,
       });
       ecadRef.current = ecad;
+      // Rebuild the saved ECAD scene + firmware. Restore keeps instance ids
+      // stable, so wires and per-board firmware still point at the right
+      // parts after a reload.
+      {
+        const savedEcad = scadgenProjectRef.current?.design.ecad;
+        if (isEcadSnapshot(savedEcad)) {
+          const restored = ecad.sim.restore(savedEcad);
+          for (const instId of ecad.sim.instances.keys())
+            ecad.layer.add(instId);
+          debugLog(`ecad: restored ${restored} parts + firmware`);
+        }
+      }
       dbg.scadgen.ecad = ecad;
       (window as unknown as { __ecad?: unknown }).__ecad = ecad;
+      // Publish the live EcadLayer so the VR session (useVRSession) can build
+      // its 1:1 physics world + bind boards. The layer, not its group, is the
+      // object with .sim + .meters(); the scene only mounts layer.group.
+      (
+        window as unknown as { __scadgen?: Record<string, unknown> }
+      ).__scadgen ??= {};
+      (
+        window as unknown as { __scadgen: Record<string, unknown> }
+      ).__scadgen.ecadLayer = ecad.layer;
       dbg.scadgen.bus.register({
         id: "ecad.openPanel",
         kind: "command",
         aliases: [],
         run: () => setEcadOpen(true),
       });
+      // Persist from any surface (ECAD panel after deploy/run, VR, AI).
+      if (!dbg.scadgen.bus.has("project.save")) {
+        dbg.scadgen.bus.register({
+          id: "project.save",
+          kind: "op",
+          aliases: [],
+          run: () => persistProject(),
+        });
+      }
       dbg.scadgen.bus.register({
         id: "ecad.closePanel",
         kind: "command",
@@ -1342,6 +1643,16 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
     setPrintOpen,
   ]);
 
+  // The visualizer's `scene` context value is a stale sceneRef.current
+  // captured at provider render time; the actual THREE scene exists only
+  // after mountRenderer() runs and sceneReady flips true. Attach the ECAD
+  // layer group to the LIVE scene whenever it becomes available (detached
+  // otherwise, boards would be ungrabbable / invisible in VR).
+  useEffect(() => {
+    if (!sceneReady || !scene) return;
+    ecadRef.current?.attach(scene);
+  }, [sceneReady, scene]);
+
   useEffect(() => {
     if (!pendingAuthorFixups.current.size) {
       for (const el of elements) seenElementIds.current.add(el.nodeId);
@@ -1437,8 +1748,7 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
     string[]
   >([]);
   const originGroupRef = useOriginHelpers(scene, originVisibility);
-  const ModeContent =
-    inVR && mode === "sketch" ? undefined : MODE_COMPONENTS[mode];
+  const ModeContent = inVR || !canEdit ? undefined : MODE_COMPONENTS[mode];
 
   const [undoDropdownOpen, setUndoDropdownOpen] = useState(false);
   const [redoDropdownOpen, setRedoDropdownOpen] = useState(false);
@@ -1447,6 +1757,102 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
   elementsRef.current = elements;
   const selectedElementsRef = useRef(selectedElements);
   selectedElementsRef.current = selectedElements;
+
+  // One live session over the open project. Both surfaces share it: this
+  // webview publishes what the tree has selected, the headset publishes what
+  // it is holding, and a peer's pick tints the same body here that gets an
+  // outline in VR.
+  useEffect(() => {
+    const doc = scadgenProjectRef.current;
+    if (!doc) return;
+    try {
+      startSession({
+        doc,
+        account: getAccount(),
+        surface: "2d",
+        role: bootAccess.role,
+      });
+      const initial = getSessionSnapshot();
+      if (initial) setSessionRole(initial.self.role);
+    } catch {
+      return;
+    }
+
+    let prev: string[] = [];
+    const unsub = subscribeSession(() => {
+      const snap = getSessionSnapshot();
+      if (snap) {
+        setSessionRole((current) =>
+          current === snap.self.role ? current : snap.self.role,
+        );
+      }
+      const next = snap
+        ? snap.peers.flatMap((p) => (p.surface === "2d" ? p.selection : []))
+        : [];
+      const local = selectedElementsRef.current;
+      for (const id of prev) {
+        if (!next.includes(id) && !local.includes(id)) unhighlightElement(id);
+      }
+      for (const id of next) {
+        if (!local.includes(id) && !prev.includes(id)) highlightElement(id);
+      }
+      prev = next;
+    });
+
+    // A peer saved the design: reload the shared doc rather than serving
+    // geometry from our last local write.
+    const offDoc = onRemoteDoc(() => {
+      try {
+        const current = scadgenProjectRef.current;
+        if (current) {
+          const refreshed = getProject(current.id);
+          if (refreshed) scadgenProjectRef.current = refreshed;
+        }
+        applyDesign();
+        // The peer's save owns the live design now; fold it into this tab so
+        // switching away and back does not resurrect stale geometry.
+        const currentDoc = documentRef.current;
+        if (currentDoc) {
+          try {
+            setDocument(
+              writeTabDesign(
+                currentDoc,
+                currentDoc.activeTabId,
+                saveProject(ecadRef.current?.sim.snapshot()),
+              ),
+            );
+          } catch {
+            /* keep the local tab blob */
+          }
+        }
+        setShareRevision((v) => v + 1);
+      } catch {
+        /* a malformed peer doc must not take the desk down */
+      }
+    });
+
+    return () => {
+      unsub();
+      offDoc();
+      for (const id of prev) {
+        if (!selectedElementsRef.current.includes(id)) unhighlightElement(id);
+      }
+      stopSession();
+    };
+  }, [
+    bootAccess.role,
+    highlightElement,
+    unhighlightElement,
+    forceSceneUpdate,
+    applyDesign,
+    setDocument,
+  ]);
+
+  // Publish my tree selection for the headset's outline. While VR owns the
+  // seat the desk stays quiet, and vice versa.
+  useEffect(() => {
+    if (!inVR) publishSelection(selectedElements, "2d");
+  }, [selectedElements, inVR]);
   const pickExport = useCallback(() => selectedElementsRef.current ?? [], []);
   const onGetStl = useCallback(async () => {
     const ids = pickExport();
@@ -1581,7 +1987,12 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
     prevModeRef.current = mode;
   }, [mode, modeCleanupMap]);
 
+  useEffect(() => {
+    if (!canEdit && mode !== "move") setMode("move");
+  }, [canEdit, mode, setMode]);
+
   useSceneKeyboardBindings({
+    enabled: canEdit,
     mode,
     setMode,
     activeSketch: !!activeSketch,
@@ -1662,14 +2073,15 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
   const isLocked = inActiveSketch || isOperationPending;
 
   const showSecondaryBar =
-    (mode === "sketch" && !sketchIsSelectingPlane && activeSketch) ||
-    isBooleanMode ||
-    mode === "extrude" ||
-    mode === "fillet" ||
-    mode === "sweep" ||
-    mode === "loft" ||
-    mode === "revolve" ||
-    mode === "measure";
+    canEdit &&
+    ((mode === "sketch" && !sketchIsSelectingPlane && activeSketch) ||
+      isBooleanMode ||
+      mode === "extrude" ||
+      mode === "fillet" ||
+      mode === "sweep" ||
+      mode === "loft" ||
+      mode === "revolve" ||
+      mode === "measure");
 
   // Flux copilot: one session (the master orchestrator + its trace) per open
   // project file. The same session backs the desk OrchestratorView, the VR
@@ -1677,14 +2089,43 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
   // (exit-ramp rule). Created once per mount; projectRef = the file/project id.
   const [fluxOpen, setFluxOpen] = useState(false);
   const fluxSessionRef = useRef<FluxSession | null>(null);
+  const scadgenProjectRef = useRef<import("../project").ProjectDoc | null>(
+    null,
+  );
   if (fluxSessionRef.current === null) {
+    // Resolve the active project from the local store (migrating the pre-model
+    // single-doc blob so nothing is lost). On any storage failure fall back to
+    // the bare "scadgen-file" id rather than crashing the scene.
+    const doc: ProjectDoc | null = bootAccess.doc;
+    scadgenProjectRef.current = doc;
+    // Expose the resolved project + settings to the world (VR room, print
+    // wizard, share links, AI). One node of truth.
+    const win = window as unknown as {
+      __scadgen?: Record<string, unknown>;
+      __vrMechanics?: Record<string, unknown>;
+    };
+    win.__scadgen = win.__scadgen ?? {};
+    win.__scadgen.project = doc;
+    win.__scadgen.share = bootAccess.share;
+    win.__scadgen.access = {
+      role: bootAccess.role,
+      allowVr: bootAccess.allowVr,
+      denied: bootAccess.denied,
+    };
+    win.__scadgen.settings = doc
+      ? {
+          ...doc.settings,
+          resolved: resolveSettings(doc, getOverlay(doc.ownerId)),
+        }
+      : null;
     fluxSessionRef.current = makeFluxSession({
-      projectRef: "scadgen-file",
-      projectName: "Current project",
+      projectRef: doc?.id ?? "scadgen-file",
+      projectName: doc?.name ?? "Current project",
       brain: { provider: "local" },
     });
   }
   const fluxSession = fluxSessionRef.current;
+  const projectDoc = scadgenProjectRef.current;
   useEffect(() => {
     const bus = busRef.current;
     if (!bus) return;
@@ -1735,74 +2176,130 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
 
   return (
     <div className="w-full h-screen flex overflow-hidden">
+      {shareDenied && (
+        <ShareGate
+          projectName="Shared project"
+          role={sessionRole}
+          vrRequested={Boolean(bootAccess.share?.vr)}
+          vrAllowed={false}
+          denied
+          onContinue={() => setVrGateOpen(false)}
+          onOpenProject={() => {
+            window.location.href = "/";
+          }}
+        />
+      )}
+      {!shareDenied && vrGateOpen && projectDoc && (
+        <ShareGate
+          projectName={projectDoc.name}
+          role={sessionRole}
+          vrRequested={Boolean(bootAccess.share?.vr)}
+          vrAllowed={bootAccess.allowVr}
+          onContinue={() => setVrGateOpen(false)}
+          onOpenProject={() => {
+            window.location.href = "/";
+          }}
+          {...(bootAccess.allowVr
+            ? {
+                onEnterVR: () => {
+                  setVrGateOpen(false);
+                  enterVR();
+                },
+              }
+            : {})}
+        />
+      )}
       <BrowserSidePanel
         sections={browserSections}
         selectedElementId={selectedElementId}
         onSelectNode={handleBrowserSelect}
-        onToggleVisibility={handleToggleVisibility}
+        onToggleVisibility={canEdit ? handleToggleVisibility : () => {}}
         onToggleSectionExpanded={toggleSectionExpanded}
         onToggleItemExpanded={toggleNodeExpanded}
-        onRenameNode={renameNode}
-        onDeleteNode={deleteNode}
-        onEditSketch={editSketch}
+        onRenameNode={canEdit ? renameNode : () => {}}
+        onDeleteNode={canEdit ? deleteNode : () => {}}
+        onEditSketch={canEdit ? editSketch : () => {}}
       />
 
-      {/* Center column: toolbars + canvas */}
+      {/* Center column: document tabs + toolbars + canvas */}
       <div className="flex-1 flex flex-col min-w-0">
-        <PrimaryToolbar
-          mode={mode}
-          setMode={setMode}
-          isLocked={isLocked}
-          isOperationPending={isOperationPending}
-          isBooleanMode={isBooleanMode}
-          sketchIsSelectingPlane={sketchIsSelectingPlane}
-          onSketchClick={() => {
-            if (mode !== "sketch") {
-              setMode("sketch");
-              setSketchStartCounter((c) => c + 1);
-            } else if (!activeSketch) {
-              setSketchStartCounter((c) => c + 1);
-            }
-          }}
-          showGroundPlane={showGroundPlane}
-          toggleGroundPlane={toggleGroundPlane}
-          onFitAll={handleFitAll}
-          onSelectFastener={(spec) => {
-            const dbg = (
-              window as unknown as {
-                __cadDebug: { scadgen: Record<string, unknown> };
+        {cadDocument && (
+          <DocumentTabBar
+            doc={cadDocument}
+            readOnly={!canEdit}
+            busy={isOperationPending || (mode === "sketch" && !!activeSketch)}
+            onSelect={handleTabSelect}
+            onCreate={handleTabCreate}
+            onRename={handleTabRename}
+            onDuplicate={handleTabDuplicate}
+            onMove={handleTabMove}
+            onDelete={handleTabDelete}
+          />
+        )}
+        {canEdit ? (
+          <PrimaryToolbar
+            mode={mode}
+            setMode={setMode}
+            isLocked={isLocked}
+            isOperationPending={isOperationPending}
+            isBooleanMode={isBooleanMode}
+            sketchIsSelectingPlane={sketchIsSelectingPlane}
+            onSketchClick={() => {
+              if (mode !== "sketch") {
+                setMode("sketch");
+                setSketchStartCounter((c) => c + 1);
+              } else if (!activeSketch) {
+                setSketchStartCounter((c) => c + 1);
               }
-            ).__cadDebug;
-            const hook = dbg?.scadgen?.fastener as
-              | ((s: Partial<FastenerSpec>) => string)
-              | undefined;
-            if (hook) hook(spec);
-          }}
-          inSketch={mode === "sketch" && !!activeSketch}
-          canUndoSketch={canUndoSketch}
-          canRedoSketch={canRedoSketch}
-          undoSketch={undoSketch}
-          redoSketch={redoSketch}
-          canUndo={canUndo}
-          canRedo={canRedo}
-          undo={undo}
-          redo={redo}
-          undoActionName={undoActionName}
-          redoActionName={redoActionName}
-          undoStack={undoStack}
-          redoStack={redoStack}
-          undoDropdownOpen={undoDropdownOpen}
-          redoDropdownOpen={redoDropdownOpen}
-          setUndoDropdownOpen={setUndoDropdownOpen}
-          setRedoDropdownOpen={setRedoDropdownOpen}
-          undoDropdownRef={undoDropdownRef}
-          redoDropdownRef={redoDropdownRef}
-        />
+            }}
+            showGroundPlane={showGroundPlane}
+            toggleGroundPlane={toggleGroundPlane}
+            onFitAll={handleFitAll}
+            onShare={() => setCollabOpen(true)}
+            onSelectFastener={(spec) => {
+              const dbg = (
+                window as unknown as {
+                  __cadDebug: { scadgen: Record<string, unknown> };
+                }
+              ).__cadDebug;
+              const hook = dbg?.scadgen?.fastener as
+                | ((s: Partial<FastenerSpec>) => string)
+                | undefined;
+              if (hook) hook(spec);
+            }}
+            inSketch={mode === "sketch" && !!activeSketch}
+            canUndoSketch={canUndoSketch}
+            canRedoSketch={canRedoSketch}
+            undoSketch={undoSketch}
+            redoSketch={redoSketch}
+            canUndo={canUndo}
+            canRedo={canRedo}
+            undo={undo}
+            redo={redo}
+            undoActionName={undoActionName}
+            redoActionName={redoActionName}
+            undoStack={undoStack}
+            redoStack={redoStack}
+            undoDropdownOpen={undoDropdownOpen}
+            redoDropdownOpen={redoDropdownOpen}
+            setUndoDropdownOpen={setUndoDropdownOpen}
+            setRedoDropdownOpen={setRedoDropdownOpen}
+            undoDropdownRef={undoDropdownRef}
+            redoDropdownRef={redoDropdownRef}
+          />
+        ) : (
+          <ViewerToolbar
+            projectName={projectDoc?.name ?? "Shared project"}
+            role={sessionRole}
+            onShare={() => setCollabOpen(true)}
+            onFitAll={handleFitAll}
+          />
+        )}
 
         <VRButton
-          vrSupported={vrSupported}
+          vrSupported={vrSupported && bootAccess.allowVr}
           inVR={inVR}
-          onEnterVR={enterVR}
+          onEnterVR={bootAccess.allowVr ? enterVR : () => {}}
           onExitVR={exitVR}
         />
 
@@ -1826,6 +2323,26 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
               data-testid="cad-canvas"
             />
 
+            {/* Who is in the suit, and what they are touching. */}
+            <SessionPresenceStrip />
+
+            {collabOpen && !shareDenied && projectDoc && (
+              <CollaborationPanel
+                doc={projectDoc}
+                selfId={getAccount().id}
+                role={sessionRole}
+                selectedIds={selectedElements}
+                tree={browserSections}
+                vrAllowed={bootAccess.allowVr}
+                onClose={() => setCollabOpen(false)}
+                onSave={() => {
+                  saveProjectDoc(projectDoc);
+                  announceDocSaved();
+                }}
+                {...(bootAccess.allowVr ? { onEnterVR: enterVR } : {})}
+              />
+            )}
+
             {/* ViewCube — responsive container */}
             <div className="absolute top-2 right-2 md:top-4 md:right-4 w-20 h-20 md:w-[120px] md:h-[120px] z-10">
               <ViewCube camera={camera} onViewChange={handleViewCubeClick} />
@@ -1845,7 +2362,7 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
             {/* Flux copilot — the master orchestrator window (desk surface).
                 One thread per file; sub-agents post rows into this same panel.
                 Toggled by the "⚡ Flux" button below. */}
-            {fluxOpen && (
+            {canEdit && fluxOpen && (
               <OrchestratorView
                 projectRef={fluxSession.ref}
                 projectName={fluxSession.name}
@@ -1856,13 +2373,15 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
             )}
 
             {/* Flux toggle — the copilot entry point on the desk. */}
-            <button
-              onClick={() => setFluxOpen((v) => !v)}
-              title="Toggle the Flux copilot (⚡)"
-              className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 px-3 py-1.5 rounded bg-gray-800/95 border border-gray-700 hover:border-blue-500 text-xs text-gray-200"
-            >
-              {fluxOpen ? "✕ Flux" : "⚡ Flux"}
-            </button>
+            {canEdit && (
+              <button
+                onClick={() => setFluxOpen((v) => !v)}
+                title="Toggle the Flux copilot (⚡)"
+                className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 px-3 py-1.5 rounded bg-gray-800/95 border border-gray-700 hover:border-blue-500 text-xs text-gray-200"
+              >
+                {fluxOpen ? "✕ Flux" : "⚡ Flux"}
+              </button>
+            )}
 
             {/* Projection toggle */}
             <button
@@ -1916,8 +2435,8 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
               onUpdatePrimitiveProperty={updatePrimitivePropertyAndSolve}
             />
           )}
-          {assemblyPanel}
-          {ecadOpen && ecadRef.current && (
+          {canEdit ? assemblyPanel : null}
+          {canEdit && ecadOpen && ecadRef.current && (
             <EcadPanel
               ecad={ecadRef.current}
               onClose={() => setEcadOpen(false)}

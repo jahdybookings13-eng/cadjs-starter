@@ -4,7 +4,7 @@ import { loadAppReady, readMode, readElements } from "./helpers";
 async function sketchRectangle(page: import("@playwright/test").Page) {
   await page.getByTestId("tool-sketch").click();
   await page.getByRole("button", { name: "XY", exact: true }).click();
-  await page.getByTitle("Rect (R)").click();
+  await page.getByRole("button", { name: "Rect", exact: true }).click();
 
   const box = await page.getByTestId("cad-canvas").boundingBox();
   if (!box) throw new Error("canvas has no bounding box");

@@ -26,6 +26,18 @@ export default defineConfig({
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
     },
+    {
+      name: "firefox",
+      use: { ...devices["Desktop Firefox"] },
+      testMatch:
+        /(app-boot|sketch-controls|sketch-rectangle|undo-chain)\.spec\.ts/,
+    },
+    {
+      name: "webkit",
+      use: { ...devices["Desktop Safari"] },
+      testMatch:
+        /(app-boot|sketch-controls|sketch-rectangle|undo-chain)\.spec\.ts/,
+    },
   ],
   webServer: {
     command: `npm run dev -- --port ${process.env.E2E_PORT ?? "3000"} --strictPort`,

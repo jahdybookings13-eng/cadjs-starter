@@ -23,6 +23,8 @@ interface PrimaryToolbarProps {
   toggleGroundPlane: () => void;
   onFitAll: () => void;
   onSelectFastener?: (spec: FastenerSpec) => void;
+  /** Open the people/share panel. */
+  onShare?: () => void;
 
   // Undo/redo — forwarded to <UndoRedoMenus />.
   inSketch: boolean;
@@ -344,6 +346,7 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = (props) => {
     isBooleanMode,
     sketchIsSelectingPlane,
     onSketchClick,
+    onShare,
     showGroundPlane,
     toggleGroundPlane,
     onFitAll,
@@ -379,6 +382,14 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = (props) => {
     <div className="flex-none h-12 bg-gray-900 border-b border-gray-700 flex items-center z-30">
       <div className="flex items-center px-3 gap-1 min-w-0 flex-1">
         <FileMenu />
+
+        <button
+          className="flex-none px-3 py-1.5 text-sm rounded bg-blue-600 hover:bg-blue-500 text-white"
+          data-testid="tool-share"
+          onClick={onShare}
+        >
+          People
+        </button>
 
         <div className="flex-none w-px h-6 bg-gray-600 mx-1" />
 

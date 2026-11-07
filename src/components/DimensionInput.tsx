@@ -1,5 +1,6 @@
 import React, { FC } from "react";
 import { NumberInput } from "./NumberInput";
+import type { NumericInputMode } from "../model/numericInput";
 
 interface DimensionInputProps {
   visible: boolean;
@@ -10,6 +11,7 @@ interface DimensionInputProps {
   onSubmit: (value: number) => void;
   onCancel: () => void;
   onChange?: ((value: number) => void) | undefined;
+  expressionMode?: NumericInputMode | undefined;
   showConfirmButton?: boolean | undefined;
 }
 
@@ -22,6 +24,7 @@ const DimensionInput: FC<DimensionInputProps> = ({
   onSubmit,
   onCancel,
   onChange,
+  expressionMode = "length",
   showConfirmButton,
 }) => {
   if (!visible) return null;
@@ -57,6 +60,7 @@ const DimensionInput: FC<DimensionInputProps> = ({
         onSubmit={onSubmit}
         onCancel={onCancel}
         onChange={onChange}
+        expressionMode={expressionMode}
         showConfirmButton={showConfirmButton}
         confirmLabel="Confirm"
         tabCancels

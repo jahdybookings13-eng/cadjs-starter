@@ -282,6 +282,8 @@ interface PeripheralRefs {
   servoHorn?: THREE.Object3D;
   buttonCap?: THREE.Object3D;
   buzzerBody?: THREE.Object3D;
+  /** Activity LED on an in-world RF part (keyed on tx, heard on rx). */
+  rfLed?: THREE.MeshStandardMaterial;
 }
 
 function buildPeripheral(part: PeripheralPart): {
@@ -378,6 +380,151 @@ function buildPeripheral(part: PeripheralPart): {
     cap.position.y = part.size.t + 1;
     g.add(cap);
     refs.buttonCap = cap;
+  } else if (part.kind === "rf-tx" || part.kind === "rf-rx") {
+    const pcb = box(part.size.w, part.size.h, 1.6, std(part.color));
+    pcb.position.y = 0.8;
+    g.add(pcb);
+    // Shield can over the radio IC (same silhouette as the real modules).
+    const can = box(
+      part.size.w * 0.5,
+      part.size.h * 0.5,
+      4,
+      std(0xb8bcc0, { metalness: 0.8, roughness: 0.3 }),
+    );
+    can.position.y = 3.6;
+    g.add(can);
+    const ant = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.35, 0.35, 12, 8),
+      std(0xcccccc, { metalness: 0.9, roughness: 0.25 }),
+    );
+    ant.position.set(part.size.w * 0.4, 8, 0);
+    g.add(ant);
+    const ledMat = std(0xff4433, {
+      emissive: new THREE.Color(0xff2200),
+      emissiveIntensity: 0,
+      roughness: 0.4,
+    });
+    const led = new THREE.Mesh(new THREE.SphereGeometry(0.9, 10, 8), ledMat);
+    led.position.set(-part.size.w * 0.38, 2, part.size.h * 0.18);
+    g.add(led);
+    refs.rfLed = ledMat;
+  } else if (part.kind === "resistor") {
+    const body = new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        part.size.h / 2,
+        part.size.h / 2,
+        part.size.w * 0.6,
+        12,
+      ),
+      std(part.color),
+    );
+    body.rotation.z = Math.PI / 2;
+    body.position.y = part.size.h / 2;
+    g.add(body);
+    const lead = std(0xbbbbbb, { metalness: 0.8 });
+    for (const dir of [-1, 1]) {
+      const wire = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.3, 0.3, part.size.w * 0.4, 6),
+        lead,
+      );
+      wire.rotation.z = Math.PI / 2;
+      wire.position.set(dir * part.size.w * 0.4, part.size.h / 2, 0);
+      g.add(wire);
+    }
+  } else if (part.kind === "capacitor") {
+    const body = new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        part.size.w / 2,
+        part.size.w / 2,
+        part.size.t,
+        16,
+      ),
+      std(part.color),
+    );
+    body.position.y = part.size.t / 2;
+    g.add(body);
+    const stripe = box(2, part.size.h, part.size.t * 0.75, std(0xdddddd));
+    stripe.position.set(part.size.w * 0.3, part.size.t / 2, 0);
+    g.add(stripe);
+  } else if (part.kind === "inductor") {
+    const coil = new THREE.Mesh(
+      new THREE.TorusGeometry(part.size.w * 0.32, 1.7, 8, 24),
+      std(0xb87333, { metalness: 0.75, roughness: 0.3 }),
+    );
+    coil.rotation.x = Math.PI / 2;
+    coil.position.y = part.size.t / 2;
+    g.add(coil);
+    const core = new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        part.size.w * 0.18,
+        part.size.w * 0.18,
+        part.size.t * 0.5,
+        12,
+      ),
+      std(0x555555),
+    );
+    core.position.y = part.size.t / 2;
+    g.add(core);
+  } else if (part.kind === "diode") {
+    const body = new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        part.size.h / 2,
+        part.size.h / 2,
+        part.size.w * 0.7,
+        12,
+      ),
+      std(part.color),
+    );
+    body.rotation.z = Math.PI / 2;
+    body.position.y = part.size.h / 2;
+    g.add(body);
+    const band = box(
+      1.2,
+      part.size.h * 1.05,
+      part.size.h * 1.05,
+      std(0xdddddd),
+    );
+    band.position.set(part.size.w * 0.28, part.size.h / 2, 0);
+    g.add(band);
+  } else if (part.kind === "transistor" || part.kind === "mosfet") {
+    const body = new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        part.size.w / 2,
+        part.size.w / 2,
+        part.size.t,
+        14,
+        1,
+        false,
+        0,
+        Math.PI,
+      ),
+      std(part.color),
+    );
+    body.rotation.x = -Math.PI / 2;
+    body.position.y = part.size.t / 2;
+    g.add(body);
+    const legMat = std(0xcccccc, { metalness: 0.85 });
+    for (const x of [-1.4, 0, 1.4]) {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.4, 3, 0.4), legMat);
+      leg.position.set(x, -1.2, 0);
+      g.add(leg);
+    }
+  } else if (part.kind === "battery") {
+    const body = box(part.size.w, part.size.h, part.size.t, std(part.color));
+    body.position.y = part.size.t / 2;
+    g.add(body);
+    const plus = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.6, 1.6, 1.2, 10),
+      std(0xd4af37, { metalness: 0.85 }),
+    );
+    plus.position.set(part.size.w * 0.32, part.size.t + 0.4, 0);
+    g.add(plus);
+    const minus = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.6, 1.6, 0.6, 10),
+      std(0x999999, { metalness: 0.8 }),
+    );
+    minus.position.set(-part.size.w * 0.32, part.size.t + 0.2, 0);
+    g.add(minus);
   } else if (part.kind === "pot") {
     const body = new THREE.Mesh(
       new THREE.CylinderGeometry(
@@ -402,15 +549,38 @@ function buildPeripheral(part: PeripheralPart): {
 }
 
 // ---------------------------------------------------------------------------
-// Layer
+// 1:1 LAW — the VR world is meters. The ECAD catalog is the one mm-authored
+// domain (part.size.{w,h,t} + chip/USB/header offsets are mm). We convert
+// exactly ONCE at this layer boundary (the part group is scaled 0.001 in
+// add()). The law + conversion + guards live dependency-free in oneToOne.ts
+// so the e2e suite can enforce them without allocating the physics world.
 // ---------------------------------------------------------------------------
+import { mmToM, MM_PER_M } from "./oneToOne.js";
+
+/** Real (meter) size of an ECAD part — the 1:1 guard + collider read this. */
+export function instanceMeters(part: EcadPart): {
+  w: number;
+  h: number;
+  t: number;
+} {
+  return {
+    w: mmToM(part.size.w),
+    h: mmToM(part.size.h),
+    t: mmToM(part.size.t),
+  };
+}
 
 interface PartObject {
   instId: string;
+  /** The world-space group (carries meter position + grab userData). */
   group: THREE.Group;
+  /** The unscaled part geometry, scaled 0.001 inside `group` (mm→m). */
+  part: THREE.Group;
   kind: EcadPart["category"];
-  screen?: ScreenState;
-  refs?: PeripheralRefs;
+  /** Real size of this part in meters (for the 1:1 guard + collider). */
+  meters: { w: number; h: number; t: number };
+  screen?: ScreenState | undefined;
+  refs?: PeripheralRefs | undefined;
   ledColor: THREE.Color;
 }
 
@@ -418,9 +588,45 @@ export class EcadLayer {
   readonly group = new THREE.Group();
   private objects = new Map<string, PartObject>();
   private highlighted: string | null = null;
+  /**
+   * Instances whose world transform is owned by the physics world (a thrown
+   * or floating board). While owned, `update()` must NOT overwrite the group
+   * transform from the sim instance — Rapier writes it instead (via
+   * setFromWorld). Toggled by the physics integrator on grab/release.
+   */
+  private physicsOwned = new Set<string>();
 
   constructor(readonly sim: EcadSim) {
     this.group.name = "scadgen-ecad";
+    // The scene-sync effect in @vitekk02/cadjs removes any scene child not in
+    // its allowlist; mark the ECAD root so it is kept like a ground plane.
+    this.group.userData.isScadGenEcad = true;
+  }
+
+  markPhysicsOwned(instId: string, owned: boolean): void {
+    if (owned) this.physicsOwned.add(instId);
+    else this.physicsOwned.delete(instId);
+  }
+
+  isPhysicsOwned(instId: string): boolean {
+    return this.physicsOwned.has(instId);
+  }
+
+  /** Physics integrator → mesh: Rapier-owned transform (meters). */
+  setFromWorld(
+    instId: string,
+    pos: { x: number; y: number; z: number },
+    quat: { x: number; y: number; z: number; w: number },
+  ): void {
+    const obj = this.objects.get(instId);
+    if (!obj) return;
+    obj.group.position.set(pos.x, pos.y, pos.z);
+    obj.group.quaternion.set(quat.x, quat.y, quat.z, quat.w);
+  }
+
+  /** Real (meter) size of an instance — the 1:1 guard + collider read this. */
+  meters(instId: string): { w: number; h: number; t: number } | null {
+    return this.objects.get(instId)?.meters ?? null;
   }
 
   /** Build the 3D model for a placed instance (called after sim.insert). */
@@ -429,38 +635,62 @@ export class EcadLayer {
     const inst = this.sim.instances.get(instId);
     const part = this.sim.partOf(instId);
     if (!inst || !part) return null;
-    let obj: PartObject;
+
+    // 1:1 boundary — build the part ONCE in mm (correct internal geometry:
+    // chips, headers, USB, screens all proportional), remember its refs, then
+    // scale that one group 0.001 so it lands in the meter world.
+    let partGroup: THREE.Group;
+    let screen: ScreenState | undefined;
+    let refs: PeripheralRefs | undefined;
     if (part.category === "board") {
-      obj = {
-        instId,
-        group: buildBoard(part),
-        kind: "board",
-        ledColor: new THREE.Color(0xffffff),
-      };
+      partGroup = buildBoard(part);
     } else if (part.category === "display") {
       const built = buildDisplay(part);
-      obj = {
-        instId,
-        group: built.group,
-        kind: "display",
-        screen: built.screen,
-        ledColor: new THREE.Color(0xffffff),
-      };
+      partGroup = built.group;
+      screen = built.screen;
     } else {
       const built = buildPeripheral(part);
-      obj = {
-        instId,
-        group: built.group,
-        kind: "peripheral",
-        refs: built.refs,
-        ledColor: new THREE.Color(part.color),
-      };
+      partGroup = built.group;
+      refs = built.refs;
     }
-    obj.group.position.set(inst.position.x, inst.position.y, inst.position.z);
-    obj.group.rotation.y = inst.rotation;
-    this.group.add(obj.group);
+    partGroup.scale.setScalar(1 / MM_PER_M); // mm -> m (the ONE conversion)
+
+    const m = instanceMeters(part);
+    const worldGroup = new THREE.Group();
+    worldGroup.name = `ecad-${instId}`;
+    // The instance is placed at mm coords (a board at y=0mm = 0 above its
+    // origin). Convert to meters and lift by half the board thickness so the
+    // part's bottom face sits on its y=0 reference plane.
+    worldGroup.position.set(
+      mmToM(inst.position.x),
+      mmToM(inst.position.y) + m.t / 2,
+      mmToM(inst.position.z),
+    );
+    worldGroup.rotation.y = inst.rotation;
+    worldGroup.add(partGroup);
+    // Grab-system + 1:1-guard userData: the scene walks userData.id to grab;
+    // objType tells physics which collider to build; meters is the real size.
+    worldGroup.userData = {
+      id: instId,
+      objType: part.category,
+      meters: m,
+    };
+
+    const obj: PartObject = {
+      instId,
+      group: worldGroup,
+      part: partGroup,
+      kind: part.category,
+      meters: m,
+      screen,
+      refs,
+      ledColor: new THREE.Color(
+        part.category === "peripheral" ? part.color : 0xffffff,
+      ),
+    };
+    this.group.add(worldGroup);
     this.objects.set(instId, obj);
-    return obj.group;
+    return worldGroup;
   }
 
   remove(instId: string): boolean {
@@ -517,12 +747,17 @@ export class EcadLayer {
     for (const [instId, obj] of this.objects) {
       const inst = this.sim.instances.get(instId);
       if (inst) {
-        obj.group.position.set(
-          inst.position.x,
-          inst.position.y,
-          inst.position.z,
-        );
-        obj.group.rotation.y = inst.rotation;
+        // Physics owns the transform when a board is free/thrown (Rapier
+        // pushes it via setFromWorld). Otherwise apply the sim placement,
+        // converting mm -> m at this boundary (1:1 law).
+        if (!this.physicsOwned.has(instId)) {
+          obj.group.position.set(
+            mmToM(inst.position.x),
+            mmToM(inst.position.y) + obj.meters.t / 2,
+            mmToM(inst.position.z),
+          );
+          obj.group.rotation.y = inst.rotation;
+        }
       }
       if (obj.kind === "display") {
         for (const [boardId] of this.sim.instances) {
@@ -548,6 +783,12 @@ export class EcadLayer {
           const t = performance.now();
           const pulse = f ? 1 + 0.06 * Math.sin((t / 1000) * f * 0.05) : 1;
           obj.refs.buzzerBody.scale.setScalar(pulse);
+        } else if (
+          (part.kind === "rf-tx" || part.kind === "rf-rx") &&
+          obj.refs.rfLed
+        ) {
+          obj.refs.rfLed.emissiveIntensity =
+            this.sim.radioActivity(instId) * 2.4;
         } else if (part.kind === "button" && obj.refs.buttonCap) {
           obj.refs.buttonCap.position.y =
             part.size.t + (this.isPressed(instId) ? 0.2 : 1);

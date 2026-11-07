@@ -1,14 +1,29 @@
 // ecad/firmware.ts — the firmware registry: what ships preloaded per board,
 // and the source of truth for "upload all their firmware".
 //
-// Two tiers:
+// Three tiers:
 // - virtual: Arduino-flavored ScadGen JS (runs on EVERY board via runtime.ts)
 // - hex: real compiled binaries for AVR boards (assembled + emulator-proven
-//   in __tests__/hex.test.ts — see hex.ts for the assembler)
+//   in __tests__/hex.test.ts — see hex.ts for the assembler and avrChips.ts
+//   for the per-chip register maps the emulator runs them against)
+// - binary: validated images for MCUs with no in-app emulator (delivery only;
+//   RP2040 / STM32F4 / classic ESP32 uploads run and get those tiers)
 
-import { NANO_BLINK_HEX, UNO_BLINK_HEX } from "./hex";
+import {
+  ATTINY85_BLINK_HEX,
+  LEONARDO_BLINK_HEX,
+  MEGA_BLINK_HEX,
+  NANO_BLINK_HEX,
+  UNO_BLINK_HEX,
+} from "./hex";
 
-export type FirmwareTier = "virtual" | "hex";
+export type FirmwareTier =
+  | "virtual"
+  | "hex"
+  | "binary"
+  | "rp2040"
+  | "stm32f4"
+  | "esp32";
 
 export interface FirmwareEntry {
   id: string;
@@ -16,7 +31,7 @@ export interface FirmwareEntry {
   /** Boards this firmware targets (catalog ids). Empty = any board. */
   boards: string[];
   tier: FirmwareTier;
-  language: "scadgen-js" | "avr-hex";
+  language: "scadgen-js" | "avr-hex" | "binary";
   /** The firmware body: JS source, or Intel HEX text. */
   source: string;
   desc?: string | undefined;
@@ -177,6 +192,30 @@ async function loop() {
   }
 }
 `,
+  "rf-send": `
+// RF link — keys an OOK transmitter wired to TX_PIN at 5 Hz. The receiver on
+// the same channel reproduces these edges on RX_PIN.
+function setup() {
+  pinMode(TX_PIN, OUTPUT);
+}
+async function loop() {
+  digitalWrite(TX_PIN, HIGH);
+  await delay(100);
+  digitalWrite(TX_PIN, LOW);
+  await delay(100);
+}
+`,
+  "rf-receive": `
+// RF link — mirrors an OOK receiver's OUT pin (RX_PIN) onto LED_PIN.
+function setup() {
+  pinMode(RX_PIN, INPUT);
+  pinMode(LED_PIN, OUTPUT);
+}
+async function loop() {
+  digitalWrite(LED_PIN, digitalRead(RX_PIN) ? HIGH : LOW);
+  await delay(20);
+}
+`,
   "pot-dimmer": `
 // Potentiometer dims the wired LED via PWM.
 const LED = LED_PIN, POT = POT_PIN;
@@ -244,6 +283,13 @@ const VIRTUAL_FIRMWARE: FirmwareEntry[] = [
   entry("rgb-cycle", "RGB cycle", [], "R_PIN/G_PIN/B_PIN on PWM pins"),
   entry("buzzer-melody", "Buzzer melody", [], "Buzzer on BUZZ_PIN"),
   entry("pot-dimmer", "Pot dimmer", [], "POT_PIN analog + LED_PIN PWM"),
+  entry("rf-send", "RF send (OOK)", [], "Transmitter DATA on TX_PIN, 5 Hz"),
+  entry(
+    "rf-receive",
+    "RF receive (OOK)",
+    [],
+    "Receiver OUT on RX_PIN mirrors to LED_PIN",
+  ),
   entry("wifi-scan", "WiFi scan", [
     "esp32-devkit",
     "esp32-s3",
@@ -270,6 +316,33 @@ const HEX_FIRMWARE: FirmwareEntry[] = [
     language: "avr-hex",
     source: NANO_BLINK_HEX,
     desc: "Same ATmega328P binary as the Uno build.",
+  },
+  {
+    id: "blink-hex-mega",
+    title: "Blink (compiled .hex, ATmega2560)",
+    boards: ["arduino-mega"],
+    tier: "hex",
+    language: "avr-hex",
+    source: MEGA_BLINK_HEX,
+    desc: "Runs on the 2560 emulator (256 KB flash, 22-bit PC); D13 is PB7 on a Mega.",
+  },
+  {
+    id: "blink-hex-leonardo",
+    title: "Blink (compiled .hex, ATmega32U4)",
+    boards: ["arduino-leonardo"],
+    tier: "hex",
+    language: "avr-hex",
+    source: LEONARDO_BLINK_HEX,
+    desc: "Runs on the 32U4 emulator; Leonardo D13 is PC7.",
+  },
+  {
+    id: "blink-hex-attiny85",
+    title: "Blink (compiled .hex, ATtiny85)",
+    boards: ["attiny85"],
+    tier: "hex",
+    language: "avr-hex",
+    source: ATTINY85_BLINK_HEX,
+    desc: "Runs on the ATtiny85 emulator at 8 MHz; PB1 is DIP pin 6.",
   },
 ];
 
@@ -303,6 +376,7 @@ export function pinConstantsFor(boardId: string): Record<string, string> {
     case "microbit-v2":
       return { LED_PIN: "P0", BTN_PIN: "P5", SERVO_PIN: "P1" };
     case "stm32-bluepill":
+    case "stm32f4-blackpill":
       return { LED_PIN: "PC13", BTN_PIN: "PA0", SERVO_PIN: "PA1" };
     case "teensy-40":
       return { LED_PIN: "13", BTN_PIN: "1", SERVO_PIN: "14" };

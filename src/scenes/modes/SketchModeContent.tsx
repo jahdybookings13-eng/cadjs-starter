@@ -1,8 +1,14 @@
 import {
   DimensionalConstraint,
+  getAvailableConstraints,
+  getDefaultValue,
   isDimensionalConstraint,
+  isSketchLine,
+  isSketchPoint,
   PLANE_SELECTOR,
   type ConstraintType,
+  type SketchImageUnderlay,
+  type SketchPrimitive,
   worldToScreen,
 } from "@vitekk02/cadjs";
 import React, { FC, useEffect, useRef, useState } from "react";
@@ -18,7 +24,44 @@ import {
 import { useToast } from "../../contexts/ToastContext";
 import SketchToolbar from "../../navbar/SketchToolbar";
 import DimensionInput from "../../components/DimensionInput";
+import SketchCommandPalette from "../../components/SketchCommandPalette";
 import SketchContextMenu from "../../components/SketchContextMenu";
+import SketchControlsHelp from "../../components/SketchControlsHelp";
+import ValueInputModal from "../../navbar/ValueInputModal";
+import {
+  sketchCommandAvailability,
+  type SketchCommand,
+} from "../../model/sketchControls";
+import { mirrorSelectedPrimitives } from "../../model/sketchMirror";
+import {
+  cornerModifyArcArc,
+  cornerModifyLineArc,
+  cornerModifyLines,
+  type CornerOperation,
+} from "../../model/sketchCorner";
+import {
+  joinSketchLines,
+  offsetSketchPrimitive,
+} from "../../model/sketchModify";
+import {
+  circularPatternSelected,
+  moveOrCopySelected,
+  pathPatternSelected,
+  rotateSelectedGeometry,
+  scaleSelectedGeometry,
+} from "../../model/sketchTransform";
+import { linearPatternSelected } from "../../model/sketchPattern";
+import VectorInputModal from "../../navbar/VectorInputModal";
+import PatternInputModal from "../../navbar/PatternInputModal";
+import CircularPatternInputModal from "../../navbar/CircularPatternInputModal";
+import PathPatternInputModal, {
+  type PathPatternCandidate,
+} from "../../navbar/PathPatternInputModal";
+import TextInputModal from "../../navbar/TextInputModal";
+import ImageUnderlayModal from "../../navbar/ImageUnderlayModal";
+import { textToSketchPrimitives } from "../../model/sketchText";
+import { importDxfToSketch } from "../../model/dxfImport";
+import { includeSelectedEdges } from "../../model/sketchInclude";
 import type { ModeContentProps } from ".";
 
 const SketchModeContent: FC<ModeContentProps> = ({
@@ -34,6 +77,16 @@ const SketchModeContent: FC<ModeContentProps> = ({
     cancelSketch,
     solveSketch,
     isOperationPending,
+    canUndoSketch,
+    canRedoSketch,
+    undoSketch,
+    redoSketch,
+    addPrimitive,
+    updatePrimitive,
+    updateSketch,
+    elements,
+    selectedElements,
+    removePrimitive,
     addConstraintAndSolve,
     removeConstraint: removeSketchConstraint,
     pushSketchUndo,
@@ -49,10 +102,13 @@ const SketchModeContent: FC<ModeContentProps> = ({
     setGridSnapEnabled,
   } = useCadVisualizer();
   const { showToast } = useToast();
+  const [polygonSides, setPolygonSides] = useState(6);
+  const [conicRho, setConicRho] = useState(0.5);
 
   const {
     sketchSubMode,
     setSketchSubMode,
+    cancelCurrentOperation,
     handleSketchMode,
     handleKeyDown,
     selectedPrimitives,
@@ -80,10 +136,51 @@ const SketchModeContent: FC<ModeContentProps> = ({
     toggleFixPoint,
     editingConstraintId,
     constraintFeedback,
-  } = useSketchMode();
+  } = useSketchMode(false, polygonSides, conicRho);
 
   // Local UI state for the plane-selection overlay's offset input.
   const [planeOffset, setPlaneOffset] = useState(0);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [pendingPaletteConstraint, setPendingPaletteConstraint] = useState<{
+    type: ConstraintType;
+    defaultValue: number;
+  } | null>(null);
+  const [pendingCorner, setPendingCorner] = useState<{
+    operation: CornerOperation;
+    defaultValue: number;
+  } | null>(null);
+  const [pendingOffset, setPendingOffset] = useState<{
+    defaultValue: number;
+  } | null>(null);
+  const [pendingTransform, setPendingTransform] = useState<{
+    mode: "move" | "copy";
+    defaultX: number;
+    defaultY: number;
+  } | null>(null);
+  const [pendingRotate, setPendingRotate] = useState<{
+    defaultValue: number;
+  } | null>(null);
+  const [pendingScale, setPendingScale] = useState<{
+    defaultValue: number;
+  } | null>(null);
+  const [pendingPattern, setPendingPattern] = useState<{
+    defaultCount: number;
+    defaultX: number;
+    defaultY: number;
+  } | null>(null);
+  const [pendingCircularPattern, setPendingCircularPattern] = useState<{
+    defaultCount: number;
+    defaultAngle: number;
+  } | null>(null);
+  const [pendingPathPattern, setPendingPathPattern] = useState<{
+    defaultCount: number;
+    candidates: PathPatternCandidate[];
+  } | null>(null);
+  const [textDialogOpen, setTextDialogOpen] = useState(false);
+  const [underlayEditorOpen, setUnderlayEditorOpen] = useState(false);
+  const dxfInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   // Local dimension-input state. Used by all 3 dimension flows
   // (selecting a primitive, after line creation, editing an existing constraint).
@@ -150,6 +247,36 @@ const SketchModeContent: FC<ModeContentProps> = ({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
+
+  // Command palette and control-sheet shortcuts. Capture phase so the sketch
+  // handler never treats these as drawing keys. Ctrl/Cmd+K works even while
+  // the palette input is focused, so it can also close the palette.
+  useEffect(() => {
+    if (mode !== "sketch") return;
+    const handleChromeKeys = (event: KeyboardEvent) => {
+      const mod = event.ctrlKey || event.metaKey;
+      if (mod && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        event.stopPropagation();
+        setHelpOpen(false);
+        setPaletteOpen((open) => !open);
+        return;
+      }
+      if (
+        event.target instanceof HTMLInputElement ||
+        event.target instanceof HTMLTextAreaElement
+      )
+        return;
+      if (event.key === "F1" || (event.key === "?" && event.shiftKey)) {
+        event.preventDefault();
+        event.stopPropagation();
+        setPaletteOpen(false);
+        setHelpOpen((open) => !open);
+      }
+    };
+    window.addEventListener("keydown", handleChromeKeys, true);
+    return () => window.removeEventListener("keydown", handleChromeKeys, true);
+  }, [mode]);
 
   // Two-level Escape in sketch mode:
   //   Level 1: sketch's handleKeyDown fires first. If mid-drawing, it cancels the
@@ -522,6 +649,715 @@ const SketchModeContent: FC<ModeContentProps> = ({
     );
   };
 
+  const hasPointSelection = selectedPrimitives.some((id) => {
+    const primitive = activeSketch?.primitives.find((p) => p.id === id);
+    return primitive ? isSketchPoint(primitive) : false;
+  });
+  const hasTwoLineSelection =
+    selectedPrimitives.length === 2 &&
+    selectedPrimitives.every((id) => {
+      const primitive = activeSketch?.primitives.find((p) => p.id === id);
+      return primitive ? isSketchLine(primitive) && !primitive.origin : false;
+    });
+
+  const availableConstraints = activeSketch
+    ? getAvailableConstraints(selectedPrimitives, activeSketch.primitives)
+    : [];
+
+  const commandAvailability = (command: SketchCommand) =>
+    sketchCommandAvailability(command, {
+      hasSelection: selectedPrimitives.length > 0,
+      hasPointSelection,
+      hasTwoLineSelection,
+      canUndo: canUndoSketch,
+      canRedo: canRedoSketch,
+      availableConstraints,
+    });
+
+  const mirrorSeqRef = useRef(0);
+  const cornerSeqRef = useRef(0);
+  const handleMirror = () => {
+    if (!activeSketch) return;
+
+    const selected = activeSketch.primitives.filter((primitive) =>
+      selectedPrimitives.includes(primitive.id),
+    );
+    const axisLines = selected.filter(
+      (primitive) => isSketchLine(primitive) && !primitive.origin,
+    );
+    if (axisLines.length !== 1 || selected.length < 2) {
+      showToast(
+        "Select exactly one line as the mirror axis, plus the geometry to mirror.",
+        "warning",
+      );
+      return;
+    }
+
+    const axis = axisLines[0]!;
+    const result = mirrorSelectedPrimitives(
+      activeSketch,
+      selectedPrimitives,
+      axis.id,
+      (prefix) =>
+        `${prefix}_${Date.now().toString(36)}_${++mirrorSeqRef.current}`,
+    );
+    if (!result.ok) {
+      showToast(result.reason, "warning");
+      return;
+    }
+
+    pushSketchUndo();
+    for (const primitive of result.primitives) {
+      addPrimitive(primitive);
+    }
+    void solveSketch();
+    showToast(`Mirrored ${result.primitives.length} primitives`, "success");
+  };
+
+  const lineArcCornerSelection = (() => {
+    if (!activeSketch || selectedPrimitives.length !== 2) return false;
+    const selected = activeSketch.primitives.filter((primitive) =>
+      selectedPrimitives.includes(primitive.id),
+    );
+    return (
+      selected.some(
+        (primitive) => primitive.type === "line" && !primitive.origin,
+      ) && selected.some((primitive) => primitive.type === "arc")
+    );
+  })();
+
+  const arcArcCornerSelection = (() => {
+    if (!activeSketch || selectedPrimitives.length !== 2) return false;
+    return (
+      activeSketch.primitives.filter(
+        (primitive) =>
+          selectedPrimitives.includes(primitive.id) && primitive.type === "arc",
+      ).length === 2
+    );
+  })();
+
+  const handleCorner = (operation: CornerOperation) => {
+    if (operation === "chamfer" && !hasTwoLineSelection) {
+      showToast("Select exactly two lines first.", "warning");
+      return;
+    }
+    if (
+      operation === "fillet" &&
+      !hasTwoLineSelection &&
+      !lineArcCornerSelection &&
+      !arcArcCornerSelection
+    ) {
+      showToast(
+        "Select two lines, a line and an arc, or two arcs that share a corner.",
+        "warning",
+      );
+      return;
+    }
+    setPendingCorner({ operation, defaultValue: 0.5 });
+  };
+
+  const applyCorner = (value: number) => {
+    if (!activeSketch || !pendingCorner) return;
+
+    const generateId = (prefix: string) =>
+      `${prefix}_${Date.now().toString(36)}_${++cornerSeqRef.current}`;
+    const result =
+      pendingCorner.operation === "fillet" && arcArcCornerSelection
+        ? cornerModifyArcArc(
+            activeSketch,
+            selectedPrimitives,
+            value,
+            generateId,
+          )
+        : pendingCorner.operation === "fillet" && lineArcCornerSelection
+          ? cornerModifyLineArc(
+              activeSketch,
+              selectedPrimitives,
+              value,
+              generateId,
+            )
+          : cornerModifyLines(
+              activeSketch,
+              selectedPrimitives,
+              pendingCorner.operation,
+              value,
+              generateId,
+            );
+    if (!result.ok) {
+      showToast(result.reason, "warning");
+      return;
+    }
+
+    pushSketchUndo();
+    for (const point of result.points) addPrimitive(point);
+    for (const update of result.lineUpdates) {
+      const updates = {
+        ...(update.p1Id ? { p1Id: update.p1Id } : {}),
+        ...(update.p2Id ? { p2Id: update.p2Id } : {}),
+      } as Partial<SketchPrimitive>;
+      updatePrimitive(update.id, updates);
+    }
+    for (const update of result.arcUpdates ?? []) {
+      updatePrimitive(update.id, {
+        ...(update.startId ? { startId: update.startId } : {}),
+        ...(update.endId ? { endId: update.endId } : {}),
+      } as Partial<SketchPrimitive>);
+    }
+    for (const primitive of result.primitives) addPrimitive(primitive);
+    for (const pointId of result.removePointIds) removePrimitive(pointId);
+    void solveSketch();
+
+    const label = pendingCorner.operation === "fillet" ? "Fillet" : "Chamfer";
+    setPendingCorner(null);
+    showToast(`${label} applied`, "success");
+  };
+
+  const handleOffset = () => {
+    if (!activeSketch || selectedPrimitives.length !== 1) {
+      showToast("Select one line, circle or arc to offset.", "warning");
+      return;
+    }
+    const target = activeSketch.primitives.find(
+      (primitive) => primitive.id === selectedPrimitives[0],
+    );
+    if (
+      !target ||
+      target.type === "point" ||
+      target.type === "ellipse" ||
+      target.type === "ellipticalArc" ||
+      target.type === "spline" ||
+      target.type === "bezier" ||
+      target.type === "conic" ||
+      (target.type === "line" && target.origin)
+    ) {
+      showToast("Offset supports lines, circles and arcs.", "warning");
+      return;
+    }
+    setPendingOffset({ defaultValue: 1 });
+  };
+
+  const applyOffset = (value: number) => {
+    if (!activeSketch || !pendingOffset || selectedPrimitives.length !== 1)
+      return;
+    const result = offsetSketchPrimitive(
+      activeSketch,
+      selectedPrimitives[0]!,
+      value,
+      (prefix) =>
+        `${prefix}_${Date.now().toString(36)}_${++cornerSeqRef.current}`,
+    );
+    if (!result.ok) {
+      showToast(result.reason, "warning");
+      return;
+    }
+    pushSketchUndo();
+    for (const point of result.points) addPrimitive(point);
+    for (const primitive of result.primitives) addPrimitive(primitive);
+    void solveSketch();
+    setPendingOffset(null);
+    showToast("Offset applied", "success");
+  };
+
+  const handleJoin = () => {
+    if (!activeSketch) return;
+    const result = joinSketchLines(activeSketch, selectedPrimitives);
+    if (!result.ok) {
+      showToast(result.reason, "warning");
+      return;
+    }
+    pushSketchUndo();
+    const updates = {
+      ...(result.update.p1Id ? { p1Id: result.update.p1Id } : {}),
+      ...(result.update.p2Id ? { p2Id: result.update.p2Id } : {}),
+    } as Partial<SketchPrimitive>;
+    updatePrimitive(result.update.id, updates);
+    removePrimitive(result.removeLineId);
+    if (result.removePointId) removePrimitive(result.removePointId);
+    void solveSketch();
+    showToast("Lines joined", "success");
+  };
+
+  const handleTransform = (mode: "move" | "copy" | "rotate" | "scale") => {
+    if (selectedPrimitives.length === 0) {
+      showToast("Select geometry to transform.", "warning");
+      return;
+    }
+    if (mode === "rotate") {
+      setPendingRotate({ defaultValue: 45 });
+      return;
+    }
+    if (mode === "scale") {
+      setPendingScale({ defaultValue: 2 });
+      return;
+    }
+    setPendingTransform({ mode, defaultX: 1, defaultY: 1 });
+  };
+
+  const applyTransform = (x: number, y: number) => {
+    if (!activeSketch || !pendingTransform) return;
+    const result = moveOrCopySelected(
+      activeSketch,
+      selectedPrimitives,
+      pendingTransform.mode,
+      x,
+      y,
+      (prefix) =>
+        `${prefix}_${Date.now().toString(36)}_${++cornerSeqRef.current}`,
+    );
+    if (!result.ok) {
+      showToast(result.reason, "warning");
+      return;
+    }
+
+    pushSketchUndo();
+    for (const update of result.pointUpdates) {
+      updatePrimitive(update.id, {
+        x: update.x,
+        y: update.y,
+      } as Partial<SketchPrimitive>);
+    }
+    for (const point of result.points) addPrimitive(point);
+    for (const primitive of result.primitives) addPrimitive(primitive);
+    void solveSketch();
+
+    const label = pendingTransform.mode === "move" ? "Moved" : "Copied";
+    setPendingTransform(null);
+    showToast(`${label} selected geometry`, "success");
+  };
+
+  const applyRotate = (degrees: number) => {
+    if (!activeSketch || !pendingRotate) return;
+    const result = rotateSelectedGeometry(
+      activeSketch,
+      selectedPrimitives,
+      (degrees * Math.PI) / 180,
+    );
+    if (!result.ok) {
+      showToast(result.reason, "warning");
+      return;
+    }
+    pushSketchUndo();
+    for (const update of result.pointUpdates) {
+      updatePrimitive(update.id, {
+        x: update.x,
+        y: update.y,
+      } as Partial<SketchPrimitive>);
+    }
+    for (const update of result.primitiveUpdates) {
+      updatePrimitive(update.id, update.updates as Partial<SketchPrimitive>);
+    }
+    void solveSketch();
+    setPendingRotate(null);
+    showToast(`Rotated ${degrees}°`, "success");
+  };
+
+  const applyScale = (factor: number) => {
+    if (!activeSketch || !pendingScale) return;
+    const result = scaleSelectedGeometry(
+      activeSketch,
+      selectedPrimitives,
+      factor,
+    );
+    if (!result.ok) {
+      showToast(result.reason, "warning");
+      return;
+    }
+    pushSketchUndo();
+    for (const update of result.pointUpdates) {
+      updatePrimitive(update.id, {
+        x: update.x,
+        y: update.y,
+      } as Partial<SketchPrimitive>);
+    }
+    for (const update of result.primitiveUpdates) {
+      updatePrimitive(update.id, update.updates as Partial<SketchPrimitive>);
+    }
+    void solveSketch();
+    setPendingScale(null);
+    showToast(`Scaled by ${factor}`, "success");
+  };
+
+  const handlePattern = () => {
+    if (selectedPrimitives.length === 0) {
+      showToast("Select geometry to pattern.", "warning");
+      return;
+    }
+    setPendingPattern({ defaultCount: 3, defaultX: 1, defaultY: 0 });
+  };
+
+  const applyPattern = (count: number, x: number, y: number) => {
+    if (!activeSketch || !pendingPattern) return;
+    const result = linearPatternSelected(
+      activeSketch,
+      selectedPrimitives,
+      count,
+      x,
+      y,
+      (prefix) =>
+        `${prefix}_${Date.now().toString(36)}_${++cornerSeqRef.current}`,
+    );
+    if (!result.ok) {
+      showToast(result.reason, "warning");
+      return;
+    }
+    pushSketchUndo();
+    for (const point of result.points) addPrimitive(point);
+    for (const primitive of result.primitives) addPrimitive(primitive);
+    void solveSketch();
+    setPendingPattern(null);
+    showToast(`Linear pattern: ${count} instances`, "success");
+  };
+
+  const handleCircularPattern = () => {
+    if (selectedPrimitives.length === 0) {
+      showToast("Select geometry to pattern.", "warning");
+      return;
+    }
+    setPendingCircularPattern({ defaultCount: 4, defaultAngle: 360 });
+  };
+
+  const applyCircularPattern = (count: number, angle: number) => {
+    if (!activeSketch || !pendingCircularPattern) return;
+    const result = circularPatternSelected(
+      activeSketch,
+      selectedPrimitives,
+      count,
+      (angle * Math.PI) / 180,
+      (prefix) =>
+        `${prefix}_${Date.now().toString(36)}_${++cornerSeqRef.current}`,
+    );
+    if (!result.ok) {
+      showToast(result.reason, "warning");
+      return;
+    }
+    pushSketchUndo();
+    for (const point of result.points) addPrimitive(point);
+    for (const primitive of result.primitives) addPrimitive(primitive);
+    void solveSketch();
+    setPendingCircularPattern(null);
+    showToast(`Circular pattern: ${count} instances`, "success");
+  };
+
+  const applyText = (text: string, height: number) => {
+    if (!activeSketch) return;
+    const originPrimitive = activeSketch.primitives.find(
+      (primitive) =>
+        selectedPrimitives.includes(primitive.id) && primitive.type === "point",
+    );
+    const result = textToSketchPrimitives(text, {
+      x: originPrimitive?.type === "point" ? originPrimitive.x : 0,
+      y: originPrimitive?.type === "point" ? originPrimitive.y : 0,
+      height,
+      generateId: (prefix) =>
+        `${prefix}_${Date.now().toString(36)}_${++cornerSeqRef.current}`,
+    });
+    if (result.primitives.length === 0) {
+      showToast("No supported text characters to insert.", "warning");
+      return;
+    }
+    pushSketchUndo();
+    for (const point of result.points) addPrimitive(point);
+    for (const primitive of result.primitives) addPrimitive(primitive);
+    void solveSketch();
+    setTextDialogOpen(false);
+    showToast(
+      `Text: ${result.lineCount} lines, ${Math.round(result.width * 10) / 10} mm wide`,
+      "success",
+    );
+  };
+
+  const handleAddImage = () => {
+    if (!activeSketch) return;
+    imageInputRef.current?.click();
+  };
+
+  const handleImageFile = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !activeSketch) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result ?? "");
+      if (!dataUrl) return;
+      const image = new Image();
+      image.onload = () => {
+        const width = 120;
+        const height = (width * image.height) / Math.max(1, image.width);
+        pushSketchUndo();
+        updateSketch((sketch) => ({
+          ...sketch,
+          imageUnderlays: [
+            ...(sketch.imageUnderlays ?? []),
+            {
+              id: `img_${Date.now().toString(36)}_${++cornerSeqRef.current}`,
+              dataUrl,
+              x: 0,
+              y: 0,
+              width,
+              height,
+              opacity: 0.55,
+            },
+          ],
+        }));
+        showToast("Image underlay inserted.", "success");
+      };
+      image.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+    event.target.value = "";
+  };
+
+  const handleEditUnderlay = () => {
+    if (!activeSketch?.imageUnderlays?.length) return;
+    pushSketchUndo();
+    setUnderlayEditorOpen(true);
+  };
+
+  const updateUnderlay = (
+    id: string,
+    updates: Partial<SketchImageUnderlay>,
+  ) => {
+    updateSketch((sketch) => ({
+      ...sketch,
+      imageUnderlays: (sketch.imageUnderlays ?? []).map((underlay) =>
+        underlay.id === id ? { ...underlay, ...updates } : underlay,
+      ),
+    }));
+  };
+
+  const deleteUnderlay = (id: string) => {
+    updateSketch((sketch) => ({
+      ...sketch,
+      imageUnderlays: (sketch.imageUnderlays ?? []).filter(
+        (underlay) => underlay.id !== id,
+      ),
+    }));
+    if ((activeSketch?.imageUnderlays?.length ?? 0) <= 1) {
+      setUnderlayEditorOpen(false);
+    }
+  };
+
+  const handleInclude = async () => {
+    if (!activeSketch) return;
+    const selected = elements.filter((element) =>
+      selectedElements.includes(element.nodeId),
+    );
+    const result = await includeSelectedEdges(
+      selected,
+      activeSketch.plane,
+      (prefix) =>
+        `${prefix}_${Date.now().toString(36)}_${++cornerSeqRef.current}`,
+    );
+    if (!result.ok) {
+      showToast(result.reason, "warning");
+      return;
+    }
+    pushSketchUndo();
+    for (const point of result.points) addPrimitive(point);
+    for (const primitive of result.primitives) addPrimitive(primitive);
+    void solveSketch();
+    showToast(
+      `Included ${result.primitives.length} projected edges.`,
+      "success",
+    );
+  };
+
+  const handleImportDxf = () => {
+    if (!activeSketch) return;
+    dxfInputRef.current?.click();
+  };
+
+  const handleDxfFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !activeSketch) return;
+    try {
+      const result = importDxfToSketch(
+        await file.text(),
+        (prefix) =>
+          `${prefix}_${Date.now().toString(36)}_${++cornerSeqRef.current}`,
+      );
+      if (!result.ok) {
+        showToast(result.reason, "error");
+        return;
+      }
+      pushSketchUndo();
+      for (const point of result.points) addPrimitive(point);
+      for (const primitive of result.primitives) addPrimitive(primitive);
+      void solveSketch();
+      const skipped = result.skipped.length
+        ? `; skipped ${result.skipped.join(", ")}`
+        : "";
+      showToast(
+        `DXF: ${result.entityCount} entities in ${result.units}${skipped}`,
+        result.skipped.length ? "warning" : "success",
+      );
+    } catch (error) {
+      showToast(
+        `DXF import failed: ${error instanceof Error ? error.message : String(error)}`,
+        "error",
+      );
+    } finally {
+      event.target.value = "";
+    }
+  };
+
+  const handlePathPattern = () => {
+    if (!activeSketch || selectedPrimitives.length < 2) {
+      showToast(
+        "Select geometry plus one line or curve to use as the path.",
+        "warning",
+      );
+      return;
+    }
+    const candidates: PathPatternCandidate[] = activeSketch.primitives
+      .filter(
+        (primitive) =>
+          selectedPrimitives.includes(primitive.id) &&
+          primitive.type !== "point" &&
+          !(primitive.type === "line" && primitive.origin),
+      )
+      .map((primitive, index) => ({
+        id: primitive.id,
+        label: `${primitive.type} ${index + 1}`,
+      }));
+    if (candidates.length === 0) {
+      showToast(
+        "Select one line or curve as the path, with other geometry to copy.",
+        "warning",
+      );
+      return;
+    }
+    setPendingPathPattern({ defaultCount: 4, candidates });
+  };
+
+  const applyPathPattern = (count: number, pathId: string, align: boolean) => {
+    if (!activeSketch || !pendingPathPattern) return;
+    const result = pathPatternSelected(
+      activeSketch,
+      selectedPrimitives,
+      { count, pathId, align },
+      (prefix) =>
+        `${prefix}_${Date.now().toString(36)}_${++cornerSeqRef.current}`,
+    );
+    if (!result.ok) {
+      showToast(result.reason, "warning");
+      return;
+    }
+    pushSketchUndo();
+    for (const point of result.points) addPrimitive(point);
+    for (const primitive of result.primitives) addPrimitive(primitive);
+    void solveSketch();
+    setPendingPathPattern(null);
+    showToast(`Path pattern: ${count} instances`, "success");
+  };
+
+  const runSketchCommand = (command: SketchCommand) => {
+    const availability = commandAvailability(command);
+    if (!availability.enabled) {
+      showToast(availability.reason ?? "Command unavailable", "warning");
+      return;
+    }
+    setPaletteOpen(false);
+    switch (command.action.type) {
+      case "tool":
+        cancelCurrentOperation();
+        setSketchSubMode(command.action.mode);
+        break;
+      case "mirror":
+        handleMirror();
+        break;
+      case "corner":
+        handleCorner(command.action.operation);
+        break;
+      case "offset":
+        handleOffset();
+        break;
+      case "join":
+        handleJoin();
+        break;
+      case "transform":
+        handleTransform(command.action.mode);
+        break;
+      case "pattern":
+        handlePattern();
+        break;
+      case "patternCircular":
+        handleCircularPattern();
+        break;
+      case "patternPath":
+        handlePathPattern();
+        break;
+      case "text":
+        setTextDialogOpen(true);
+        break;
+      case "import-dxf":
+        handleImportDxf();
+        break;
+      case "toggle-construction":
+        // The engine owns the construction rules (origin points excluded).
+        // Reuse its real X handler instead of duplicating selection semantics.
+        window.dispatchEvent(
+          new KeyboardEvent("keydown", { key: "x", cancelable: true }),
+        );
+        break;
+      case "toggle-fix":
+        toggleFixPoint();
+        break;
+      case "delete":
+        deleteSelectedPrimitives();
+        break;
+      case "constraint":
+        if (!activeSketch) break;
+        if (command.action.needsValue) {
+          setPendingPaletteConstraint({
+            type: command.action.constraint,
+            defaultValue:
+              getDefaultValue(
+                command.action.constraint,
+                selectedPrimitives,
+                activeSketch.primitives,
+              ) ?? 0,
+          });
+        } else {
+          void applyConstraint(command.action.constraint);
+        }
+        break;
+      case "undo":
+        undoSketch();
+        break;
+      case "redo":
+        redoSketch();
+        break;
+      case "solve":
+        solveSketch();
+        break;
+      case "finish":
+        void (async () => {
+          const success = await finishSketch();
+          if (!success) {
+            showToast(
+              "Sketch may have open profiles — try closing them first",
+              "warning",
+            );
+            return;
+          }
+          setMode("move");
+        })();
+        break;
+      case "cancel":
+        cancelSketch();
+        break;
+      case "grid-snap":
+        setGridSnapEnabled(!gridSnapEnabled);
+        break;
+      case "command-palette":
+        setPaletteOpen(true);
+        break;
+      case "controls-help":
+        setHelpOpen(true);
+        break;
+    }
+  };
+
   const showPanel = !isSelectingPlane && !!activeSketch;
 
   return (
@@ -548,6 +1384,9 @@ const SketchModeContent: FC<ModeContentProps> = ({
         onSubmit={handleDimensionSubmit}
         onCancel={handleDimensionCancel}
         onChange={handleDimensionChange}
+        expressionMode={
+          dimensionInputLabel.toLowerCase() === "angle" ? "angle" : "length"
+        }
       />
 
       {/* Right-click context menu for constraints. */}
@@ -683,9 +1522,269 @@ const SketchModeContent: FC<ModeContentProps> = ({
             onGridSpacingChange={setGridSpacing}
             gridSnapEnabled={gridSnapEnabled}
             onGridSnapToggle={() => setGridSnapEnabled(!gridSnapEnabled)}
+            polygonSides={polygonSides}
+            onPolygonSidesChange={setPolygonSides}
+            conicRho={conicRho}
+            onConicRhoChange={setConicRho}
+            onOpenPalette={() => setPaletteOpen(true)}
+            onOpenHelp={() => setHelpOpen(true)}
+            onMirror={handleMirror}
+            onCorner={handleCorner}
+            onOffset={handleOffset}
+            onJoin={handleJoin}
+            onTransform={handleTransform}
+            onPattern={handlePattern}
+            onPatternCircular={handleCircularPattern}
+            onPatternPath={handlePathPattern}
+            onText={() => setTextDialogOpen(true)}
+            onImportDxf={handleImportDxf}
+            onAddImage={handleAddImage}
+            onEditUnderlay={handleEditUnderlay}
+            onInclude={() => void handleInclude()}
           />,
           panelSlot,
         )}
+
+      {pendingPaletteConstraint && (
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget)
+              setPendingPaletteConstraint(null);
+          }}
+        >
+          <div className="p-2 bg-gray-800 rounded border border-gray-600 shadow-xl">
+            <ValueInputModal
+              constraintType={pendingPaletteConstraint.type}
+              defaultValue={pendingPaletteConstraint.defaultValue}
+              onConfirm={(value) => {
+                const type = pendingPaletteConstraint.type;
+                const finalValue =
+                  type === "angle" ? (value * Math.PI) / 180 : value;
+                void applyConstraint(type, finalValue);
+                setPendingPaletteConstraint(null);
+              }}
+              onCancel={() => setPendingPaletteConstraint(null)}
+            />
+          </div>
+        </div>
+      )}
+
+      {textDialogOpen && (
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setTextDialogOpen(false);
+          }}
+        >
+          <div className="p-2 bg-gray-800 rounded border border-gray-600 shadow-xl">
+            <TextInputModal
+              onConfirm={applyText}
+              onCancel={() => setTextDialogOpen(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {underlayEditorOpen && activeSketch && (
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget)
+              setUnderlayEditorOpen(false);
+          }}
+        >
+          <ImageUnderlayModal
+            underlays={activeSketch.imageUnderlays ?? []}
+            onUpdate={updateUnderlay}
+            onDelete={deleteUnderlay}
+            onClose={() => setUnderlayEditorOpen(false)}
+          />
+        </div>
+      )}
+
+      <input
+        ref={dxfInputRef}
+        type="file"
+        accept=".dxf"
+        className="hidden"
+        onChange={handleDxfFile}
+        aria-label="Import DXF file"
+      />
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleImageFile}
+        aria-label="Insert image underlay"
+      />
+
+      {pendingPathPattern && (
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget)
+              setPendingPathPattern(null);
+          }}
+        >
+          <div className="p-2 bg-gray-800 rounded border border-gray-600 shadow-xl">
+            <PathPatternInputModal
+              candidates={pendingPathPattern.candidates}
+              defaultCount={pendingPathPattern.defaultCount}
+              onConfirm={(count, pathId, align) =>
+                applyPathPattern(count, pathId, align)
+              }
+              onCancel={() => setPendingPathPattern(null)}
+            />
+          </div>
+        </div>
+      )}
+
+      {pendingCircularPattern && (
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget)
+              setPendingCircularPattern(null);
+          }}
+        >
+          <div className="p-2 bg-gray-800 rounded border border-gray-600 shadow-xl">
+            <CircularPatternInputModal
+              defaultCount={pendingCircularPattern.defaultCount}
+              defaultAngle={pendingCircularPattern.defaultAngle}
+              onConfirm={(count, angle) => applyCircularPattern(count, angle)}
+              onCancel={() => setPendingCircularPattern(null)}
+            />
+          </div>
+        </div>
+      )}
+
+      {pendingPattern && (
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setPendingPattern(null);
+          }}
+        >
+          <div className="p-2 bg-gray-800 rounded border border-gray-600 shadow-xl">
+            <PatternInputModal
+              defaultCount={pendingPattern.defaultCount}
+              defaultX={pendingPattern.defaultX}
+              defaultY={pendingPattern.defaultY}
+              onConfirm={(count, x, y) => applyPattern(count, x, y)}
+              onCancel={() => setPendingPattern(null)}
+            />
+          </div>
+        </div>
+      )}
+
+      {pendingRotate && (
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setPendingRotate(null);
+          }}
+        >
+          <div className="p-2 bg-gray-800 rounded border border-gray-600 shadow-xl">
+            <ValueInputModal
+              label="Rotation angle"
+              unit="deg"
+              defaultValue={pendingRotate.defaultValue}
+              onConfirm={(value) => applyRotate(value)}
+              onCancel={() => setPendingRotate(null)}
+            />
+          </div>
+        </div>
+      )}
+
+      {pendingScale && (
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setPendingScale(null);
+          }}
+        >
+          <div className="p-2 bg-gray-800 rounded border border-gray-600 shadow-xl">
+            <ValueInputModal
+              label="Scale factor"
+              unit="ratio"
+              defaultValue={pendingScale.defaultValue}
+              onConfirm={(value) => applyScale(value)}
+              onCancel={() => setPendingScale(null)}
+            />
+          </div>
+        </div>
+      )}
+
+      {pendingTransform && (
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setPendingTransform(null);
+          }}
+        >
+          <div className="p-2 bg-gray-800 rounded border border-gray-600 shadow-xl">
+            <VectorInputModal
+              title={pendingTransform.mode === "move" ? "Move by" : "Copy by"}
+              defaultX={pendingTransform.defaultX}
+              defaultY={pendingTransform.defaultY}
+              onConfirm={(x, y) => applyTransform(x, y)}
+              onCancel={() => setPendingTransform(null)}
+            />
+          </div>
+        </div>
+      )}
+
+      {pendingOffset && (
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setPendingOffset(null);
+          }}
+        >
+          <div className="p-2 bg-gray-800 rounded border border-gray-600 shadow-xl">
+            <ValueInputModal
+              label="Offset distance"
+              unit="units"
+              defaultValue={pendingOffset.defaultValue}
+              onConfirm={(value) => applyOffset(value)}
+              onCancel={() => setPendingOffset(null)}
+            />
+          </div>
+        </div>
+      )}
+
+      {pendingCorner && (
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setPendingCorner(null);
+          }}
+        >
+          <div className="p-2 bg-gray-800 rounded border border-gray-600 shadow-xl">
+            <ValueInputModal
+              label={
+                pendingCorner.operation === "fillet"
+                  ? "Fillet radius"
+                  : "Chamfer distance"
+              }
+              unit="units"
+              defaultValue={pendingCorner.defaultValue}
+              onConfirm={(value) => applyCorner(value)}
+              onCancel={() => setPendingCorner(null)}
+            />
+          </div>
+        </div>
+      )}
+
+      <SketchCommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        onRun={runSketchCommand}
+        availability={commandAvailability}
+      />
+      <SketchControlsHelp open={helpOpen} onClose={() => setHelpOpen(false)} />
     </>
   );
 };

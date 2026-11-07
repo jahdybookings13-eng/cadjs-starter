@@ -36,3 +36,12 @@ yarn-error.log*
 
 # VR probe screenshots (debug artifacts)
 vr-shots/
+
+# AVR wasm toolchain staged from node_modules by scripts/avr-assets.mjs
+/public/avr/
+
+# staged STM32F4 core assets (scripts/stm32f4-assets.mjs)
+public/stm32f4/
+
+# esp32sim source checkout used to build public/esp32/esp32sim.wasm
+/vendor/esp32sim/

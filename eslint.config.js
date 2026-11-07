@@ -15,6 +15,9 @@ export default [
       "test-results/**",
       "playwright-report/**",
       "src/lib/*.mjs",
+      // Generated/vendor assets staged by predev/prebuild (gitignored).
+      "public/**",
+      "vendor/**",
     ],
   },
   {
@@ -97,9 +100,10 @@ export default [
       },
     },
   },
-  // Node scripts (headless probes) run outside the app bundle.
+  // Node scripts (headless probes) and Node-side .mjs helpers run outside the
+  // browser bundle; they use process/Buffer and are not browser globals.
   {
-    files: ["scripts/**/*.mjs"],
+    files: ["scripts/**/*.mjs", "src/**/*.mjs"],
     languageOptions: {
       globals: { process: "readonly", console: "readonly" },
     },

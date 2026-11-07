@@ -32,7 +32,7 @@ export type McuFamily =
  *               setup/loop run against the board's real pin map. Every board
  *               supports this tier.
  */
-export type RuntimeTier = "hex" | "virtual";
+export type RuntimeTier = "hex" | "virtual" | "rp2040" | "stm32f4" | "esp32";
 
 export type PinFunction =
   | "gpio"
@@ -50,7 +50,9 @@ export type PinFunction =
   | "vcc"
   | "vin"
   | "reset"
-  | "nc";
+  | "nc"
+  /** Two/three-terminal component lead: conducts like a real node. */
+  | "passive";
 
 export interface PartPin {
   /** Pin name as printed on the board silkscreen, e.g. "13", "A0", "GND". */
@@ -130,7 +132,80 @@ export type PeripheralKind =
   | "buzzer"
   | "servo"
   | "button"
-  | "pot";
+  | "pot"
+  | "rf-tx"
+  | "rf-rx"
+  | "resistor"
+  | "capacitor"
+  | "inductor"
+  | "diode"
+  | "transistor"
+  | "mosfet"
+  | "battery";
+
+/**
+ * Electrical model of a discrete component (see ecad/circuit.ts). A part with
+ * this field is stamped into the nodal solver every tick; it is never decor.
+ */
+export interface ElectronicsSpec {
+  device:
+    | "resistor"
+    | "capacitor"
+    | "inductor"
+    | "diode"
+    | "led"
+    | "battery"
+    | "npn"
+    | "mosfet";
+  /** Ohms, farads, henries, volts, or forward/threshold volts. */
+  value: number;
+  /** Series resistance (diode/LED). */
+  rOn?: number;
+  /** Junction saturation current, A. */
+  is?: number;
+  /** Emission coefficient. */
+  n?: number;
+  /** Forward / reverse current gain (BJT). */
+  bf?: number;
+  br?: number;
+  /** Early voltage, V (BJT). */
+  vaf?: number;
+  /** Reverse breakdown voltage, V (diode). */
+  vbr?: number;
+  /** Zero-bias junction capacitance, F. */
+  cj?: number;
+  /** MOSFET transconductance, A/V². */
+  k?: number;
+  /** MOSFET channel-length modulation, 1/V. */
+  lambda?: number;
+  /** Breakdown saturation current / coefficient (diode). */
+  isZ?: number;
+  nz?: number;
+}
+
+/**
+ * In-world radio capability of a part (see ecad/radio.ts). The transport is
+ * OOK level edges through space, so firmware owns the protocol above it.
+ */
+export type RadioCapability =
+  | {
+      role: "tx";
+      /** Centre frequency, MHz. Only parts on the same channel link. */
+      mhz: number;
+      /** Conducted transmit power, dBm. */
+      powerDbm: number;
+      /** Antenna / enclosure / matching loss, dB. */
+      lossDb?: number;
+    }
+  | {
+      role: "rx";
+      /** Centre frequency, MHz. Only parts on the same channel link. */
+      mhz: number;
+      /** Smallest signal this receiver can hear, dBm. */
+      sensitivityDbm: number;
+      /** Antenna / enclosure / matching loss, dB. */
+      lossDb?: number;
+    };
 
 export interface PeripheralPart {
   id: string;
@@ -141,6 +216,10 @@ export interface PeripheralPart {
   color: string;
   pins: PartPin[];
   firmware: string[];
+  /** Set on parts that transmit or receive through the in-world RF medium. */
+  radio?: RadioCapability;
+  /** Set on discrete electrical parts; the nodal solver stamps them. */
+  electronics?: ElectronicsSpec;
 }
 
 export type EcadPart = BoardPart | DisplayPart | PeripheralPart;
@@ -195,6 +274,8 @@ const a = (
   avrPort,
   avrBit,
 });
+/** Component lead (resistor, coil, transistor…): wires to any electrical pin. */
+const el = (name: string): PartPin => ({ name, fn: "passive" });
 
 /** Digital header row for AVR boards (D0..D13 with fixed extra functions). */
 function avrDigital(
@@ -514,6 +595,37 @@ const microbitPins: PartPin[] = [
   pwr("GND"),
 ];
 
+/** Black Pill F411CE: 40-pin DIP footprint, PC13 LED, USART1 on PA9/PA10. */
+const blackPillPins: PartPin[] = [
+  ...Array.from({ length: 16 }, (_, i) =>
+    g(`PA${i}`, i, i <= 7 ? { fn: "adc" } : {}),
+  ),
+  g("PB0", 16, { fn: "adc" }),
+  g("PB1", 17, { fn: "adc" }),
+  g("PB2", 18),
+  g("PB3", 19),
+  g("PB4", 20),
+  g("PB5", 21),
+  g("PB6", 22, { fn: "i2c-sda" }),
+  g("PB7", 23, { fn: "i2c-scl" }),
+  g("PB8", 24),
+  g("PB9", 25),
+  g("PB10", 26),
+  g("PB12", 27),
+  g("PB13", 28, { fn: "spi-sck" }),
+  g("PB14", 29, { fn: "spi-miso" }),
+  g("PB15", 30, { fn: "spi-mosi" }),
+  g("PC13", 31),
+  g("PC14", 32),
+  g("PC15", 33),
+  g("5V", 34, { fn: "vcc" }),
+  g("GND", 35, { fn: "gnd" }),
+  g("3V3", 36, { fn: "vcc" }),
+  g("GND", 37, { fn: "gnd" }),
+  g("PA9", 38, { fn: "uart-tx" }),
+  g("PA10", 39, { fn: "uart-rx" }),
+];
+
 const boards: BoardPart[] = [
   {
     id: "arduino-uno",
@@ -651,10 +763,10 @@ const boards: BoardPart[] = [
       },
     ],
     chips: [{ name: "ATmega2560", x: 12, y: -30, w: 12, h: 12 }],
-    tiers: ["virtual"],
-    firmware: ["blink", "hello-serial", "hello-oled"],
+    tiers: ["hex", "virtual"],
+    firmware: ["blink", "hello-serial", "hello-oled", "blink-hex-mega"],
     notes:
-      "2560 hex emulation is not shipped (avr8js focuses on 328P); virtual tier + .hex upload accepted.",
+      "ATmega2560 .hex runs in-app: 256 KB flash, 8 KB SRAM, 22-bit PC, ports A-L, timers 0-5, USART0-3. In-browser C++ still targets 328P; build Mega firmware in Arduino IDE and upload the .hex.",
   },
   {
     id: "arduino-leonardo",
@@ -710,8 +822,10 @@ const boards: BoardPart[] = [
       },
     ],
     chips: [{ name: "ATmega32U4", x: 30, y: -12, w: 10, h: 10 }],
-    tiers: ["virtual"],
-    firmware: ["blink", "hello-serial", "button-led"],
+    tiers: ["hex", "virtual"],
+    firmware: ["blink", "hello-serial", "button-led", "blink-hex-leonardo"],
+    notes:
+      "ATmega32U4 .hex runs in-app (timers 0/1/3, USART1, ports B-F). `Serial` is USB CDC and is not emulated — use `Serial1`.",
   },
   {
     id: "esp32-devkit",
@@ -739,8 +853,10 @@ const boards: BoardPart[] = [
       },
     ],
     chips: [{ name: "ESP32-WROOM-32", x: 0, y: 8, w: 18, h: 25.5 }],
-    tiers: ["virtual"],
+    tiers: ["esp32", "virtual"],
     firmware: ["blink", "wifi-scan", "hello-oled", "servo-sweep"],
+    notes:
+      "Uploaded merged or combined ESP32 flash image (bootloader + partition table + app) runs on the in-app Xtensa LX6 (esp32sim, MIT) through Espressif's mask ROM. GPIO output edges drive wired LEDs, servos and buzzers; inputs from buttons and pots reach the pads. A virtual access point 'esp32sim' (WPA2, passphrase esp32sim-pass) is attached for Wi-Fi; association with the stock Espressif blob is not yet validated, and there is no NAT, so the guest reaches its own subnet only. Bluetooth runs when the application ELF is attached, because the VHCI controller needs its symbol table. The S3 (LX7) and ESP8266 (L106) stay verified-image only.",
   },
   {
     id: "esp32-s3",
@@ -826,7 +942,7 @@ const boards: BoardPart[] = [
       },
     ],
     chips: [{ name: "RP2040", x: 0, y: 0, w: 12, h: 12 }],
-    tiers: ["virtual"],
+    tiers: ["rp2040", "virtual"],
     firmware: [
       "blink",
       "hello-serial",
@@ -834,6 +950,8 @@ const boards: BoardPart[] = [
       "hello-oled",
       "servo-sweep",
     ],
+    notes:
+      "Uploaded .uf2 / raw flash images run on the in-app RP2040 (Cortex-M0+, GPIO, UART0). Boot-vector images only: the mask ROM is not redistributable, so firmware that calls ROM functions may not finish booting.",
   },
   {
     id: "rpi-pico-w",
@@ -861,8 +979,10 @@ const boards: BoardPart[] = [
       },
     ],
     chips: [{ name: "RP2040", x: 0, y: 0, w: 12, h: 12 }],
-    tiers: ["virtual"],
+    tiers: ["rp2040", "virtual"],
     firmware: ["blink", "wifi-scan", "hello-oled"],
+    notes:
+      "Same RP2040 core as the Pico for uploaded .uf2 / raw images; the CYW43439 wireless side is not modelled.",
   },
   {
     id: "stm32-bluepill",
@@ -892,6 +1012,37 @@ const boards: BoardPart[] = [
     chips: [{ name: "STM32F103C8T6", x: 0, y: 0, w: 9, h: 9 }],
     tiers: ["virtual"],
     firmware: ["blink", "hello-serial"],
+  },
+  {
+    id: "stm32f4-blackpill",
+    name: "STM32F4 Black Pill",
+    category: "board",
+    family: "stm32",
+    mcu: "STM32F411CEU6",
+    size: { w: 22.9, h: 53.3, t: 1.6 },
+    pcbColor: "#101418",
+    usb: { w: 9, h: 7.5, edge: "top" },
+    headers: [
+      {
+        label: "L",
+        edge: "left",
+        start: 3,
+        pitch: 2.54,
+        pins: blackPillPins.slice(0, 20),
+      },
+      {
+        label: "R",
+        edge: "right",
+        start: 3,
+        pitch: 2.54,
+        pins: blackPillPins.slice(20),
+      },
+    ],
+    chips: [{ name: "STM32F411CEU6", x: 0, y: 0, w: 7, h: 7 }],
+    tiers: ["stm32f4", "virtual"],
+    firmware: ["blink", "hello-serial", "button-led"],
+    notes:
+      "Uploaded .bin / .hex / .elf firmware runs on the in-app Cortex-M4 core (GPIO, USART, timers, SPI, I2C, ADC/DAC, DMA). F401/F407/F407VE/F429 images boot on their matching chip model; the F103 Blue Pill is a different core and stays verified-image only.",
   },
   {
     id: "teensy-40",
@@ -958,10 +1109,10 @@ const boards: BoardPart[] = [
       },
     ],
     chips: [],
-    tiers: ["virtual"],
-    firmware: ["blink"],
+    tiers: ["hex", "virtual"],
+    firmware: ["blink", "blink-hex-attiny85"],
     notes:
-      "Bare 8-pin MCU. Hex tier requires avr8js ATtiny timer support — virtual tier is default.",
+      "Bare 8-pin MCU at 8 MHz. .hex runs in-app (8 KB flash, PORTB, Timer0, ATtiny Timer1); there is no USART, so serial stays empty.",
   },
   {
     id: "microbit-v2",
@@ -1260,6 +1411,14 @@ const peripherals: PeripheralPart[] = [
     color: "#ff2222",
     pins: [g("A", 0), g("K", 1)],
     firmware: ["blink"],
+    electronics: {
+      device: "led",
+      value: 1.8,
+      is: 8.4e-16,
+      n: 2,
+      rOn: 10,
+      cj: 1e-12,
+    },
   },
   {
     id: "led-green",
@@ -1270,6 +1429,14 @@ const peripherals: PeripheralPart[] = [
     color: "#22ff44",
     pins: [g("A", 0), g("K", 1)],
     firmware: ["blink"],
+    electronics: {
+      device: "led",
+      value: 2.1,
+      is: 2.4e-18,
+      n: 2,
+      rOn: 10,
+      cj: 1e-12,
+    },
   },
   {
     id: "led-blue",
@@ -1280,6 +1447,14 @@ const peripherals: PeripheralPart[] = [
     color: "#3366ff",
     pins: [g("A", 0), g("K", 1)],
     firmware: ["blink"],
+    electronics: {
+      device: "led",
+      value: 3.0,
+      is: 8.5e-20,
+      n: 2.2,
+      rOn: 10,
+      cj: 1.5e-12,
+    },
   },
   {
     id: "rgb-led",
@@ -1330,6 +1505,193 @@ const peripherals: PeripheralPart[] = [
     color: "#888888",
     pins: [pwr("VCC", "vcc"), g("SIG", 0), pwr("GND")],
     firmware: ["pot-dimmer"],
+  },
+  {
+    id: "rf-tx-433",
+    name: "RF transmitter 433 MHz (OOK)",
+    category: "peripheral",
+    kind: "rf-tx",
+    size: { w: 20, h: 15, t: 4 },
+    color: "#1d5c8a",
+    pins: [g("DATA", 0), pwr("VCC", "vcc"), pwr("GND")],
+    firmware: ["rf-send"],
+    radio: { role: "tx", mhz: 433.92, powerDbm: 10, lossDb: 25 },
+  },
+  {
+    id: "rf-rx-433",
+    name: "RF receiver 433 MHz (OOK)",
+    category: "peripheral",
+    kind: "rf-rx",
+    size: { w: 20, h: 15, t: 5 },
+    color: "#2a6b3f",
+    pins: [g("OUT", 0), pwr("VCC", "vcc"), pwr("GND")],
+    firmware: ["rf-receive"],
+    radio: { role: "rx", mhz: 433.92, sensitivityDbm: -95, lossDb: 25 },
+  },
+  {
+    id: "resistor-220",
+    name: "Resistor 220 Ω",
+    category: "peripheral",
+    kind: "resistor",
+    size: { w: 6.3, h: 2.3, t: 2.3 },
+    color: "#d9c9a3",
+    pins: [el("1"), el("2")],
+    firmware: [],
+    electronics: { device: "resistor", value: 220 },
+  },
+  {
+    id: "resistor-1k",
+    name: "Resistor 1 kΩ",
+    category: "peripheral",
+    kind: "resistor",
+    size: { w: 6.3, h: 2.3, t: 2.3 },
+    color: "#d9c9a3",
+    pins: [el("1"), el("2")],
+    firmware: [],
+    electronics: { device: "resistor", value: 1000 },
+  },
+  {
+    id: "resistor-10k",
+    name: "Resistor 10 kΩ",
+    category: "peripheral",
+    kind: "resistor",
+    size: { w: 6.3, h: 2.3, t: 2.3 },
+    color: "#d9c9a3",
+    pins: [el("1"), el("2")],
+    firmware: [],
+    electronics: { device: "resistor", value: 10_000 },
+  },
+  {
+    id: "capacitor-100u",
+    name: "Capacitor 100 µF",
+    category: "peripheral",
+    kind: "capacitor",
+    size: { w: 8, h: 8, t: 11 },
+    color: "#223344",
+    pins: [el("+"), el("-")],
+    firmware: [],
+    electronics: { device: "capacitor", value: 100e-6 },
+  },
+  {
+    id: "coil-100mh",
+    name: "Coil 100 mH",
+    category: "peripheral",
+    kind: "inductor",
+    size: { w: 12, h: 12, t: 9 },
+    color: "#8a5a2b",
+    pins: [el("1"), el("2")],
+    firmware: [],
+    electronics: { device: "inductor", value: 0.1 },
+  },
+  {
+    id: "diode-1n4148",
+    name: "Diode 1N4148",
+    category: "peripheral",
+    kind: "diode",
+    size: { w: 4.5, h: 2, t: 2 },
+    color: "#1b1b1b",
+    pins: [el("A"), el("K")],
+    firmware: [],
+    electronics: {
+      device: "diode",
+      value: 0.7,
+      is: 2.52e-9,
+      n: 1.752,
+      rOn: 0.5,
+      vbr: 100,
+      cj: 4e-12,
+    },
+  },
+  {
+    id: "transistor-2n3904",
+    name: "NPN transistor 2N3904",
+    category: "peripheral",
+    kind: "transistor",
+    size: { w: 5, h: 4.5, t: 4.5 },
+    color: "#101010",
+    pins: [el("B"), el("C"), el("E")],
+    firmware: [],
+    electronics: {
+      device: "npn",
+      value: 0.75,
+      is: 6.7e-15,
+      n: 1,
+      bf: 200,
+      br: 4,
+      vaf: 75,
+      cj: 4e-12,
+    },
+  },
+  {
+    id: "mosfet-2n7000",
+    name: "N-MOSFET 2N7000",
+    category: "peripheral",
+    kind: "mosfet",
+    size: { w: 5, h: 4.5, t: 4.5 },
+    color: "#101010",
+    pins: [el("G"), el("D"), el("S")],
+    firmware: [],
+    electronics: {
+      device: "mosfet",
+      value: 2.1,
+      k: 0.15,
+      lambda: 0.02,
+      cj: 50e-12,
+    },
+  },
+  {
+    id: "battery-5v",
+    name: "Battery pack 5 V",
+    category: "peripheral",
+    kind: "battery",
+    size: { w: 26, h: 14, t: 12 },
+    color: "#333333",
+    pins: [el("+"), el("-")],
+    firmware: [],
+    electronics: { device: "battery", value: 5 },
+  },
+  {
+    id: "battery-9v",
+    name: "Battery 9 V",
+    category: "peripheral",
+    kind: "battery",
+    size: { w: 26, h: 17, t: 16 },
+    color: "#2c2c2c",
+    pins: [el("+"), el("-")],
+    firmware: [],
+    electronics: { device: "battery", value: 9 },
+  },
+  {
+    id: "capacitor-100n",
+    name: "Capacitor 100 nF",
+    category: "peripheral",
+    kind: "capacitor",
+    size: { w: 5, h: 5, t: 7 },
+    color: "#20405a",
+    pins: [el("+"), el("-")],
+    firmware: [],
+    electronics: { device: "capacitor", value: 100e-9 },
+  },
+  {
+    id: "zener-5v1",
+    name: "Zener diode 5.1 V",
+    category: "peripheral",
+    kind: "diode",
+    size: { w: 4.5, h: 2, t: 2 },
+    color: "#202020",
+    pins: [el("A"), el("K")],
+    firmware: [],
+    electronics: {
+      device: "diode",
+      value: 0.7,
+      is: 1e-11,
+      n: 1.75,
+      rOn: 0.5,
+      vbr: 5.1,
+      isZ: 1e-9,
+      nz: 0.2,
+      cj: 4e-12,
+    },
   },
 ];
 

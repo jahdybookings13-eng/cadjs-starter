@@ -1,0 +1,5 @@
+esp32_rev300_rom.elf
+Source: https://github.com/espressif/esp-rom-elfs (release 20260528)
+Copyright (c) Espressif Systems (Shanghai) CO LTD
+Licensed under the Apache License, Version 2.0 (see APACHE-2.0.txt).
+Fetched with SHA-256 pin 920b70635440517866aab2230964a570d2cf2b676658d93c52fbac108c1cca31.

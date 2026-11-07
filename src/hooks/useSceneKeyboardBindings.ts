@@ -39,6 +39,9 @@ export interface SceneKeyboardBindingsParams {
   selectedElements: string[];
   duplicateSelectedElements: () => void;
 
+  /** View/comment roles must not be able to reach editing shortcuts. */
+  enabled?: boolean;
+
   // View shortcuts (numpad / 1, 3, 5, 7, 0, F)
   animateToView: (view: NamedView) => void;
   handleFitAll: () => void;
@@ -59,6 +62,7 @@ export function useSceneKeyboardBindings(
     isOperationPending,
     selectedElements,
     duplicateSelectedElements,
+    enabled = true,
     animateToView,
     handleFitAll,
     toggleProjection,
@@ -68,6 +72,7 @@ export function useSceneKeyboardBindings(
   // In sketch mode with active sketch, routes to sketch undo/redo exclusively.
   useEffect(() => {
     const handleUndoRedoKeys = (event: KeyboardEvent) => {
+      if (!enabled) return;
       const isUndo =
         (event.ctrlKey || event.metaKey) &&
         event.key === "z" &&
@@ -94,7 +99,7 @@ export function useSceneKeyboardBindings(
 
     window.addEventListener("keydown", handleUndoRedoKeys);
     return () => window.removeEventListener("keydown", handleUndoRedoKeys);
-  }, [mode, activeSketch, undo, redo, undoSketch, redoSketch]);
+  }, [enabled, mode, activeSketch, undo, redo, undoSketch, redoSketch]);
 
   // Global Escape key — exits non-sketch modes back to "move".
   // Sketch mode handles its own Esc via useSketchInputHandlers:
@@ -116,6 +121,7 @@ export function useSceneKeyboardBindings(
   // Global keyboard listener for Ctrl+D (duplicate)
   useEffect(() => {
     const handleDuplicate = (event: KeyboardEvent) => {
+      if (!enabled) return;
       if (
         event.target instanceof HTMLInputElement ||
         event.target instanceof HTMLTextAreaElement
@@ -132,6 +138,7 @@ export function useSceneKeyboardBindings(
     window.addEventListener("keydown", handleDuplicate);
     return () => window.removeEventListener("keydown", handleDuplicate);
   }, [
+    enabled,
     mode,
     activeSketch,
     isOperationPending,

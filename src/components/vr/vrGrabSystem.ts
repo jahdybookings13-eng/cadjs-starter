@@ -56,19 +56,18 @@ export function createVRGrabSystem(): VRGrabSystem {
 
     for (const hit of intersects) {
       let obj: THREE.Object3D | null = hit.object;
-      while (obj && !(obj as unknown as Record<string, unknown>).userData) {
+      while (obj) {
+        const userData = (obj as unknown as Record<string, unknown>)
+          .userData as Record<string, unknown> | undefined;
+        if (userData && typeof userData.id === "string" && userData.id) {
+          state.heldObjectId = userData.id;
+          state.heldObjectMesh = obj;
+          state.gripOrigin = controllerPos.clone();
+          state.gripOffset = obj.position.clone().sub(controllerPos);
+          state.initialScale = obj.scale.x;
+          return state.heldObjectId;
+        }
         obj = obj.parent;
-      }
-      if (!obj) continue;
-      const userData = (obj as unknown as Record<string, unknown>)
-        .userData as Record<string, unknown>;
-      if (userData.id) {
-        state.heldObjectId = userData.id as string;
-        state.heldObjectMesh = obj;
-        state.gripOrigin = controllerPos.clone();
-        state.gripOffset = obj.position.clone().sub(controllerPos);
-        state.initialScale = obj.scale.x;
-        return state.heldObjectId;
       }
     }
     return null;

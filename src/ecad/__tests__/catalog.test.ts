@@ -36,6 +36,7 @@ describe("ecad catalog", () => {
       "rpi-pico",
       "rpi-pico-w",
       "stm32-bluepill",
+      "stm32f4-blackpill",
       "teensy-40",
       "attiny85",
       "microbit-v2",

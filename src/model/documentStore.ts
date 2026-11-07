@@ -20,6 +20,8 @@ interface ProjectDoc {
   savedAt: number;
   nodes: ScadgenFeatureNode[];
   assets: Array<Omit<ImportAsset, "bytes"> & { bytesB64: string }>;
+  /** ECAD scene + firmware, when the project has one (ecad/persist.ts). */
+  ecad?: unknown;
 }
 
 function toB64(b: Uint8Array): string {
@@ -35,7 +37,7 @@ function fromB64(s: string): Uint8Array {
   return out;
 }
 
-export function saveProject(): string {
+export function saveProject(ecad?: unknown): string {
   const doc: ProjectDoc = {
     v: 1,
     savedAt: Date.now(),
@@ -47,6 +49,8 @@ export function saveProject(): string {
       bytesB64: toB64(a.bytes),
     })),
   };
+  // Only write the key when there is a scene, so CAD-only saves stay identical.
+  if (ecad !== undefined) doc.ecad = ecad;
   const text = JSON.stringify(doc);
   try {
     localStorage.setItem(KEY, text);

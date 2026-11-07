@@ -252,6 +252,9 @@ const SketchContextMenu: FC<SketchContextMenuProps> = ({
             onSubmit={(v) => onApplyConstraint(pendingConstraintType, v)}
             onCancel={cancelValueInput}
             onChange={(v) => onValueChange?.(pendingConstraintType, v)}
+            expressionMode={
+              pendingConstraintType === "angle" ? "angle" : "length"
+            }
             showConfirmButton
             confirmButtonClassName="px-2 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
           />

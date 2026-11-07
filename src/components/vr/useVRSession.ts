@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import * as THREE from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { Mesh, MeshStandardMaterial } from "three";
 import { useCadVisualizer, useCadCore } from "@vitekk02/cadjs/react";
 import {
@@ -11,6 +10,33 @@ import {
 import { buildVRRoom, disposeVRRoom } from "./buildVRRoom";
 import { buildVRControls } from "./buildVRControls";
 import { createVRGrabSystem, type VRGrabSystem } from "./vrGrabSystem";
+import { createVRSuitPanel, type VRSuitPanel } from "./vrSuitPanel";
+import { createVRCircuitPip, type VRCircuitPip } from "./vrCircuitPip";
+import {
+  createVRSessionPresence,
+  type VRSessionPresence,
+} from "./vrSessionPresence";
+import {
+  canEditSession,
+  publishSelection,
+  remoteSelections,
+  setSurface,
+} from "../../project/sessionRuntime";
+import { circuitPipSnapshot } from "../../ecad/circuitPip";
+import {
+  getProject,
+  getActiveProjectId,
+  saveProject,
+} from "../../project/store";
+import { suitPanelFor } from "../../project/suitPanel";
+import type { ProjectDoc } from "../../project/model";
+import { assertOneToOneScale, OneToOneScaleError } from "../../ecad/oneToOne";
+import { EcadPhysics } from "../../ecad/physics";
+import {
+  createPhysicsWorld,
+  buildRoomBoundaries,
+  type PhysicsWorld,
+} from "./physicsWorld";
 import { createSubPrimSelector, type SubPrimHit } from "./subPrimSelector";
 import {
   createVRSketchSystem,
@@ -419,6 +445,13 @@ export function useVRSession() {
   const BUTTON_PRESS_COOLDOWN = 500;
   const lastBackButtonPress = useRef(0);
   const grabSystemRef = useRef<VRGrabSystem | null>(null);
+  const ecadPhysicsRef = useRef<EcadPhysics | null>(null);
+  const physicsWorldRef = useRef<PhysicsWorld | null>(null);
+  /** Static bodies bound at VR entry; retired + rebuilt on room/desk edits. */
+  const roomBodiesRef = useRef<import("@dimforge/rapier3d-compat").RigidBody[]>(
+    [],
+  );
+  const lastOneToOneNag = useRef(0);
   const subPrimSelectorRef = useRef(createSubPrimSelector());
   const vrSubSelection = useRef<SubPrimHit | null>(null);
   const gripWasPressed = useRef(false);
@@ -428,6 +461,15 @@ export function useVRSession() {
   const sketchSystemRef = useRef<VRSketchSystem | null>(null);
   const deskVisualsRef = useRef<DeskSketchVisuals | null>(null);
   const paramPanelRef = useRef<VRParamPanel | null>(null);
+  const suitPanelRef = useRef<VRSuitPanel | null>(null);
+  const suitTriggerWasPressed = useRef(false);
+  const circuitPipRef = useRef<VRCircuitPip | null>(null);
+  const sessionPresenceRef = useRef<VRSessionPresence | null>(null);
+  const lastPipRefresh = useRef(0);
+  // Which board the card is pinned to. The card is always up: it tracks the
+  // board you are holding, and once you let go it stays on that board (falling
+  // back to the first board in the circuit when nothing has been held yet).
+  const pipBoardId = useRef<string | null>(null);
   const fluxChatPanelRef = useRef<VRChatPanel | null>(null);
   // Live session getter for the VR flux chat panel. The scene pushes a
   // () => ({ ref, rows }) binding via __vrMechanics.setFluxSession; the render
@@ -635,6 +677,7 @@ export function useVRSession() {
         return panel?.rows ?? [];
       },
       panelStep: (featureId: string, parameterId: string, delta: number) => {
+        if (!canEditSession()) return null;
         const pp = paramPanelRef.current;
         if (!pp) return null;
         const node = scadgenHistory.get(featureId);
@@ -913,37 +956,70 @@ export function useVRSession() {
       await renderer.xr.setSession(session);
       setContinuousRender(true);
 
-      // Room
-      const room = buildVRRoom();
+      // Room: honor the project's room settings (meters). Falls back to the
+      // default 5×5×3 workshop when no project is resolved (storage failure).
+      const scadgen = (
+        window as unknown as {
+          __scadgen?: {
+            settings?: {
+              room?: {
+                width: number;
+                depth: number;
+                height: number;
+                deskWidth: number;
+                deskDepth: number;
+                deskHeight: number;
+              };
+            };
+          };
+        }
+      ).__scadgen;
+      const rs = scadgen?.settings?.room;
+      const room = buildVRRoom(
+        rs
+          ? {
+              roomWidth: rs.width,
+              roomDepth: rs.depth,
+              roomHeight: rs.height,
+              deskWidth: rs.deskWidth,
+              deskDepth: rs.deskDepth,
+              deskHeight: rs.deskHeight,
+            }
+          : {},
+      );
       roomRef.current = room;
       scene.add(room);
 
       // Picture-generated room (TripoSR from a canvas shot of this room).
       // Procedural room stays as the fallback; the GLB replaces its shell.
-      void new GLTFLoader().load(
-        "/vr/room.glb",
-        (gltf) => {
-          const model = gltf.scene;
-          model.name = "vr-room-model";
-          const box = new THREE.Box3().setFromObject(model);
-          const size = box.getSize(new THREE.Vector3());
-          // Backdrop relief on the far wall — the interior photo reconstructs
-          // as one solid, so it decorates the room, it is not the room.
-          const s = 2.4 / Math.max(size.x, size.z, 1e-6);
-          model.scale.setScalar(s);
-          box.setFromObject(model);
-          const c = box.getCenter(new THREE.Vector3());
-          model.position.set(-c.x, 1.5 - c.y, -2.3 - c.z);
-          room.add(model);
-          (
-            window as unknown as { __vrRoomModelReady?: boolean }
-          ).__vrRoomModelReady = true;
-        },
-        undefined,
-        () => {
-          /* no generated room file — keep procedural shell */
-        },
-      );
+      void (async () => {
+        const { GLTFLoader } =
+          await import("three/examples/jsm/loaders/GLTFLoader.js");
+        new GLTFLoader().load(
+          "/vr/room.glb",
+          (gltf) => {
+            const model = gltf.scene;
+            model.name = "vr-room-model";
+            const box = new THREE.Box3().setFromObject(model);
+            const size = box.getSize(new THREE.Vector3());
+            // Backdrop relief on the far wall — the interior photo reconstructs
+            // as one solid, so it decorates the room, it is not the room.
+            const s = 2.4 / Math.max(size.x, size.z, 1e-6);
+            model.scale.setScalar(s);
+            box.setFromObject(model);
+            const c = box.getCenter(new THREE.Vector3());
+            model.position.set(-c.x, 1.5 - c.y, -2.3 - c.z);
+            room.add(model);
+            (
+              window as unknown as { __vrRoomModelReady?: boolean }
+            ).__vrRoomModelReady = true;
+          },
+          undefined,
+          () => {
+            /* no generated room file — keep procedural shell */
+          },
+        );
+      })();
 
       // VR Controls
       const vrControls = buildVRControls();
@@ -953,6 +1029,82 @@ export function useVRSession() {
       // Grab system
       const grabSystem = createVRGrabSystem();
       grabSystemRef.current = grabSystem;
+
+      // === 1:1 physics for ECAD boards (real size, real mass, throw-able) ===
+      // The VR physics world was always available (createPhysicsWorld); now
+      // boards get a Rapier body sized to their REAL meters (the 1:1 law) and
+      // rest on the desk. Grab = kinematic (follows hand); release = dynamic
+      // (falls). The same world grounds the throw.
+      void (async () => {
+        try {
+          const physics = await createPhysicsWorld();
+          physicsWorldRef.current = physics;
+          // Desk = a static box boards rest on. Prefer the project's desk
+          // dimensions (rs above); fall back to defaults.
+          const desk = rs
+            ? { w: rs.deskWidth, d: rs.deskDepth, h: rs.deskHeight }
+            : { w: 1.6, d: 0.8, h: 0.75 };
+          roomBodiesRef.current = buildRoomBoundaries(
+            physics,
+            desk.w,
+            desk.d,
+            desk.h,
+            rs?.width ?? 20,
+          );
+          // installEcad (simpleCadScene) publishes the live EcadLayer on
+          // window.__scadgen at install time. The layer, not its group, is the
+          // object with .sim + .meters(); grab it from there.
+          const scadgen = (
+            window as unknown as { __scadgen?: Record<string, unknown> }
+          ).__scadgen;
+          const layer = scadgen?.ecadLayer as
+            | {
+                sim: {
+                  instances: Map<string, unknown>;
+                  partOf: (id: string) => { category: string } | undefined;
+                };
+                meters: (id: string) => unknown;
+                get: (id: string) => THREE.Object3D | undefined;
+              }
+            | undefined;
+          if (layer && layer.sim && typeof layer.meters === "function") {
+            const phys = new EcadPhysics(physics, layer as never, {});
+            // Bind every board currently in the ecosystem. (syncBoards() in
+            // step() keeps this in sync for boards added mid-VR.)
+            for (const instId of layer.sim.instances.keys()) {
+              const part = layer.sim.partOf(instId);
+              if (part?.category === "board") phys.bind(instId);
+            }
+            ecadPhysicsRef.current = phys;
+            if (scadgen) scadgen.ecadPhysics = phys;
+          }
+          if (scadgen) {
+            scadgen.suitPanel = {
+              isVisible: () => suitPanelRef.current?.mesh.visible ?? false,
+              rows: () => {
+                const id = getActiveProjectId();
+                const doc = id ? getProject(id) : null;
+                return doc ? suitPanelFor(doc).rows : [];
+              },
+              pose: () => suitPanelRef.current?.panelPose() ?? null,
+              hitPoint: (
+                parameterId: string,
+                region?:
+                  | "label"
+                  | "value"
+                  | "decrement"
+                  | "increment"
+                  | "toggle"
+                  | "enum",
+              ) => suitPanelRef.current?.hitPoint(parameterId, region) ?? null,
+            };
+          }
+        } catch (e) {
+          debugLog("ECAD physics failed to start:", e);
+          physicsWorldRef.current = null;
+          ecadPhysicsRef.current = null;
+        }
+      })();
 
       // Sketch system — use the render-refreshed ref so point snapping sees live data
       const activeSketchRef = activeSketchRef2;
@@ -978,6 +1130,23 @@ export function useVRSession() {
 
       // Parameter panel — floating, raycast-editable feature params
       paramPanelRef.current = createVRParamPanel(scene);
+      suitPanelRef.current = createVRSuitPanel(scene);
+      circuitPipRef.current = createVRCircuitPip(scene);
+      // The headset is now the surface publishing my selection; peers' picks
+      // get a wireframe box drawn each frame.
+      sessionPresenceRef.current = createVRSessionPresence();
+      setSurface("vr");
+      // Debug/e2e surface: is the circuit card up, and what does it show?
+      {
+        const win = window as unknown as {
+          __scadgen?: Record<string, unknown>;
+        };
+        win.__scadgen = win.__scadgen ?? {};
+        win.__scadgen.circuitPip = {
+          isVisible: () => circuitPipRef.current?.mesh.visible ?? false,
+          snapshot: () => circuitPipRef.current?.lastSnapshot() ?? null,
+        };
+      }
 
       // Flux copilot panel — the floating one-thread orchestrator window
       // (twin of the desk OrchestratorView). Positioned top-right at eye
@@ -1018,6 +1187,16 @@ export function useVRSession() {
           controlsRef.current = null;
         }
 
+        // 1:1 physics teardown: unbind every board body + free the world.
+        if (ecadPhysicsRef.current) {
+          ecadPhysicsRef.current.dispose();
+          ecadPhysicsRef.current = null;
+        }
+        if (physicsWorldRef.current) {
+          physicsWorldRef.current.dispose();
+          physicsWorldRef.current = null;
+        }
+
         scene.background = baseBackgroundRef.current;
         baseBackgroundRef.current = null;
 
@@ -1028,6 +1207,12 @@ export function useVRSession() {
         carouselRotation.current = 0;
         carouselIndex.current = 0;
         lastBackButtonPress.current = 0;
+        if (sessionPresenceRef.current) {
+          sessionPresenceRef.current.dispose(scene);
+          sessionPresenceRef.current = null;
+        }
+        publishSelection([], "vr");
+        setSurface("2d");
         grabSystemRef.current = null;
         gripWasPressed.current = false;
         if (sketchSystemRef.current) {
@@ -1049,6 +1234,10 @@ export function useVRSession() {
         if (paramPanelRef.current) {
           paramPanelRef.current.dispose();
           paramPanelRef.current = null;
+          suitPanelRef.current?.dispose();
+          suitPanelRef.current = null;
+          circuitPipRef.current?.dispose();
+          circuitPipRef.current = null;
         }
         if (fluxChatPanelRef.current) {
           fluxChatPanelRef.current.dispose();
@@ -1369,7 +1558,13 @@ export function useVRSession() {
               if (source.handedness === "left") leftTrigger = trig;
               if (source.handedness === "right") rightTrigger = trig;
             }
-            if (leftGrip && rightGrip && leftTrigger && rightTrigger) {
+            if (
+              leftGrip &&
+              rightGrip &&
+              leftTrigger &&
+              rightTrigger &&
+              canEditSession()
+            ) {
               lastSketchHistoryRef.current = sketch.getFeatureHistoryNode();
               if (lastSketchHistoryRef.current) {
                 scadgenHistory.add(lastSketchHistoryRef.current);
@@ -1429,6 +1624,80 @@ export function useVRSession() {
         const now = performance.now();
         const dt = Math.min((now - lastTime.current) / 1000, 0.05);
         lastTime.current = now;
+
+        // === 1:1 physics: step boards (real size/mass, throw) + nag the law ===
+        // NOTE: handOverride is set ONLY by the grip bridge below (the grab
+        // path), from the controller that actually holds a board. Plain
+        // gravity + colliders run for the rest.
+        const ecadPhys = ecadPhysicsRef.current;
+        if (ecadPhys) {
+          ecadPhys.step(dt);
+        }
+
+        // === circuit card: live top-down view of the circuit ===
+        // Always up, pinned to the board you last held (or the first board in
+        // the circuit before you've held one), so letting go of a board does
+        // not take its schematic away. It follows the head (left of centre,
+        // arm's length) so it never sits inside the board you're looking at,
+        // and it only repaints when the circuit changes.
+        const pip = circuitPipRef.current;
+        if (pip) {
+          let boardId: string | null = null;
+          if (ecadPhys) {
+            const sim = ecadPhys.layerEcad.sim;
+            const heldId = ecadPhys.grabbedIds()[0];
+            if (heldId && sim.partOf(heldId)?.category === "board") {
+              pipBoardId.current = heldId;
+            }
+            const sticky = pipBoardId.current;
+            if (sticky && sim.partOf(sticky)) {
+              boardId = sticky;
+            } else {
+              for (const instId of sim.instances.keys()) {
+                if (sim.partOf(instId)?.category === "board") {
+                  boardId = instId;
+                  break;
+                }
+              }
+              pipBoardId.current = boardId;
+            }
+          }
+          if (ecadPhys && boardId) {
+            if (now - lastPipRefresh.current > 120) {
+              lastPipRefresh.current = now;
+              const snap = circuitPipSnapshot(ecadPhys.layerEcad.sim, boardId);
+              if (snap) pip.update(snap);
+            }
+            const camForPip = renderer.xr.getCamera();
+            const pipFwd = new THREE.Vector3(0, 0, -1).applyQuaternion(
+              camForPip.quaternion,
+            );
+            const pipRight = new THREE.Vector3(1, 0, 0).applyQuaternion(
+              camForPip.quaternion,
+            );
+            pip.mesh.position.copy(camForPip.position);
+            pip.mesh.position.addScaledVector(pipFwd, 0.55);
+            pip.mesh.position.addScaledVector(pipRight, -0.24);
+            pip.mesh.position.y -= 0.06;
+            pip.mesh.quaternion.copy(camForPip.quaternion);
+            pip.mesh.visible = true;
+          } else {
+            pip.hide();
+          }
+        }
+        // 1:1 nag — every ~0.5s, the law can't be quietly broken. If any
+        // board's size escaped the physical range, log it. (Enforced for real
+        // in the e2e suite via assertOneToOneScale.)
+        if (now - lastOneToOneNag.current > 500) {
+          lastOneToOneNag.current = now;
+          try {
+            if (ecadPhys) assertOneToOneScale(ecadPhys.layerEcad);
+          } catch (e) {
+            if (e instanceof OneToOneScaleError)
+              debugLog("1:1 VIOLATION", e.message);
+            else throw e;
+          }
+        }
 
         // Basic locomotion without collision (for debugging)
         let stickX = 0;
@@ -1526,9 +1795,127 @@ export function useVRSession() {
           const lookingUp = ctrl.isLookingUp(headDir);
           const lookingDown = ctrl.isLookingDown(headDir);
 
-          ctrl.headMenu.visible = lookingUp;
-          if (lookingUp) {
-            ctrl.updateHeadMenu(cam.quaternion, cam.position);
+          // === SUIT SETTINGS PANEL (look up to open) ===
+          // Replaces the deprecated head menu: same gesture, but the panel is
+          // a live, clickable canvas instead of a list of dead names.
+          const suitPanel = suitPanelRef.current;
+          if (suitPanel) {
+            if (lookingUp) {
+              const id = getActiveProjectId();
+              const doc = id ? getProject(id) : null;
+              if (doc) {
+                suitPanel.show(doc);
+                suitPanel.mesh.position.copy(cam.position);
+                const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(
+                  cam.quaternion,
+                );
+                suitPanel.mesh.position.addScaledVector(fwd, 0.52);
+                suitPanel.mesh.position.y += 0.04;
+                suitPanel.mesh.quaternion.copy(cam.quaternion);
+              } else {
+                suitPanel.mesh.visible = false;
+              }
+            } else {
+              suitPanel.mesh.visible = false;
+              suitTriggerWasPressed.current = false; // re-arm on close
+            }
+            // Point + trigger to click a region.
+            if (suitPanel.mesh.visible) {
+              const refSpaceForPanel = renderer.xr.getReferenceSpace();
+              if (refSpaceForPanel) {
+                for (const source of session.inputSources) {
+                  if (
+                    source.handedness !== "right" ||
+                    !source.targetRaySpace ||
+                    !source.gamepad
+                  )
+                    continue;
+                  const pose = xrFrame.getPose(
+                    source.targetRaySpace,
+                    refSpaceForPanel,
+                  );
+                  if (!pose) continue;
+                  const q = pose.transform.orientation;
+                  const ray = new THREE.Raycaster(
+                    new THREE.Vector3(
+                      pose.transform.position.x,
+                      pose.transform.position.y,
+                      pose.transform.position.z,
+                    ),
+                    new THREE.Vector3(0, 0, -1).applyQuaternion(
+                      new THREE.Quaternion(q.x, q.y, q.z, q.w),
+                    ),
+                  );
+                  const trig = source.gamepad.buttons[0]?.pressed ?? false;
+                  const hitInfo = suitPanel.raycast(ray);
+                  if (
+                    hitInfo &&
+                    trig &&
+                    !suitTriggerWasPressed.current &&
+                    canEditSession()
+                  ) {
+                    const id2 = getActiveProjectId();
+                    const doc2 = id2 ? getProject(id2) : null;
+                    if (doc2) {
+                      suitPanel.applyHit(
+                        doc2,
+                        hitInfo.hit,
+                        (docArg, paramId) => {
+                          saveProject(docArg);
+                          // Live-apply room/desk dims: rebuild the room mesh.
+                          if (
+                            paramId === "roomWidth" ||
+                            paramId === "roomDepth" ||
+                            paramId === "roomHeight" ||
+                            paramId === "deskWidth" ||
+                            paramId === "deskDepth" ||
+                            paramId === "deskHeight"
+                          ) {
+                            const r = docArg.settings.room;
+                            // Rebuild the static room shell: retire the bodies
+                            // the old dims created, then re-add with new dims.
+                            // Board bodies are untouched.
+                            const pw = physicsWorldRef.current;
+                            if (pw) {
+                              for (const b of roomBodiesRef.current) {
+                                pw.removeBody(b);
+                              }
+                              roomBodiesRef.current = buildRoomBoundaries(
+                                pw,
+                                r.deskWidth,
+                                r.deskDepth,
+                                r.deskHeight,
+                                r.width,
+                              );
+                            }
+                            const newRoom = buildVRRoom({
+                              roomWidth: r.width,
+                              roomDepth: r.depth,
+                              roomHeight: r.height,
+                              deskWidth: r.deskWidth,
+                              deskDepth: r.deskDepth,
+                              deskHeight: r.deskHeight,
+                            });
+                            if (roomRef.current) {
+                              scene.remove(roomRef.current);
+                              disposeVRRoom(roomRef.current);
+                            }
+                            roomRef.current = newRoom;
+                            newRoom.position.copy(playerOffset.current);
+                            scene.add(newRoom);
+                          }
+                        },
+                      );
+                      // The right trigger was consumed by the panel — do not
+                      // also fire armed belt actions with it.
+                      extrudeTriggerWasPressed.current = true;
+                    }
+                  }
+                  suitTriggerWasPressed.current = trig;
+                  break;
+                }
+              }
+            }
           }
 
           ctrl.carousel.visible = lookingDown;
@@ -1668,7 +2055,7 @@ export function useVRSession() {
               }
 
               // L3 selects the hovered segment
-              if (hoveredButtonIndex >= 0 && l3Pressed) {
+              if (hoveredButtonIndex >= 0 && l3Pressed && canEditSession()) {
                 const currentTime = Date.now();
                 if (
                   currentTime - lastButtonPressTime.current >=
@@ -1820,13 +2207,23 @@ export function useVRSession() {
               if (
                 gripPressed &&
                 !gripWasPressed.current &&
-                !grab.state.heldObjectId
+                !grab.state.heldObjectId &&
+                canEditSession()
               ) {
                 const handDir = new THREE.Vector3(0, 0, -1).applyQuaternion(
                   handQuat,
                 );
                 const grabbedId = grab.tryGrab(handPos, handDir, scene);
                 if (grabbedId) {
+                  // If it hits a physics-ownable PCB board, hand it to the
+                  // physics orchestrator (kinematic hand-follow); the render
+                  // loop's EcadPhysics.step() then drives it.
+                  const ecadPhysG = ecadPhysicsRef.current;
+                  if (ecadPhysG?.hasBody(grabbedId)) {
+                    ecadPhysG.grab(grabbedId);
+                    // Physics owns this board's transform from here on — the
+                    // kinematic grab.updateHeldPosition is skipped below.
+                  }
                   selectElementRef.current(grabbedId);
                   assemblyBridgeRef.current?.onGrab?.(grabbedId);
                 }
@@ -1839,6 +2236,11 @@ export function useVRSession() {
                 grab.state.heldObjectId
               ) {
                 const heldId = grab.state.heldObjectId;
+                const ecadPhysR = ecadPhysicsRef.current;
+                if (ecadPhysR?.hasBody(heldId) && ecadPhysR.isGrabbed(heldId)) {
+                  ecadPhysR.release(heldId);
+                  ecadPhysR.handOverride = null;
+                }
                 grab.release();
                 if (heldId) {
                   deselectElementRef.current(heldId);
@@ -1846,9 +2248,31 @@ export function useVRSession() {
                 }
               }
 
-              // Update position while held
+              // Update position while held. For a physics-ownable board the
+              // physics orchestrator's hand-follow (EcadPhysics.step) drives
+              // it; here we point handOverride at the hand and skip the
+              // kinematic update so the board's Rapier body, not raw
+              // position-copying, is the source of truth.
               if (grab.state.heldObjectId) {
-                grab.updateHeldPosition(handPos, handQuat);
+                const ecadPhysU = ecadPhysicsRef.current;
+                if (
+                  ecadPhysU?.hasBody(grab.state.heldObjectId) &&
+                  ecadPhysU.isGrabbed(grab.state.heldObjectId)
+                ) {
+                  ecadPhysU.handOverride = {
+                    x: handPos.x,
+                    y: handPos.y,
+                    z: handPos.z,
+                  };
+                } else {
+                  grab.updateHeldPosition(handPos, handQuat);
+                }
+              } else {
+                // Not holding a board: clear any stale hand-follow so gravity
+                // (or a thrown board) keeps integrating freely.
+                if (ecadPhysicsRef.current) {
+                  ecadPhysicsRef.current.handOverride = null;
+                }
               }
 
               gripWasPressed.current = gripPressed;
@@ -1868,7 +2292,7 @@ export function useVRSession() {
               rTrig = source.gamepad.buttons[0]?.pressed ?? false;
             }
           }
-          if (rTrig && !extrudeTriggerWasPressed.current) {
+          if (rTrig && !extrudeTriggerWasPressed.current && canEditSession()) {
             const featureType = vrActionArmed.current;
             vrActionArmed.current = null;
             if (featureType) {
@@ -1908,6 +2332,12 @@ export function useVRSession() {
           );
           deskViz.renderPiP();
         }
+
+        // Session presence: publish what I'm holding and outline what my
+        // peers are touching (a 2D tree pick arrives through the same bus).
+        const heldByHand = grabSystemRef.current?.state.heldObjectId ?? null;
+        publishSelection(heldByHand ? [heldByHand] : [], "vr");
+        sessionPresenceRef.current?.update(scene, remoteSelections());
 
         renderer.render(scene, cam);
       });

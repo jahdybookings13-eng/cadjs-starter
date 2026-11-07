@@ -10,7 +10,7 @@ test("sketch mode → XY plane → draw rectangle → finish creates a profile",
   await expect.poll(() => readMode(page)).toBe("sketch");
 
   await page.getByRole("button", { name: "XY", exact: true }).click();
-  await page.getByTitle("Rect (R)").click();
+  await page.getByRole("button", { name: "Rect", exact: true }).click();
 
   const canvas = page.getByTestId("cad-canvas");
   const box = await canvas.boundingBox();

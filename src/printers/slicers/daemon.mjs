@@ -48,7 +48,9 @@ function which(bin, override) {
       : bin === "prusaslicer"
         ? ["PrusaSlicer", "prusaslicer"]
         : ["OrcaSlicer", "oraslicer", "orca"];
-  for (const d of (process.env.PATH ?? "").split(path.delimiter).filter(Boolean))
+  for (const d of (process.env.PATH ?? "")
+    .split(path.delimiter)
+    .filter(Boolean))
     for (const n of names) {
       const p = path.join(d, n);
       if (existsSync(p)) return p;
@@ -86,10 +88,11 @@ function build3mf(stlName, params, stlBytes) {
     '<?xml version="1.0" encoding="UTF-8"?>' +
     `<metadata xmlns="http://schemas.microsoft.com/3dmanufacturing/v1/property_schema.xsd">` +
     `<name>scadgen</name><manufacturer>scadgen</manufacturer><model>print</model><units>millimeter</units></metadata>`;
-  const cfg = [
-    "; scadgen slice config (profile-mapped keys)",
-    ...Object.entries(params).map(([k, v]) => `${k}=${v}`),
-  ].join("\n") + "\n";
+  const cfg =
+    [
+      "; scadgen slice config (profile-mapped keys)",
+      ...Object.entries(params).map(([k, v]) => `${k}=${v}`),
+    ].join("\n") + "\n";
   const contentTypes =
     '<?xml version="1.0" encoding="UTF-8"?>' +
     `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">` +
@@ -227,16 +230,13 @@ function runSlicerJob(kind, stlB64, params, stlName) {
   };
   child.stdout?.on("data", onData);
   child.stderr?.on("data", onData);
-  child.on("error", (e) =>
-    emitJob(jobId, { event: "done", error: e.message }),
-  );
+  child.on("error", (e) => emitJob(jobId, { event: "done", error: e.message }));
   child.on("close", (code) => {
     const j = jobs.get(jobId);
     if (!j) return;
     if (code === 0 && existsSync(j.outGcode))
       emitJob(jobId, { event: "done", file: j.outGcode });
-    else
-      emitJob(jobId, { event: "done", error: `slicer exited ${code}` });
+    else emitJob(jobId, { event: "done", error: `slicer exited ${code}` });
   });
   return { jobId, status: "running", output: outGcode };
 }
@@ -281,7 +281,11 @@ const server = createServer(async (req, res) => {
     }
     if (url.pathname === "/slice" && req.method === "POST") {
       const body = await takeBody();
-      if (body.kind !== "orca" && body.kind !== "prusaslicer" && body.kind !== "cura")
+      if (
+        body.kind !== "orca" &&
+        body.kind !== "prusaslicer" &&
+        body.kind !== "cura"
+      )
         return send(400, JSON.stringify({ error: "bad kind" }));
       const r = runSlicerJob(
         body.kind,
@@ -330,18 +334,21 @@ const server = createServer(async (req, res) => {
       const name = body.filename ?? "scadgen.gcode";
       const dest = path.join(printDir, name);
       writeFileSync(dest, gcode);
-      return send(200, JSON.stringify({ ok: true, path: dest, bytes: gcode.length }));
+      return send(
+        200,
+        JSON.stringify({ ok: true, path: dest, bytes: gcode.length }),
+      );
     }
     send(404, JSON.stringify({ error: "not found" }));
   } catch (e) {
-    send(500, JSON.stringify({ error: (e as Error)?.message ?? "server error" }));
+    send(500, JSON.stringify({ error: e?.message ?? "server error" }));
   }
 });
 
 server.listen(port, () => {
   console.log(`[slicer-daemon] pid ${process.pid} listening on :${port}`);
   console.log(`[slicer-daemon] print dir: ${printDir}`);
-  for (const k of ["orca", "prusaslicer", "cura"] as const)
+  for (const k of ["orca", "prusaslicer", "cura"])
     console.log(`[slicer-daemon] ${k}: ${which(k, BIN[k]) ?? "not found"}`);
 });
 

@@ -65,6 +65,17 @@ export class ScadgenSceneSync {
     return [...this.authored.entries()].map(([f, e]) => `${f}->${e}`);
   }
 
+  /**
+   * Drop every feature → element association before a whole-design replace
+   * (tab switch, reload). Without this, a feature id that exists in both tabs
+   * would resolve to the other tab's body.
+   */
+  reset(): void {
+    this.synced.clear();
+    this.hiddenBySync.clear();
+    this.authored.clear();
+  }
+
   featureForElement(nodeId: string): string | null {
     for (const [fid, id] of this.authored) if (id === nodeId) return fid;
     const nodes = this.history?.evaluatedNodes() ?? [];

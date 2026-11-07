@@ -105,18 +105,17 @@ export const brne = (k: number): number => 0xf400 | ((k & 0x7f) << 3) | 0x1;
 export const IORD = 0x20; // IO address -> data-space address offset (328P)
 
 /**
- * Blink firmware for ATmega328P boards (Arduino Uno / Nano): toggles the
- * on-board LED pin (PB5, Arduino D13) with a ~262 ms software delay loop —
- * roughly 524 ms full period at 16 MHz. No Arduino core, no interrupts, no
- * stack: pure register loops so it runs identically under avr8js.
+ * Blink firmware from raw I/O addresses: `portIo`/`ddrIo` come from the chip's
+ * own register map (see avrChips.ts), so the same program drives a 328P, a
+ * 2560, a 32U4 or an ATtiny85. No Arduino core, no interrupts, no stack: pure
+ * register loops so it runs identically under avr8js.
  */
-export function assembleBlink(
-  port: "B" | "C" | "D",
+export function assembleBlinkIo(
+  portIo: number,
+  ddrIo: number,
   bit: number,
   outerLoops = 16,
 ): number[] {
-  const portIo = { A: 0x02, B: 0x05, C: 0x08, D: 0x0b }[port]; // PORTx IO addr (328P)
-  const ddrIo = portIo - 1; // DDRx directly below PORTx on AVR
   const prog: number[] = [];
   prog.push(sbi(ddrIo, bit)); // 0: DDRx |= bit
   const loopStart = 1;
@@ -150,6 +149,20 @@ export function assembleBlink(
   return prog;
 }
 
+/**
+ * Blink for ATmega328P boards (Arduino Uno / Nano): toggles the on-board LED
+ * pin (PB5, Arduino D13) with a ~262 ms software delay loop — roughly 524 ms
+ * full period at 16 MHz.
+ */
+export function assembleBlink(
+  port: "B" | "C" | "D",
+  bit: number,
+  outerLoops = 16,
+): number[] {
+  const portIo = { A: 0x02, B: 0x05, C: 0x08, D: 0x0b }[port]; // PORTx IO addr (328P)
+  return assembleBlinkIo(portIo, portIo - 1, bit, outerLoops); // DDRx below PORTx
+}
+
 /** Words -> byte image (little-endian), ready for toHex(). */
 export function wordsToImage(words: number[], sizeWords = 1024): Uint8Array {
   const image = new Uint8Array(sizeWords * 2);
@@ -171,3 +184,24 @@ export const UNO_BLINK_HEX = toHex(
 
 /** Same program for Arduino Nano (also ATmega328P, LED on PB5/D13). */
 export const NANO_BLINK_HEX = UNO_BLINK_HEX;
+
+/**
+ * Arduino Mega 2560: D13 is PB7 (not PB5), so the same blink body is aimed at
+ * PORTB bit 7. PORTB/DDRB keep the 328P I/O addresses on the 2560.
+ */
+export const MEGA_BLINK_HEX = toHex(
+  wordsToImage(assembleBlinkIo(0x05, 0x04, 7), 1024),
+  1024,
+);
+
+/** Arduino Leonardo (ATmega32U4): D13 is PC7 → PORTC bit 7. */
+export const LEONARDO_BLINK_HEX = toHex(
+  wordsToImage(assembleBlinkIo(0x08, 0x07, 7), 1024),
+  1024,
+);
+
+/** ATtiny85: PB1 (DIP pin 6) → PORTB I/O 0x18, DDRB 0x17, 8 MHz core. */
+export const ATTINY85_BLINK_HEX = toHex(
+  wordsToImage(assembleBlinkIo(0x18, 0x17, 1, 8), 1024),
+  1024,
+);

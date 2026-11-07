@@ -2,10 +2,13 @@
 
 A reference React + Three.js + Vite app built on the [`@vitekk02/cadjs`](https://www.npmjs.com/package/@vitekk02/cadjs) library. Use it as a working demo or as a starting point for your own CAD tooling.
 
+For the in-browser Onshape designer parity scope (everything inside the designer and its controls — no API, App Store or cloud services), current capability matrix and phased delivery plan, see [`ONSHAPE_PARITY.md`](./ONSHAPE_PARITY.md).
+
 ## What's inside
 
 - **`src/index.tsx`**: entry. Wires `configureCadjs` with Vite-resolved WASM URLs, mounts the provider tree (`ToastProvider` → `CadCoreProvider` → `CadVisualizerProvider`), shows a `LoadingScreen` while WASM boots.
 - **`src/scenes/simpleCadScene.tsx`**: primary editor: viewport, mode switching (sketch / extrude / fillet / sweep / loft / revolve / measure / combine), keyboard shortcuts, undo/redo, ViewCube, feature tree.
+- **`src/document/`**: persisted document/tab model: Part Studio tabs with create, rename, duplicate, move, delete and switch, each carrying its own design blob.
 - **`src/components/`**: reusable UI: `DimensionInput`, `SketchContextMenu`, `PlaneSelector`, `ViewCube`, `FeatureTree`, `FileMenu`, `ModeInfoCard`, `LoadingScreen`, …
 - **`src/navbar/`**: `Navbar`, `SketchToolbar`, `ConstraintPanel`, `ValueInputModal`.
 

@@ -4,7 +4,10 @@
 
 import type { ActionBus } from "../model/actionBus";
 import { findPartByName, getPart } from "./catalog";
-import { firmwareFor } from "./firmware";
+import { firmwareFor, pinConstantsFor } from "./firmware";
+import { analyzeBoard } from "./studio";
+import { avrBuildRefusal, buildAvrFirmware } from "./avrBuild";
+import { inspectFirmware } from "./delivery";
 import type { Ecad } from "./install";
 
 /** Register all ecad.* actions on a bus. Idempotent. */
@@ -133,7 +136,69 @@ export function registerEcadActions(bus: ActionBus, ecad: Ecad): void {
     return { firmwareId: fw.id, tier: fw.tier };
   });
 
+  // Real C++ → Intel HEX inside the browser: cc1plus / avr-as / avr-ld /
+  // avr-objcopy as WebAssembly, linked against Arduino core objects. The
+  // compiled binary is deployed to the same emulated ATmega328P that runs
+  // uploaded .hex files, so desk, VR, voice and the AI all get one path.
+  reg("ecad.buildFirmware", async (spec: unknown) => {
+    const { board, code } = (spec ?? {}) as { board?: string; code?: string };
+    if (!board || code === undefined)
+      throw new Error("ecad.buildFirmware: board + code required");
+    const part = ecad.sim.partOf(board);
+    if (!part || part.category !== "board")
+      throw new Error(`ecad.buildFirmware: "${board}" is not a placed board`);
+    const refusal = avrBuildRefusal(part);
+    if (refusal) throw new Error(`ecad.buildFirmware: ${refusal}`);
+    const out = await buildAvrFirmware({
+      source: code,
+      constants: pinConstantsFor(part.id),
+    });
+    if (!out.ok) return out; // a failed compile is an answer, not an exception
+    ecad.sim.deploy(board, { hex: out.result.hex });
+    return { ...out, board, status: await ecad.run(board) };
+  });
+
+  // Real firmware for MCUs the suit cannot emulate: the binary itself is
+  // validated, attached to the board and persisted, so the project carries
+  // deliverable code for every board in the catalog.
+  reg("ecad.uploadBinary", (spec: unknown) => {
+    const { board, data, name } = (spec ?? {}) as {
+      board?: string;
+      data?: string;
+      name?: string;
+    };
+    if (!board || !data)
+      throw new Error("ecad.uploadBinary: board + data required");
+    const part = ecad.sim.partOf(board);
+    if (!part || part.category !== "board")
+      throw new Error(`ecad.uploadBinary: "${board}" is not a placed board`);
+    // Verify the container against the silicon before attaching it: an ARM ELF
+    // on an Xtensa ESP32, or an image larger than the chip's flash, is not
+    // "ready for delivery" — it is a file that cannot boot.
+    const facts = inspectFirmware(data, part.mcu);
+    if (facts.issues.length)
+      throw new Error(`ecad.uploadBinary: ${facts.issues.join("; ")}`);
+    const fw = ecad.sim.deploy(board, {
+      binary: data,
+      ...(name ? { name } : {}),
+    });
+    return {
+      firmwareId: fw.id,
+      tier: fw.tier,
+      format: facts.format,
+      verified: facts,
+    };
+  });
+
   reg("ecad.run", (boardInst: string) => ecad.run(boardInst));
+
+  // Pre-hardware verdict: compile, pins, wiring, peripherals, last run. The
+  // desk panel, VR hands and the AI all ask the same question the same way.
+  reg("ecad.validate", (spec: unknown) => {
+    const { board, code } = (spec ?? {}) as { board?: string; code?: string };
+    if (!board) throw new Error("ecad.validate: board required");
+    return analyzeBoard(ecad.sim, board, code === undefined ? {} : { code });
+  });
 
   reg("ecad.stop", (boardInst: string) => {
     ecad.sim.stop(boardInst);
@@ -162,6 +227,63 @@ export function registerEcadActions(bus: ActionBus, ecad: Ecad): void {
       throw new Error("ecad.setPot: id + value required");
     ecad.sim.setPot(id, value);
     return { id, value };
+  });
+
+  // In-world RF: tune a placed transmitter/receiver, then read the link and
+  // the over-the-air edge log (RSSI + distance per frame). Desk, VR, voice and
+  // the AI all use these two calls.
+  reg("ecad.tuneRadio", (spec: unknown) => {
+    const { id, mhz } = (spec ?? {}) as { id?: string; mhz?: number };
+    if (!id || mhz === undefined)
+      throw new Error("ecad.tuneRadio: id + mhz required");
+    const cap = ecad.sim.tuneRadio(id, Number(mhz));
+    return { id, mhz: cap.mhz, role: cap.role };
+  });
+
+  reg("ecad.radio", (spec: unknown) => {
+    const { tx, rx, limit } = (spec ?? {}) as {
+      tx?: string;
+      rx?: string;
+      limit?: number;
+    };
+    return {
+      link: tx && rx ? ecad.sim.radioLink(tx, rx) : null,
+      frames: ecad.sim.radioFrames(limit ?? 50),
+      stats: ecad.sim.radioStats(),
+    };
+  });
+
+  // Board supply, device temperature and AC analysis: the physical knobs.
+  reg("ecad.setSupply", (spec: unknown) => {
+    const { id, volts } = (spec ?? {}) as { id?: string; volts?: number };
+    if (!id || volts === undefined)
+      throw new Error("ecad.setSupply: id + volts required");
+    ecad.sim.setSupply(id, Number(volts));
+    return { id, volts: Number(volts) };
+  });
+
+  reg("ecad.setTemperature", (celsius: number) => {
+    ecad.sim.setTemperature(Number(celsius));
+    return { celsius: Number(celsius) };
+  });
+
+  reg("ecad.ac", (spec: unknown) => {
+    const { drive, probe, fromHz, toHz, points } = (spec ?? {}) as {
+      drive?: string;
+      probe?: string;
+      fromHz?: number;
+      toHz?: number;
+      points?: number;
+    };
+    if (!drive || !probe)
+      throw new Error("ecad.ac: drive + probe pin refs required");
+    return ecad.sim.acSweep({
+      drive,
+      probe,
+      ...(fromHz === undefined ? {} : { fromHz: Number(fromHz) }),
+      ...(toHz === undefined ? {} : { toHz: Number(toHz) }),
+      ...(points === undefined ? {} : { points: Number(points) }),
+    });
   });
 
   reg("ecad.update", (dtMs: number) => {

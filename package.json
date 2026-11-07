@@ -10,7 +10,10 @@
     "npm": ">=10"
   },
   "scripts": {
+    "predev": "node scripts/avr-assets.mjs && node scripts/stm32f4-assets.mjs",
     "dev": "vite",
+    "avr:assets": "node scripts/avr-assets.mjs",
+    "prebuild": "node scripts/avr-assets.mjs && node scripts/stm32f4-assets.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json --noEmit",
@@ -22,17 +25,23 @@
     "vr:probe": "node scripts/vr-probe.mjs",
     "vr:view": "node scripts/vr-viewer.mjs",
     "test:e2e:ui": "playwright test --ui",
-    "test:unit": "vitest run"
+    "test:unit": "vitest run",
+    "test:perf": "ECAD_BENCH=1 vitest run src/ecad/__tests__/perf.test.ts --reporter=verbose",
+    "check:bundle": "node scripts/check-bundle.mjs",
+    "test:bible": "npm run typecheck && npm run lint && npm run test:unit && npm run build && npm run check:bundle"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.20.0",
+    "@horang-corp/avr-gcc-wasm": "^0.2.0",
     "@salusoft89/planegcs": "^1.1.7",
     "@tailwindcss/vite": "^4.0.9",
-    "@vitekk02/cadjs": "file:../cadjs",
+    "@vitekk02/cadjs": "file:vendor/cadjs",
     "avr8js": "^0.21.1",
     "opencascade.js": "2.0.0-beta.b5ff984",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "rp2040js": "^1.4.1",
+    "stm32f4-emu": "^1.7.0",
     "tailwindcss": "^4.0.9",
     "three": "^0.174.0"
   },

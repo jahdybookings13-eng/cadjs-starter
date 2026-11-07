@@ -1,4 +1,8 @@
 import React, { FC, useEffect, useRef, useState } from "react";
+import {
+  parseNumericInput,
+  type NumericInputMode,
+} from "../model/numericInput";
 
 export interface NumberInputProps {
   initialValue?: number | undefined;
@@ -7,6 +11,8 @@ export interface NumberInputProps {
   onSubmit: (value: number) => void;
   onCancel: () => void;
   onChange?: ((value: number) => void) | undefined;
+  /** Unit family the surrounding feature expects. Defaults to length. */
+  expressionMode?: NumericInputMode | undefined;
   showConfirmButton?: boolean | undefined;
   confirmLabel?: string | undefined;
   confirmButtonClassName?: string | undefined;
@@ -32,6 +38,7 @@ export const NumberInput: FC<NumberInputProps> = ({
   onSubmit,
   onCancel,
   onChange,
+  expressionMode = "length",
   showConfirmButton,
   confirmLabel = "OK",
   confirmButtonClassName = DEFAULT_CONFIRM_CLASS,
@@ -43,6 +50,7 @@ export const NumberInput: FC<NumberInputProps> = ({
   autoFocus = true,
 }) => {
   const [text, setText] = useState<string>(initialValue?.toFixed(2) ?? "");
+  const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -54,15 +62,28 @@ export const NumberInput: FC<NumberInputProps> = ({
 
   useEffect(() => {
     setText(initialValue?.toFixed(2) ?? "");
+    setError(null);
   }, [initialValue]);
 
   useEffect(() => {
-    if (externalValue !== undefined) setText(externalValue.toFixed(2));
+    if (externalValue !== undefined) {
+      setText(externalValue.toFixed(2));
+      setError(null);
+    }
   }, [externalValue]);
 
   const trySubmit = () => {
-    const v = parseFloat(text);
-    if (!isNaN(v) && validate(v)) onSubmit(v);
+    const parsed = parseNumericInput(text, expressionMode);
+    if (!parsed.ok) {
+      setError(parsed.error);
+      return;
+    }
+    if (!validate(parsed.value)) {
+      setError("Value is out of range.");
+      return;
+    }
+    setError(null);
+    onSubmit(parsed.value);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -78,7 +99,8 @@ export const NumberInput: FC<NumberInputProps> = ({
       (e.key === "ArrowUp" || e.key === "ArrowDown")
     ) {
       e.preventDefault();
-      const current = parseFloat(text) || 0;
+      const parsed = parseNumericInput(text, expressionMode);
+      const current = parsed.ok ? parsed.value : 0;
       const step = e.shiftKey ? 0.1 : 1;
       const next =
         e.key === "ArrowUp"
@@ -86,17 +108,19 @@ export const NumberInput: FC<NumberInputProps> = ({
           : Math.max(arrowMinimum, current - step);
       const rounded = parseFloat(next.toFixed(2));
       setText(String(rounded));
+      setError(null);
       if (onChange && validate(rounded)) onChange(rounded);
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = e.target.value;
-    setText(v);
-    if (onChange) {
-      const num = parseFloat(v);
-      if (!isNaN(num) && validate(num)) onChange(num);
-    }
+    const value = e.target.value;
+    setText(value);
+    if (!onChange) return;
+    const parsed = parseNumericInput(value, expressionMode);
+    if (!parsed.ok) return;
+    setError(null);
+    if (validate(parsed.value)) onChange(parsed.value);
   };
 
   return (
@@ -109,11 +133,18 @@ export const NumberInput: FC<NumberInputProps> = ({
         onKeyDown={handleKeyDown}
         className={inputClassName}
         placeholder="Value"
+        aria-invalid={error ? true : undefined}
+        title={error ?? undefined}
       />
       {showConfirmButton && (
         <button onClick={trySubmit} className={confirmButtonClassName}>
           {confirmLabel}
         </button>
+      )}
+      {error && (
+        <span className="max-w-64 text-[10px] leading-tight text-red-400">
+          {error}
+        </span>
       )}
     </div>
   );

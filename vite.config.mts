@@ -38,13 +38,34 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    exclude: ["@vitekk02/cadjs", "opencascade.js", "@salusoft89/planegcs"],
+    exclude: [
+      "@vitekk02/cadjs",
+      "opencascade.js",
+      "@salusoft89/planegcs",
+      // Emscripten glue resolves its own .wasm next to the module; keep it raw.
+      "@horang-corp/avr-gcc-wasm",
+    ],
     esbuildOptions: {
       target: "es2020",
     },
   },
   build: {
     target: "es2020",
+    rollupOptions: {
+      output: {
+        // Stable vendor chunks keep their hashes across app deploys; with
+        // immutable asset caching a UI change re-downloads only the app.
+        manualChunks(id) {
+          if (id.includes("node_modules/three/build/three.module.js"))
+            return "three";
+          if (
+            id.includes("node_modules/react") ||
+            id.includes("node_modules/scheduler")
+          )
+            return "react";
+        },
+      },
+    },
   },
   assetsInclude: ["**/*.wasm"],
 });

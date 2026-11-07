@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 export interface VRRoomOptions {
   deskWidth?: number;
@@ -7,6 +6,10 @@ export interface VRRoomOptions {
   deskHeight?: number;
   padWidth?: number;
   padDepth?: number;
+  /** Room shell dims (meters). Default 5×5×3 = the existing workshop. */
+  roomWidth?: number;
+  roomDepth?: number;
+  roomHeight?: number;
 }
 
 const DEFAULTS: Required<VRRoomOptions> = {
@@ -15,22 +18,33 @@ const DEFAULTS: Required<VRRoomOptions> = {
   deskHeight: 0.75,
   padWidth: 0.4,
   padDepth: 0.3,
+  roomWidth: 5,
+  roomDepth: 5,
+  roomHeight: 3,
 };
 
 export function buildVRRoom(opts: VRRoomOptions = {}): THREE.Group {
-  const { deskWidth, deskDepth, deskHeight, padWidth, padDepth } = {
+  const {
+    deskWidth,
+    deskDepth,
+    deskHeight,
+    padWidth,
+    padDepth,
+    roomW,
+    roomD,
+    roomH,
+  } = {
     ...DEFAULTS,
     ...opts,
+    roomW: opts.roomWidth ?? DEFAULTS.roomWidth,
+    roomD: opts.roomDepth ?? DEFAULTS.roomDepth,
+    roomH: opts.roomHeight ?? DEFAULTS.roomHeight,
   };
 
   const room = new THREE.Group();
   room.name = "vr-room";
 
   // === DARK ROOM ===
-  const roomW = 5;
-  const roomD = 5;
-  const roomH = 3;
-
   const floorGeo = new THREE.PlaneGeometry(roomW, roomD);
   const floorMat = new THREE.MeshStandardMaterial({
     color: 0x1a1a1e,
@@ -236,22 +250,27 @@ export function buildVRRoom(opts: VRRoomOptions = {}): THREE.Group {
   room.add(matGroup);
 
   // === FNAF SB ENDO BLUEPRINT BOARD (flat picture, lies on the mat) ===
-  void new GLTFLoader().load(
-    "/vr/scene.gltf",
-    (gltf) => {
-      const board = gltf.scene;
-      board.name = "fnaf-endo-board";
-      board.scale.setScalar(0.47);
-      board.position.set(-1.85, deskHeight + 0.028, -0.3);
-      board.rotation.y = 0.12 + 0.35; // angled on the mat
-      room.add(board);
-      (window as unknown as { __vrBoardReady?: boolean }).__vrBoardReady = true;
-    },
-    undefined,
-    () => {
-      /* board asset missing — mat stands alone */
-    },
-  );
+  void (async () => {
+    const { GLTFLoader } =
+      await import("three/examples/jsm/loaders/GLTFLoader.js");
+    new GLTFLoader().load(
+      "/vr/scene.gltf",
+      (gltf) => {
+        const board = gltf.scene;
+        board.name = "fnaf-endo-board";
+        board.scale.setScalar(0.47);
+        board.position.set(-1.85, deskHeight + 0.028, -0.3);
+        board.rotation.y = 0.12 + 0.35; // angled on the mat
+        room.add(board);
+        (window as unknown as { __vrBoardReady?: boolean }).__vrBoardReady =
+          true;
+      },
+      undefined,
+      () => {
+        /* board asset missing — mat stands alone */
+      },
+    );
+  })();
 
   // === MEASURING PAD (green cutting mat with 3 perspectives) ===
   const padGroup = new THREE.Group();
