@@ -123,6 +123,7 @@ const DimensionInput: FC<DimensionInputProps> = ({
         <label className="flex items-center gap-1">
           <input
             type="checkbox"
+            aria-label="Driving dimension"
             checked={driving}
             onChange={(event) => setDriving(event.target.checked)}
           />

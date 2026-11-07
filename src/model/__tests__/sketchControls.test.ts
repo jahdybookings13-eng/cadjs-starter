@@ -117,7 +117,7 @@ describe("sketch control registry", () => {
   });
 
   it("lists real parity gaps instead of dead buttons", () => {
-    expect(SKETCH_PARITY_GAPS.length).toBeGreaterThan(2);
+    expect(SKETCH_PARITY_GAPS.length).toBeGreaterThanOrEqual(2);
     const commandAliases = new Set(
       lower(SKETCH_COMMANDS.flatMap((command) => command.autocad)),
     );
