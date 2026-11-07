@@ -12,6 +12,7 @@ import {
   isSketchLine,
   isSketchPoint,
   requiresValue,
+  type HatchPattern,
 } from "@vitekk02/cadjs";
 import ValueInputModal from "./ValueInputModal";
 
@@ -46,7 +47,19 @@ interface SketchToolbarProps {
   onPatternCircular: () => void;
   onPatternPath: () => void;
   onText: () => void;
+  onHatch: () => void;
+  hatchPattern: HatchPattern;
+  onHatchPatternChange: (pattern: HatchPattern) => void;
+  hatchSpacing: number;
+  onHatchSpacingChange: (spacing: number) => void;
+  hatchAngle: number;
+  onHatchAngleChange: (angle: number) => void;
+  onBlockCreate: () => void;
+  onBlockInsert: () => void;
+  onBlockExplode: () => void;
+  onOpenLayers: () => void;
   onImportDxf: () => void;
+  onExportDxf: () => void;
   onAddImage: () => void;
   onEditUnderlay: () => void;
   onInclude: () => void;
@@ -107,7 +120,19 @@ const SketchToolbar: FC<SketchToolbarProps> = ({
   onPatternCircular,
   onPatternPath,
   onText,
+  onHatch,
+  hatchPattern,
+  onHatchPatternChange,
+  hatchSpacing,
+  onHatchSpacingChange,
+  hatchAngle,
+  onHatchAngleChange,
+  onBlockCreate,
+  onBlockInsert,
+  onBlockExplode,
+  onOpenLayers,
   onImportDxf,
+  onExportDxf,
   onAddImage,
   onEditUnderlay,
   onInclude,
@@ -170,6 +195,7 @@ const SketchToolbar: FC<SketchToolbarProps> = ({
   const joinEnabled = cornerEnabled;
   const transformEnabled = selectedPrimitives.length > 0 && !isOperationPending;
   const patternEnabled = transformEnabled;
+  const blockCount = activeSketch.blocks?.length ?? 0;
 
   const handleConstraintClick = (type: ConstraintType) => {
     if (requiresValue(type)) {
@@ -244,6 +270,7 @@ const SketchToolbar: FC<SketchToolbarProps> = ({
     <div className="flex items-center gap-1 w-full min-w-0 relative">
       {/* Drawing tools */}
       {toolBtn("line", "Line", "L / LINE")}
+      {toolBtn("polyline", "Polyline", "PL / PLINE")}
       {toolBtn("midpointLine", "Mid Line", "MIDLINE / ML")}
       {toolBtn("rectangle", "Rect", "R / REC")}
       {toolBtn("centerRectangle", "Center Rect", "CRECT")}
@@ -272,6 +299,91 @@ const SketchToolbar: FC<SketchToolbarProps> = ({
       </button>
       <button
         className={`flex-none px-2 py-1 text-sm rounded ${
+          !transformEnabled
+            ? "bg-gray-700 opacity-50 cursor-not-allowed text-gray-500"
+            : "bg-gray-700 hover:bg-gray-600 text-gray-200"
+        }`}
+        disabled={!transformEnabled}
+        onClick={onHatch}
+        title="Hatch the selected closed loop (HATCH / H)"
+      >
+        Hatch
+      </button>
+      <select
+        className="flex-none px-1 py-1 text-xs bg-gray-700 text-gray-200 rounded border border-gray-600"
+        value={hatchPattern}
+        onChange={(e) => onHatchPatternChange(e.target.value as HatchPattern)}
+        title="Hatch pattern"
+        aria-label="Hatch pattern"
+      >
+        <option value="lines">Lines</option>
+        <option value="cross">Cross</option>
+        <option value="solid">Solid</option>
+      </select>
+      <input
+        type="number"
+        min="0.05"
+        step="0.05"
+        value={hatchSpacing}
+        onChange={(e) => onHatchSpacingChange(Number(e.target.value))}
+        title="Hatch spacing"
+        aria-label="Hatch spacing"
+        className="flex-none w-14 px-1 py-1 text-xs bg-gray-700 text-gray-200 rounded border border-gray-600"
+      />
+      <input
+        type="number"
+        step="5"
+        value={hatchAngle}
+        onChange={(e) => onHatchAngleChange(Number(e.target.value))}
+        title="Hatch angle in degrees"
+        aria-label="Hatch angle"
+        className="flex-none w-14 px-1 py-1 text-xs bg-gray-700 text-gray-200 rounded border border-gray-600"
+      />
+      <button
+        className={`flex-none px-2 py-1 text-sm rounded ${
+          !transformEnabled
+            ? "bg-gray-700 opacity-50 cursor-not-allowed text-gray-500"
+            : "bg-gray-700 hover:bg-gray-600 text-gray-200"
+        }`}
+        disabled={!transformEnabled}
+        onClick={onBlockCreate}
+        title="Create a block from the selection (BLOCK / B)"
+      >
+        Block
+      </button>
+      <button
+        className={`flex-none px-2 py-1 text-sm rounded ${
+          blockCount === 0 || isOperationPending
+            ? "bg-gray-700 opacity-50 cursor-not-allowed text-gray-500"
+            : "bg-gray-700 hover:bg-gray-600 text-gray-200"
+        }`}
+        disabled={blockCount === 0 || isOperationPending}
+        onClick={onBlockInsert}
+        title="Insert the most recent block definition (INSERT)"
+      >
+        Insert
+      </button>
+      <button
+        className={`flex-none px-2 py-1 text-sm rounded ${
+          !transformEnabled
+            ? "bg-gray-700 opacity-50 cursor-not-allowed text-gray-500"
+            : "bg-gray-700 hover:bg-gray-600 text-gray-200"
+        }`}
+        disabled={!transformEnabled}
+        onClick={onBlockExplode}
+        title="Explode the selected block instance (EXPLODE)"
+      >
+        Explode
+      </button>
+      <button
+        className="flex-none px-2 py-1 text-sm rounded bg-gray-700 hover:bg-gray-600 text-gray-200"
+        onClick={onOpenLayers}
+        title="Sketch layers, colours and linetypes (LAYER / LA)"
+      >
+        Layers
+      </button>
+      <button
+        className={`flex-none px-2 py-1 text-sm rounded ${
           isOperationPending
             ? "bg-gray-800 text-gray-500 cursor-not-allowed"
             : "bg-gray-700 hover:bg-gray-600 text-gray-200"
@@ -281,6 +393,13 @@ const SketchToolbar: FC<SketchToolbarProps> = ({
         title="Import 2D DXF entities into this sketch"
       >
         DXF
+      </button>
+      <button
+        className="flex-none px-2 py-1 text-sm rounded bg-gray-700 hover:bg-gray-600 text-gray-200"
+        onClick={onExportDxf}
+        title="Export this sketch as an ASCII DXF with its layers"
+      >
+        Export DXF
       </button>
       <button
         className={`flex-none px-2 py-1 text-sm rounded ${

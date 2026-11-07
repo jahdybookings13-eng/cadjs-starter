@@ -163,6 +163,9 @@ function sketchToJSON(s: Sketch): SketchJSON {
     constraints: s.constraints,
     dof: s.dof,
     status: s.status,
+    ...(s.layers ? { layers: s.layers } : {}),
+    ...(s.blocks ? { blocks: s.blocks } : {}),
+    ...(s.imageUnderlays ? { imageUnderlays: s.imageUnderlays } : {}),
   };
 }
 
@@ -174,6 +177,9 @@ function sketchFromJSON(json: SketchJSON): Sketch {
     constraints: json.constraints,
     dof: json.dof,
     status: json.status,
+    ...(json.layers ? { layers: json.layers } : {}),
+    ...(json.blocks ? { blocks: json.blocks } : {}),
+    ...(json.imageUnderlays ? { imageUnderlays: json.imageUnderlays } : {}),
   };
 }
 

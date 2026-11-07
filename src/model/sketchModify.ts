@@ -36,6 +36,8 @@ const EPSILON = 1e-9;
 
 function usesPoint(primitive: SketchPrimitive, pointId: string): boolean {
   switch (primitive.type) {
+    case "hatch":
+      return false;
     case "line":
       return primitive.p1Id === pointId || primitive.p2Id === pointId;
     case "circle":

@@ -13,9 +13,14 @@ import {
   isSketchSpline,
   isSketchBezier,
   isSketchConic,
+  isSketchHatch,
   isConstructionPrimitive,
   isDimensionalConstraint,
   findSketchPoint,
+  type Sketch,
+  type SketchHatch,
+  type SketchLayer,
+  type SketchLine,
 } from "../../../types/sketch-types";
 import { SKETCH as SKETCH_THEME } from "../../../theme";
 import {
@@ -33,6 +38,92 @@ import {
   SKETCH_ZERO_LENGTH_TOL,
 } from "../../../sketch-tolerances";
 import { SKETCH_PLANE_Z_LIFT_MM } from "../../../visual-constants";
+
+function hatchLoopPoints(
+  sketch: Sketch,
+  hatch: SketchHatch,
+): Array<{ x: number; y: number }> | null {
+  const lines = hatch.boundaryIds
+    .map((id) => sketch.primitives.find((p) => p.id === id))
+    .filter((p): p is SketchLine => !!p && p.type === "line");
+  if (lines.length < 3) return null;
+
+  const byPoint = new Map<string, string[]>();
+  let startPoint: string | null = null;
+  for (const line of lines) {
+    if (!startPoint) startPoint = line.p1Id;
+    for (const pointId of [line.p1Id, line.p2Id]) {
+      const list = byPoint.get(pointId) ?? [];
+      list.push(line.id);
+      byPoint.set(pointId, list);
+    }
+  }
+  if (!startPoint) return null;
+
+  const used = new Set<string>();
+  const ids: string[] = [startPoint];
+  let current = startPoint;
+  let guard = 0;
+  while (guard++ <= lines.length) {
+    const nextId = (byPoint.get(current) ?? []).find((id) => !used.has(id));
+    if (!nextId) break;
+    const line = lines.find((entry) => entry.id === nextId);
+    if (!line) break;
+    used.add(nextId);
+    current = line.p1Id === current ? line.p2Id : line.p1Id;
+    if (current === startPoint) break;
+    ids.push(current);
+  }
+  if (used.size !== lines.length) return null;
+
+  const points = ids
+    .map((id) => findSketchPoint(sketch.primitives, id))
+    .filter((p): p is NonNullable<typeof p> => !!p)
+    .map((p) => ({ x: p.x, y: p.y }));
+  return points.length >= 3 ? points : null;
+}
+
+function hatchSegments(
+  points: Array<{ x: number; y: number }>,
+  spacing: number,
+  angle: number,
+): Array<[number, number, number, number]> {
+  const step = Math.max(0.05, spacing);
+  const cos = Math.cos(-angle);
+  const sin = Math.sin(-angle);
+  const rotated = points.map((p) => ({
+    x: p.x * cos - p.y * sin,
+    y: p.x * sin + p.y * cos,
+  }));
+  const minY = Math.min(...rotated.map((p) => p.y));
+  const maxY = Math.max(...rotated.map((p) => p.y));
+  const out: Array<[number, number, number, number]> = [];
+  const backCos = Math.cos(angle);
+  const backSin = Math.sin(angle);
+
+  for (let y = minY + step / 2; y < maxY; y += step) {
+    const xs: number[] = [];
+    for (let i = 0; i < rotated.length; i++) {
+      const a = rotated[i]!;
+      const b = rotated[(i + 1) % rotated.length]!;
+      if ((a.y <= y && b.y > y) || (b.y <= y && a.y > y)) {
+        xs.push(a.x + ((y - a.y) / (b.y - a.y)) * (b.x - a.x));
+      }
+    }
+    xs.sort((a, b) => a - b);
+    for (let i = 0; i + 1 < xs.length; i += 2) {
+      const x1 = xs[i]!;
+      const x2 = xs[i + 1]!;
+      out.push([
+        x1 * backCos - y * backSin,
+        x1 * backSin + y * backCos,
+        x2 * backCos - y * backSin,
+        x2 * backSin + y * backCos,
+      ]);
+    }
+  }
+  return out;
+}
 
 interface UseSketchRenderParams {
   /** Parent's THREE.Object3D array, mutated by this effect, read by selection picking. */
@@ -132,6 +223,14 @@ export function useSketchRender({
       newObjects.push(mesh);
     }
 
+    const layers = activeSketch.layers ?? [];
+    const layerFor = (primitiveId: string): SketchLayer | undefined => {
+      const prim = activeSketch.primitives.find((p) => p.id === primitiveId);
+      return prim?.layerId
+        ? layers.find((layer) => layer.id === prim.layerId)
+        : layers[0];
+    };
+
     const getColor = (primitiveId: string) => {
       const prim = activeSketch.primitives.find((p) => p.id === primitiveId);
       const construction = isConstructionPrimitive(prim);
@@ -144,6 +243,8 @@ export function useSketchRender({
       if (construction) {
         return SKETCH_THEME.construction;
       }
+      const layerColor = layerFor(primitiveId)?.color;
+      if (layerColor) return new THREE.Color(layerColor).getHex();
       return activeSketch.status === "fully_constrained"
         ? COLORS.constrained
         : activeSketch.status === "overconstrained"
@@ -179,8 +280,12 @@ export function useSketchRender({
     // Render each primitive
     for (const primitive of activeSketch.primitives) {
       const isSelected = selectedPrimitives.includes(primitive.id);
+      const layer = layerFor(primitive.id);
+      if (layer && !layer.visible) continue;
       const color = getColor(primitive.id);
       const constructionFlag = isConstruction(primitive.id);
+      const styleDashed =
+        constructionFlag || (!!layer && layer.linetype !== "continuous");
       const isOrigin = !!(primitive as { origin?: boolean }).origin;
 
       if (isSketchPoint(primitive)) {
@@ -261,7 +366,7 @@ export function useSketchRender({
           end3D = sketchTo3D(p2Prim.x, p2Prim.y, 0.05);
           lineColor = isSelected ? COLORS.selectedLine : color;
           lineWidth = isSelected ? 3.0 : 1.5;
-          dashed = constructionFlag;
+          dashed = styleDashed;
         }
 
         const positions = [
@@ -310,7 +415,7 @@ export function useSketchRender({
             positions,
             color,
             lineWidth,
-            constructionFlag,
+            styleDashed,
           );
           line.renderOrder = 999;
           line.userData = {
@@ -357,7 +462,7 @@ export function useSketchRender({
             positions,
             color,
             lineWidth,
-            constructionFlag,
+            styleDashed,
           );
           line.renderOrder = 999;
           line.userData = {
@@ -409,7 +514,7 @@ export function useSketchRender({
             positions,
             color,
             lineWidth,
-            constructionFlag,
+            styleDashed,
           );
           line.renderOrder = 999;
           line.userData = {
@@ -446,7 +551,7 @@ export function useSketchRender({
             positions,
             color,
             isSelected ? 3.0 : 1.5,
-            constructionFlag,
+            styleDashed,
           );
           line.renderOrder = 999;
           line.userData = {
@@ -473,7 +578,7 @@ export function useSketchRender({
             positions,
             color,
             isSelected ? 3.0 : 1.5,
-            constructionFlag,
+            styleDashed,
           );
           line.renderOrder = 999;
           line.userData = {
@@ -513,7 +618,7 @@ export function useSketchRender({
             positions,
             color,
             isSelected ? 3.0 : 1.5,
-            constructionFlag,
+            styleDashed,
           );
           line.renderOrder = 999;
           line.userData = {
@@ -523,6 +628,92 @@ export function useSketchRender({
           };
           scene.add(line);
           newObjects.push(line);
+        }
+      } else if (isSketchHatch(primitive)) {
+        const hatchPoints = hatchLoopPoints(activeSketch, primitive);
+        if (hatchPoints) {
+          const hatchLayer = primitive.layerId
+            ? layers.find((entry) => entry.id === primitive.layerId)
+            : layer;
+          const hatchColor = new THREE.Color(hatchLayer?.color ?? "#94a3b8");
+          const shape = new THREE.Shape(
+            hatchPoints.map((p) => new THREE.Vector2(p.x, p.y)),
+          );
+          const fill = new THREE.Mesh(
+            new THREE.ShapeGeometry(shape),
+            new THREE.MeshBasicMaterial({
+              color: hatchColor,
+              transparent: true,
+              opacity: primitive.pattern === "solid" ? 0.24 : 0.1,
+              depthTest: false,
+              side: THREE.DoubleSide,
+            }),
+          );
+          fill.quaternion.setFromRotationMatrix(
+            new THREE.Matrix4().makeBasis(
+              activeSketch.plane.xAxis,
+              activeSketch.plane.yAxis,
+              activeSketch.plane.normal,
+            ),
+          );
+          fill.position.copy(activeSketch.plane.origin);
+          fill.renderOrder = 996;
+          fill.userData = {
+            primitiveId: primitive.id,
+            type: "hatch",
+            isSketchPrimitive: true,
+          };
+          scene.add(fill);
+          newObjects.push(fill);
+
+          if (primitive.pattern !== "solid") {
+            const segments = hatchSegments(
+              hatchPoints,
+              primitive.spacing,
+              primitive.angle,
+            );
+            for (const [x1, y1, x2, y2] of segments) {
+              const a = sketchTo3D(x1, y1, 0.04);
+              const b = sketchTo3D(x2, y2, 0.04);
+              const line = createLine2FromPoints(
+                [a.x, a.y, a.z, b.x, b.y, b.z],
+                isSelected ? COLORS.selectedLine : hatchColor.getHex(),
+                1.0,
+              );
+              line.renderOrder = 997;
+              line.userData = {
+                primitiveId: primitive.id,
+                type: "hatch",
+                isSketchPrimitive: true,
+              };
+              scene.add(line);
+              newObjects.push(line);
+            }
+            if (primitive.pattern === "cross") {
+              const crossSegments = hatchSegments(
+                hatchPoints,
+                primitive.spacing,
+                primitive.angle + Math.PI / 2,
+              );
+              for (const [x1, y1, x2, y2] of crossSegments) {
+                const a = sketchTo3D(x1, y1, 0.04);
+                const b = sketchTo3D(x2, y2, 0.04);
+                const line = createLine2FromPoints(
+                  [a.x, a.y, a.z, b.x, b.y, b.z],
+                  isSelected ? COLORS.selectedLine : hatchColor.getHex(),
+                  1.0,
+                );
+                line.renderOrder = 997;
+                line.userData = {
+                  primitiveId: primitive.id,
+                  type: "hatch",
+                  isSketchPrimitive: true,
+                };
+                scene.add(line);
+                newObjects.push(line);
+              }
+            }
+          }
         }
       } else if (isSketchArc(primitive)) {
         const centerPrim2D = findSketchPoint(
@@ -571,7 +762,7 @@ export function useSketchRender({
             positions,
             color,
             lineWidth,
-            constructionFlag,
+            styleDashed,
           );
           line.userData = {
             primitiveId: primitive.id,

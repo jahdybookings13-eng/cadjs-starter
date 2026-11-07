@@ -1,6 +1,6 @@
 # ONSHAPE_PARITY — in-browser designer parity
 
-Status: **scope frozen; Phase 0 complete 2026-11-06; Phase 1 complete 2026-11-06**
+Status: **scope frozen; Phase 0, Phase 1 and Phase 2.1 complete 2026-11-06; Phase 2 in progress**
 Baseline date: **2026-11-06**
 Target: **Onshape's browser designer (desktop web), current production behaviour**
 Current product: **ScadGen / cadjs-starter**
@@ -104,8 +104,10 @@ that silently does nothing is a defect, not partial parity.
   persistent face/edge tags.
 - Sketch: lines, arcs, circles, ellipses, elliptical arcs, splines, Beziers,
   conics, constraints, dimensions, trim/extend, fillet/chamfer, offset, join,
-  mirror, move/copy, rotate/scale, linear/circular/path patterns, text, DXF,
-  image underlays and analytic plane-section Include.
+  mirror, move/copy, rotate/scale, linear/circular/path patterns, text,
+  polylines, hatches, block define/insert/explode with nested instance paths,
+  layers/linetypes, DXF (including LAYER table mapping), image underlays and
+  analytic plane-section Include.
 - Features: extrude, revolve, sweep, loft, fillet, chamfer, boolean, shell,
   thicken, draft, hole, pattern, mirror, move/delete face, split, section,
   project curves, curve on face, surface, wrap, thread, fastener, screw hole,
@@ -115,10 +117,10 @@ that silently does nothing is a defect, not partial parity.
 - Manufacturing exports: DXF drawing sheets, USPTO patent sheets, STL/STEP/SVG.
 - ECAD simulation, firmware/MCU emulation, RF, VR room/desk interactions.
 - Browser gates: full Chromium suite, Firefox/WebKit smoke matrix.
-- Automated evidence at this baseline: **603 app tests passing, 4 skipped**;
-  Chromium non-VR **40 passed, 1 skipped**; the Phase 1 Documents and tab
-  specs pass. The pre-existing VR specs were not rerun in this pass, and the
-  Firefox/WebKit smoke matrix was not rerun.
+- Automated evidence at this baseline: **613 app tests passing, 4 skipped**;
+  the Chromium sketch-controls spec passes, including DXF layer/linetype
+  mapping and the layers dialog. The pre-existing VR specs were not rerun in
+  this pass, and the Firefox/WebKit smoke matrix was not rerun.
 
 ### What does not exist
 
@@ -292,25 +294,25 @@ Status keys:
 
 ### 4.2 Sketch
 
-| Capability                 | Current             | Required for parity                                      | Status  |
-| -------------------------- | ------------------- | -------------------------------------------------------- | ------- |
-| Line/arc/circle/ellipse    | Yes                 | Onshape-equivalent creation and editing                  | PARTIAL |
-| Spline/Bezier/conic        | Yes                 | Full control-point, handle and curvature editing         | PARTIAL |
-| Polyline                   | No                  | Polyline primitive and vertex editing                    | MISSING |
-| Hatch                      | No                  | Hatch regions, patterns and boundaries                   | MISSING |
-| Sketch text                | Yes                 | Fonts, alignment, path text and editing                  | PARTIAL |
-| Blocks                     | No                  | Define, insert, explode, nested blocks                   | MISSING |
-| Layers/linetypes           | No                  | Layer model, colours, line styles, visibility            | MISSING |
-| Constraints                | 18 core constraints | Full Onshape constraint set and inference                | PARTIAL |
-| Dimensions                 | Driving dimensions  | Driving/driven, expressions, variables, limits           | PARTIAL |
-| Trim/extend/split          | Yes                 | Full topology-aware behaviour                            | PARTIAL |
-| Fillet/chamfer/offset      | Yes                 | Full corner and chain behaviour                          | PARTIAL |
-| Mirror/pattern/transform   | Yes                 | Full sketch pattern, transform and constraints           | PARTIAL |
-| Project/include            | Plane section only  | Associative project edges/curves/points/silhouette       | PARTIAL |
-| Image underlay             | Yes                 | Attach/move/scale/rotate/opacity/delete                  | SHIPPED |
-| Sketch planes              | Planes/faces        | Mate connectors, custom planes, in-context               | PARTIAL |
-| Sketch analysis            | DOF/status          | Constraint conflict diagnostics, curvature, intersection | PARTIAL |
-| Sketch in drawing/assembly | No                  | In-context sketching and cross-context references        | MISSING |
+| Capability                 | Current                                                         | Required for parity                                      | Status  |
+| -------------------------- | --------------------------------------------------------------- | -------------------------------------------------------- | ------- |
+| Line/arc/circle/ellipse    | Yes                                                             | Onshape-equivalent creation and editing                  | PARTIAL |
+| Spline/Bezier/conic        | Yes                                                             | Full control-point, handle and curvature editing         | PARTIAL |
+| Polyline                   | Yes — chained lines share vertex points                         | Polyline creation and vertex editing                     | SHIPPED |
+| Hatch                      | Yes — closed-loop solid/line/cross fills                        | Hatch regions, patterns and boundaries                   | SHIPPED |
+| Sketch text                | Yes                                                             | Fonts, alignment, path text and editing                  | PARTIAL |
+| Blocks                     | Yes — define/insert/explode; nested paths remapped             | Define, insert, explode, nested blocks                   | SHIPPED |
+| Layers/linetypes           | Yes — colours, visibility, dash styles; DXF LAYER import        | Layer model, colours, line styles, visibility            | SHIPPED |
+| Constraints                | 18 core constraints; conflicts name the solver's constraint set | Full Onshape constraint set and inference                | PARTIAL |
+| Dimensions                 | Driving dimensions                                              | Driving/driven, expressions, variables, limits           | PARTIAL |
+| Trim/extend/split          | Yes                                                             | Full topology-aware behaviour                            | PARTIAL |
+| Fillet/chamfer/offset      | Yes                                                             | Full corner and chain behaviour                          | PARTIAL |
+| Mirror/pattern/transform   | Yes                                                             | Full sketch pattern, transform and constraints           | PARTIAL |
+| Project/include            | Plane section only                                              | Associative project edges/curves/points/silhouette       | PARTIAL |
+| Image underlay             | Yes                                                             | Attach/move/scale/rotate/opacity/delete                  | SHIPPED |
+| Sketch planes              | Planes/faces                                                    | Mate connectors, custom planes, in-context               | PARTIAL |
+| Sketch analysis            | DOF/status                                                      | Constraint conflict diagnostics, curvature, intersection | PARTIAL |
+| Sketch in drawing/assembly | No                                                              | In-context sketching and cross-context references        | MISSING |
 
 ### 4.3 Part Studio features
 
@@ -613,10 +615,24 @@ workspaces (their tabs arrive with their phases). The five-family toolbar
 rebuild is also deferred; the document toolbar landed, while feature/sketch
 context toolbars remain the existing surfaces.
 
-### Phase 2 — Sketch parity (4–6 months) — **not started**
+### Phase 2 — Sketch parity (4–6 months) — **in progress: Phase 2.1 complete**
 
 **Goal:** every Onshape sketch entity, constraint, dimension and modify tool,
 with inference and conflict feedback.
+
+**Phase 2 internal sequence (5 sub-phases)**
+
+| Sub-phase                                      | Scope                                                                                                                                                                                                                                   | Exit gate                                                                                                                                |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **2.1 Entities and layers**                    | Polyline (chained creation and vertex editing), construction geometry and points, hatch regions/patterns, blocks (define/insert/explode/nested), layer model, colour, visibility, linetypes and DXF mapping.                            | **Complete: entity, layer and block round-trip unit tests plus browser DXF layer evidence pass.**                                                |
+| **2.2 Constraints and inference**              | Complete geometric constraint set, inference with glyphs, DOF reporting, over-constraint resolution and named conflict sets.                                                                                                            | 15+ constraints on one sketch; a deliberate over-constraint names the conflicting set. **Partial: named conflict IDs and toast landed.** |
+| **2.3 Dimensions**                             | Driving, driven and reference dimensions; expressions and variables; limits; consistent value-entry UI.                                                                                                                                 | Three dimensions drive geometry through edit/undo/reload; driven dimensions update without solving.                                      |
+| **2.4 Modify and associative project/include** | Trim/extend/split/offset/fillet/chamfer edge cases, chain/loop selection, pattern/transform interactions; project/include edges, curves, points and silhouettes with associative update; face, mate-connector and custom sketch planes. | Modified geometry and included references survive an upstream edit and reload.                                                           |
+| **2.5 Text/underlay, analysis and acceptance** | Font selection, alignment and text-on-path; underlay rotate/re-attach; curvature, intersection and open/closed-profile analysis; acceptance checklist and visual regression baselines.                                                  | Checklist and screenshot baselines pass.                                                                                                 |
+
+These are sequencing slices inside Phase 2, not five additional global phases.
+The 4–6 month phase estimate assumes the four-person team works them in
+parallel; run sequentially they are longer.
 
 **Workstreams**
 
@@ -651,6 +667,41 @@ with inference and conflict feedback.
   fully constrained after edit, undo and reload.
 - Deliberate over-constraint is reported with the conflicting set named.
 - Checklist and screenshot baselines pass.
+
+**Landed 2026-11-06 (Phase 2.1)**
+
+- Polyline is a chain of real lines sharing `polylineId`, so solver, render,
+  BRep and shared-point vertex editing stay on the existing paths.
+- Hatch is a first-class `SketchHatch` with ordered boundary line ids, pattern,
+  spacing, angle and layer metadata; it renders solid/line/cross and is
+  excluded from BRep. Deleting a boundary line cascades to its hatch.
+- Blocks define snapshot definitions, insert clones with remapped point, line,
+  hatch-boundary and polyline ids, preserve nested instance paths, and explode
+  back to ordinary geometry. Selecting one member selects the whole instance.
+- Layers carry colour, visibility and continuous/dashed/dotted/center styles;
+  assignment, the Layers dialog, renderer visibility and DXF LAYER import are
+  wired end to end.
+- DXF import now maps LAYER table colours/linetypes/visibility and entity layer
+  codes, and groups LWPOLYLINE segments by `polylineId`.
+- Focused tests cover closed-loop hatch creation, layer assignment, block
+  define/insert/explode, nested block paths, block hatch remapping, polyline
+  vertices and DXF layers. `test:bible` and the Chromium sketch-controls spec
+  pass.
+
+**Landed 2026-11-06 (first slice)**
+
+- The solver's `conflictingConstraintIds` / `redundantConstraintIds` now flow
+  through `ConstraintResult`, sketch feedback and the UI toast. The toast names
+  the offending constraints and their primitives instead of saying only
+  "constraint conflicts".
+- `src/model/sketchDiagnostics.ts` formats the named set; unknown ids are kept
+  rather than hidden.
+- Focused unit tests cover the formatter; app typecheck, the full gate and the
+  existing sketch browser spec pass.
+
+**Still required for Phase 2 exit:** full constraint inference and driven
+ dimensions, associative project/include, sketch analysis, text/underlay depth,
+ and visual regression baselines.
 
 **Not in this phase:** in-context sketching from an assembly or drawing (Phase 4/5).
 
@@ -946,17 +997,28 @@ Landed 2026-11-06 (Phase 1, second slice):
    failure; Chromium specs cover the Documents page, tab manager and the
    existing tab isolation/reload path.
 
-Phase 1 is complete for the local document shell. The matrix remains 35.1%
-because Assembly, Drawing, BOM, feature/part search and deeper document
-behaviour are later phases; six matrix rows are `SHIPPED`, including the
+Phase 1 is complete for the local document shell. The matrix is 39.2% after
+Phase 2.1 because Assembly, Drawing, BOM, feature/part search and deeper
+document behaviour are later phases; the shipped rows include the
 Documents page, Part Studio tabs and named local history. Only Part Studio tabs
 are offered because the other workspaces do not exist yet; adding empty tabs
 would be a mock.
 
-The next implementation slice is Phase 2 sketch parity. Keep the tab spec in
-the Chromium suite until the Firefox/WebKit smoke matrix can afford its runtime,
-and continue the control-evidence burn-down (8 direct references across 295
-controls at the Phase 1 checkpoint).
+Landed 2026-11-06 (Phase 2, first slice):
+
+1. Sketch constraint feedback now carries the solver's named conflicting or
+   redundant constraint ids end to end. The feedback toast shows the constraint
+   type and primitive ids, with an 8 s window for a conflicting set.
+2. The formatter is a pure model helper with focused unit tests. Unknown ids
+   survive formatting instead of being silently dropped.
+
+Phase 2.1 is complete: polyline, hatch, blocks with nested instance paths,
+layers/linetypes and DXF layer mapping are implemented and tested. Phase 2 is
+not complete. The remaining gaps are full constraint inference and driven
+dimensions, associative project/include, sketch analysis, text/underlay depth
+and visual regression baselines. Keep the tab spec in the Chromium suite until
+the Firefox/WebKit smoke matrix can afford its runtime, and continue the
+control-evidence burn-down (8 direct references across 308 controls).
 
 ## 10. Sources and baseline notes
 

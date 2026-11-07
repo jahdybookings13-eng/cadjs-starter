@@ -3,6 +3,7 @@ import type {
   SketchCircle,
   SketchEllipse,
   SketchEllipticalArc,
+  SketchLayer,
   SketchLine,
   SketchPoint,
   SketchPrimitive,
@@ -15,6 +16,7 @@ export interface DxfImportResult {
   entityCount: number;
   skipped: string[];
   units: string;
+  layers: SketchLayer[];
 }
 
 export type DxfImportFailure = { ok: false; reason: string };
@@ -87,6 +89,52 @@ function sectionEntities(pairs: DxfPair[]): DxfEntity[] {
   return entities;
 }
 
+const ACI_COLORS: Record<number, string> = {
+  1: "#ef4444",
+  2: "#eab308",
+  3: "#22c55e",
+  4: "#06b6d4",
+  5: "#3b82f6",
+  6: "#d946ef",
+  7: "#e5e7eb",
+  8: "#9ca3af",
+  9: "#d1d5db",
+};
+
+function layerEntryPairs(pairs: DxfPair[]): DxfPair[][] {
+  const entries: DxfPair[][] = [];
+  let inLayerTable = false;
+  let current: DxfPair[] | null = null;
+  for (let i = 0; i < pairs.length; i++) {
+    const pair = pairs[i]!;
+    if (pair.code === 0 && pair.value === "TABLE") {
+      const name = pairs[i + 1];
+      inLayerTable = name?.code === 2 && name.value.toUpperCase() === "LAYER";
+      continue;
+    }
+    if (!inLayerTable) continue;
+    if (pair.code === 0 && pair.value === "LAYER") {
+      if (current) entries.push(current);
+      current = [];
+      continue;
+    }
+    if (pair.code === 0 && pair.value === "ENDTAB") {
+      if (current) entries.push(current);
+      break;
+    }
+    if (current) current.push(pair);
+  }
+  return entries;
+}
+
+function linetypeName(name: string | undefined): SketchLayer["linetype"] {
+  const normalized = (name ?? "CONTINUOUS").toUpperCase();
+  if (normalized.includes("DASH")) return "dashed";
+  if (normalized.includes("DOT")) return "dotted";
+  if (normalized.includes("CENTER")) return "center";
+  return "continuous";
+}
+
 function dxfUnits(pairs: DxfPair[]): { scale: number; name: string } {
   const index = pairs.findIndex(
     (pair) => pair.code === 9 && pair.value === "$INSUNITS",
@@ -122,41 +170,77 @@ export function importDxfToSketch(
   const points: SketchPoint[] = [];
   const primitives: SketchPrimitive[] = [];
   const skipped: string[] = [];
+  const layers: SketchLayer[] = [];
+  const layerIds = new Map<string, string>();
   let entityCount = 0;
 
-  const point = (x: number, y: number): SketchPoint => {
-    const p: SketchPoint = {
+  const ensureLayer = (name: string): string => {
+    const key = name || "0";
+    const existing = layerIds.get(key);
+    if (existing) return existing;
+    const id = generateId("layer");
+    layerIds.set(key, id);
+    layers.push({
+      id,
+      name: key,
+      color: "#cbd5e1",
+      visible: true,
+      linetype: "continuous",
+    });
+    return id;
+  };
+
+  for (const entry of layerEntryPairs(pairs)) {
+    const name = first(entry, 2) ?? "0";
+    const id = ensureLayer(name);
+    const layer = layers.find((entryLayer) => entryLayer.id === id)!;
+    const colorNumber = num(entry, 62, 7);
+    layer.color = ACI_COLORS[Math.abs(colorNumber)] ?? layer.color;
+    layer.visible = colorNumber >= 0;
+    layer.linetype = linetypeName(first(entry, 6));
+  }
+
+  const point = (
+    x: number,
+    y: number,
+    layerId: string = ensureLayer("0"),
+  ): SketchPoint => {
+    const p = {
       id: generateId("pt"),
       type: "point",
       x: x * units.scale,
       y: y * units.scale,
-    };
+      layerId,
+    } as SketchPoint;
     points.push(p);
     return p;
   };
 
   for (const entity of entities) {
     const { type, pairs: p } = entity;
+    const layerId = ensureLayer(first(p, 8) ?? "0");
     if (type === "LINE") {
-      const p1 = point(num(p, 10), num(p, 20));
-      const p2 = point(num(p, 11), num(p, 21));
+      const p1 = point(num(p, 10), num(p, 20), layerId);
+      const p2 = point(num(p, 11), num(p, 21), layerId);
       primitives.push({
         id: generateId("ln"),
         type: "line",
         p1Id: p1.id,
         p2Id: p2.id,
-      } satisfies SketchLine);
+        layerId,
+      } satisfies SketchPrimitive);
       entityCount++;
       continue;
     }
     if (type === "CIRCLE") {
-      const center = point(num(p, 10), num(p, 20));
+      const center = point(num(p, 10), num(p, 20), layerId);
       primitives.push({
         id: generateId("cir"),
         type: "circle",
         centerId: center.id,
         radius: num(p, 40) * units.scale,
-      } satisfies SketchCircle);
+        layerId,
+      } satisfies SketchPrimitive);
       entityCount++;
       continue;
     }
@@ -170,14 +254,16 @@ export function importDxfToSketch(
       }
       const startAngle = (num(p, 50) * Math.PI) / 180;
       const endAngle = (num(p, 51) * Math.PI) / 180;
-      const center = point(cx, cy);
+      const center = point(cx, cy, layerId);
       const start = point(
         cx + radius * Math.cos(startAngle),
         cy + radius * Math.sin(startAngle),
+        layerId,
       );
       const end = point(
         cx + radius * Math.cos(endAngle),
         cy + radius * Math.sin(endAngle),
+        layerId,
       );
       primitives.push({
         id: generateId("arc"),
@@ -186,7 +272,8 @@ export function importDxfToSketch(
         startId: start.id,
         endId: end.id,
         radius: radius * units.scale,
-      } satisfies SketchArc);
+        layerId,
+      } satisfies SketchPrimitive);
       entityCount++;
       continue;
     }
@@ -203,14 +290,17 @@ export function importDxfToSketch(
         skipped.push("LWPOLYLINE with fewer than two vertices");
         continue;
       }
-      const ids = vertices.map((vertex) => point(vertex.x, vertex.y));
+      const polylineId = generateId("pline");
+      const ids = vertices.map((vertex) => point(vertex.x, vertex.y, layerId));
       for (let i = 1; i < ids.length; i++) {
         primitives.push({
           id: generateId("ln"),
           type: "line",
           p1Id: ids[i - 1]!.id,
           p2Id: ids[i]!.id,
-        } satisfies SketchLine);
+          polylineId,
+          layerId,
+        } satisfies SketchPrimitive);
       }
       if (closed) {
         primitives.push({
@@ -218,7 +308,9 @@ export function importDxfToSketch(
           type: "line",
           p1Id: ids[ids.length - 1]!.id,
           p2Id: ids[0]!.id,
-        } satisfies SketchLine);
+          polylineId,
+          layerId,
+        } satisfies SketchPrimitive);
       }
       if (p.some((pair) => pair.code === 42)) {
         skipped.push("LWPOLYLINE bulge arcs imported as straight segments");
@@ -239,7 +331,7 @@ export function importDxfToSketch(
         skipped.push("ELLIPSE with invalid radii");
         continue;
       }
-      const center = point(cx, cy);
+      const center = point(cx, cy, layerId);
       const rotation = Math.atan2(my, mx);
       const full = Math.abs(end - start) >= Math.PI * 2 - 1e-9;
       if (full) {
@@ -250,7 +342,8 @@ export function importDxfToSketch(
           majorRadius: majorRadius * units.scale,
           minorRadius: majorRadius * ratio * units.scale,
           rotation,
-        } satisfies SketchEllipse);
+          layerId,
+        } satisfies SketchPrimitive);
       } else {
         primitives.push({
           id: generateId("earc"),
@@ -261,13 +354,14 @@ export function importDxfToSketch(
           rotation,
           startAngle: start,
           endAngle: end,
-        } satisfies SketchEllipticalArc);
+          layerId,
+        } satisfies SketchPrimitive);
       }
       entityCount++;
       continue;
     }
     if (type === "POINT") {
-      point(num(p, 10), num(p, 20));
+      point(num(p, 10), num(p, 20), layerId);
       entityCount++;
       continue;
     }
@@ -287,5 +381,6 @@ export function importDxfToSketch(
     entityCount,
     skipped: [...new Set(skipped)],
     units: units.name,
+    layers,
   };
 }

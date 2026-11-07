@@ -24,7 +24,57 @@ export type SketchPrimitiveType =
   | "ellipticalArc"
   | "spline"
   | "bezier"
-  | "conic";
+  | "conic"
+  | "hatch";
+
+/** Metadata shared by every drawable sketch entity. */
+export interface SketchEntityMeta {
+  /** Layer assignment. Missing means the sketch's default layer. */
+  layerId?: string | undefined;
+  /** Lines created by one polyline command share this id. */
+  polylineId?: string | undefined;
+  /** Block instance membership, used for group selection and explode. */
+  blockInstanceId?: string | undefined;
+  blockDefinitionId?: string | undefined;
+  /** Outer-to-inner instance chain for nested blocks. */
+  blockInstancePath?: string[] | undefined;
+}
+
+export type SketchLineType = "continuous" | "dashed" | "dotted" | "center";
+
+export interface SketchLayer {
+  id: string;
+  name: string;
+  /** CSS hex colour, e.g. #7dd3fc. */
+  color: string;
+  visible: boolean;
+  linetype: SketchLineType;
+}
+
+/** A named, reusable snapshot of sketch geometry. */
+export interface SketchBlockDefinition {
+  id: string;
+  name: string;
+  primitives: SketchPrimitive[];
+  constraints: SketchConstraint[];
+}
+
+export type HatchPattern = "solid" | "lines" | "cross";
+
+export interface SketchHatch {
+  id: string;
+  type: "hatch";
+  /** Ordered line ids that form the closed boundary. */
+  boundaryIds: string[];
+  pattern: HatchPattern;
+  spacing: number;
+  angle: number;
+  construction?: boolean | undefined;
+  layerId?: string | undefined;
+  blockInstanceId?: string | undefined;
+  blockDefinitionId?: string | undefined;
+  blockInstancePath?: string[] | undefined;
+}
 
 export interface SketchPoint {
   id: string;
@@ -122,7 +172,7 @@ export interface SketchConic {
   construction?: boolean | undefined;
 }
 
-export type SketchPrimitive =
+export type SketchPrimitive = (
   | SketchPoint
   | SketchLine
   | SketchCircle
@@ -131,7 +181,10 @@ export type SketchPrimitive =
   | SketchEllipticalArc
   | SketchSpline
   | SketchBezier
-  | SketchConic;
+  | SketchConic
+  | SketchHatch
+) &
+  SketchEntityMeta;
 
 /** True when `p` is a Line/Circle/Arc carrying the `construction` flag set. */
 export function isConstructionPrimitive(
@@ -258,6 +311,10 @@ export interface Sketch {
   plane: SketchPlane;
   primitives: SketchPrimitive[];
   constraints: SketchConstraint[];
+  /** Named layer table. Missing on older documents; use the default layer. */
+  layers?: SketchLayer[] | undefined;
+  /** Reusable block definitions; instances live on primitive metadata. */
+  blocks?: SketchBlockDefinition[] | undefined;
   /**
    * Degrees of freedom remaining after constraint solving.
    * `0` ⇒ fully constrained; `> 0` ⇒ underconstrained; `< 0` ⇒ overconstrained.
@@ -289,6 +346,8 @@ export type ConstraintResultStatus =
 export interface ConstraintResult {
   sketch: Sketch | null;
   status: ConstraintResultStatus;
+  /** Constraint ids named by the solver when a constraint is rolled back. */
+  constraintIds?: string[];
 }
 
 // Helper function to create default sketch planes
@@ -411,6 +470,12 @@ export function isSketchConic(
   primitive: SketchPrimitive,
 ): primitive is SketchConic {
   return primitive.type === "conic";
+}
+
+export function isSketchHatch(
+  primitive: SketchPrimitive,
+): primitive is SketchHatch {
+  return primitive.type === "hatch";
 }
 
 // Lookup helpers, narrow `Array.find` result through the type guard.

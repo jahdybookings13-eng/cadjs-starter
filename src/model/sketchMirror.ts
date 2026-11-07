@@ -467,6 +467,7 @@ export function mirrorSelectedPrimitives(
     }
 
     // Arc: reflection reverses orientation, so the mirrored start/end swap.
+    if (primitive.type !== "arc") continue;
     const center = byId.get(primitive.centerId);
     const start = byId.get(primitive.startId);
     const end = byId.get(primitive.endId);

@@ -4,6 +4,7 @@ import * as THREE from "three";
 export type SketchSubMode =
   | "select"
   | "line"
+  | "polyline"
   | "midpointLine"
   | "rectangle"
   | "centerRectangle"

@@ -37,14 +37,8 @@ interface UseSketchInputHandlersParams {
     event: MouseEvent,
     point: THREE.Vector3,
   ) => Promise<void>;
-  handleSlotDraw: (
-    event: MouseEvent,
-    point: THREE.Vector3,
-  ) => Promise<void>;
-  handlePolygonDraw: (
-    event: MouseEvent,
-    point: THREE.Vector3,
-  ) => Promise<void>;
+  handleSlotDraw: (event: MouseEvent, point: THREE.Vector3) => Promise<void>;
+  handlePolygonDraw: (event: MouseEvent, point: THREE.Vector3) => Promise<void>;
   handleCircleDraw: (event: MouseEvent, point: THREE.Vector3) => Promise<void>;
   handleCircle3PointDraw: (
     event: MouseEvent,
@@ -55,22 +49,10 @@ interface UseSketchInputHandlersParams {
     event: MouseEvent,
     point: THREE.Vector3,
   ) => Promise<void>;
-  handleSplineDraw: (
-    event: MouseEvent,
-    point: THREE.Vector3,
-  ) => Promise<void>;
-  handleBezierDraw: (
-    event: MouseEvent,
-    point: THREE.Vector3,
-  ) => Promise<void>;
-  handleConicDraw: (
-    event: MouseEvent,
-    point: THREE.Vector3,
-  ) => Promise<void>;
-  handleSplitDraw: (
-    event: MouseEvent,
-    point: THREE.Vector3,
-  ) => Promise<void>;
+  handleSplineDraw: (event: MouseEvent, point: THREE.Vector3) => Promise<void>;
+  handleBezierDraw: (event: MouseEvent, point: THREE.Vector3) => Promise<void>;
+  handleConicDraw: (event: MouseEvent, point: THREE.Vector3) => Promise<void>;
+  handleSplitDraw: (event: MouseEvent, point: THREE.Vector3) => Promise<void>;
   handleArcDraw: (event: MouseEvent, point: THREE.Vector3) => Promise<void>;
   handlePointDraw: (event: MouseEvent, point: THREE.Vector3) => Promise<void>;
   handleSelectMode: (event: MouseEvent, isRightClick?: boolean) => void;
@@ -311,6 +293,7 @@ export function useSketchInputHandlers(params: UseSketchInputHandlersParams) {
 
       switch (subMode) {
         case "line":
+        case "polyline":
           void handleLineDraw(event, point);
           break;
         case "midpointLine":

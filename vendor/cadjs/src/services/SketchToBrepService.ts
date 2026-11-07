@@ -31,6 +31,7 @@ import { POINT_COINCIDENCE_TOL_MM } from "../sketch-tolerances";
 // origin axes/points. Both are excluded from BRep conversion. Using a typed
 // narrow here avoids `as any` casts at every call site.
 function isExcludedFromBrep(p: SketchPrimitive): boolean {
+  if (p.type === "hatch") return true;
   const flags = p as { construction?: boolean; origin?: boolean };
   return Boolean(flags.construction) || Boolean(flags.origin);
 }

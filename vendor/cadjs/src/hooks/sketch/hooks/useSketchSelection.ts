@@ -10,6 +10,7 @@ import {
   isSketchLine,
   isSketchCircle,
   isSketchArc,
+  isSketchHatch,
   isDimensionalConstraint,
 } from "../../../types/sketch-types";
 import { SKETCH as SKETCH_THEME } from "../../../theme";
@@ -106,6 +107,18 @@ export function useSketchSelection({
       if (!activeSketch) return [primitiveId];
 
       const connected = new Set<string>();
+      const source = activeSketch.primitives.find((p) => p.id === primitiveId);
+      if (source?.blockInstanceId) {
+        for (const primitive of activeSketch.primitives) {
+          if (primitive.blockInstanceId === source.blockInstanceId) {
+            connected.add(primitive.id);
+          }
+        }
+      }
+      if (source && isSketchHatch(source)) {
+        for (const lineId of source.boundaryIds) connected.add(lineId);
+        return [...connected, primitiveId];
+      }
       const visited = new Set<string>();
       const queue = [primitiveId];
 
@@ -128,6 +141,8 @@ export function useSketchSelection({
           connected.add(currentId);
         } else if (isSketchArc(primitive)) {
           pointIds.push(primitive.centerId, primitive.startId, primitive.endId);
+          connected.add(currentId);
+        } else if (isSketchHatch(primitive)) {
           connected.add(currentId);
         } else if (isSketchPoint(primitive)) {
           pointIds.push(currentId);
@@ -161,21 +176,46 @@ export function useSketchSelection({
     [activeSketch],
   );
 
-  const selectPrimitive = useCallback((id: string, addToSelection: boolean) => {
-    setSelectedPrimitives((prev) => {
-      if (addToSelection) {
-        if (prev.includes(id)) {
-          return prev.filter((p) => p !== id);
+  const selectPrimitive = useCallback(
+    (id: string, addToSelection: boolean, nested: boolean = false) => {
+      const source = activeSketch?.primitives.find((p) => p.id === id);
+      const path =
+        source?.blockInstancePath ??
+        (source?.blockInstanceId ? [source.blockInstanceId] : []);
+      const groupTarget =
+        nested && path.length > 1
+          ? path[path.length - 1]
+          : source?.blockInstanceId;
+      const groupIds =
+        groupTarget && activeSketch
+          ? activeSketch.primitives
+              .filter((primitive) => {
+                const primitivePath = primitive.blockInstancePath ?? [];
+                return nested && path.length > 1
+                  ? primitivePath.includes(groupTarget)
+                  : primitive.blockInstanceId === groupTarget;
+              })
+              .map((primitive) => primitive.id)
+          : [id];
+
+      setSelectedPrimitives((prev) => {
+        if (addToSelection) {
+          if (groupIds.every((groupId) => prev.includes(groupId))) {
+            return prev.filter((p) => !groupIds.includes(p));
+          }
+          return [...new Set([...prev, ...groupIds])];
         }
-        return [...prev, id];
-      } else {
-        if (prev.length === 1 && prev[0] === id) {
+        if (
+          prev.length === groupIds.length &&
+          groupIds.every((groupId) => prev.includes(groupId))
+        ) {
           return [];
         }
-        return [id];
-      }
-    });
-  }, []);
+        return groupIds;
+      });
+    },
+    [activeSketch],
+  );
 
   const clearSelection = useCallback(() => {
     setSelectedPrimitives([]);
@@ -577,7 +617,7 @@ export function useSketchSelection({
           return;
         }
 
-        selectPrimitive(primitiveId, addToSelection);
+        selectPrimitive(primitiveId, addToSelection, event.altKey);
       };
 
       // Pick points in screen space, Line2's hit threshold otherwise lets nearby lines win.

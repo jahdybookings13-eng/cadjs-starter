@@ -85,6 +85,16 @@ export function createSketch(
     plane,
     primitives: [originPoint, xAxisEnd, yAxisEnd, xAxisLine, yAxisLine],
     constraints: [],
+    layers: [
+      {
+        id: `${sketchId}_layer0`,
+        name: "Layer 0",
+        color: "#cbd5e1",
+        visible: true,
+        linetype: "continuous",
+      },
+    ],
+    blocks: [],
     dof: 0,
     status: "fully_constrained",
   };
@@ -172,6 +182,13 @@ export function removePrimitiveFromSketch(
     (c) => !c.primitiveIds.includes(primitiveId),
   );
 
+  // Cascade: hatches that referenced the removed boundary go too.
+  const hatchesToRemove = new Set(
+    sketch.primitives
+      .filter((p) => p.type === "hatch" && p.boundaryIds.includes(primitiveId))
+      .map((p) => p.id),
+  );
+
   // Cascade: lines/circles/arcs/ellipses that reference the removed primitive go too.
   const dependentIds = new Set<string>();
   for (const p of sketch.primitives) {
@@ -225,7 +242,9 @@ export function removePrimitiveFromSketch(
   }
 
   const finalPrimitives = updatedPrimitives.filter(
-    (p) => !dependentIds.has(p.id) || (p as { origin?: boolean }).origin,
+    (p) =>
+      (!dependentIds.has(p.id) && !hatchesToRemove.has(p.id)) ||
+      (p as { origin?: boolean }).origin,
   );
 
   const finalConstraints = updatedConstraints.filter(

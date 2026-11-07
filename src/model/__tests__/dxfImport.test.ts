@@ -25,6 +25,49 @@ ENDSEC
 EOF
 `;
 
+const dxfWithLayers = (entities: string) => `0
+SECTION
+2
+HEADER
+9
+$INSUNITS
+70
+4
+0
+ENDSEC
+0
+SECTION
+2
+TABLES
+0
+TABLE
+2
+LAYER
+0
+LAYER
+2
+WALLS
+70
+0
+62
+1
+6
+DASHED
+0
+ENDTAB
+0
+ENDSEC
+0
+SECTION
+2
+ENTITIES
+${entities}
+0
+ENDSEC
+0
+EOF
+`;
+
 describe("importDxfToSketch", () => {
   it("imports lines, circles and arcs as sketch geometry", () => {
     const result = importDxfToSketch(
@@ -69,6 +112,7 @@ ARC
       "arc",
     ]);
     expect(result.points).toHaveLength(6);
+    expect(result.layers).toHaveLength(1);
   });
 
   it("closes LWPOLYLINE and converts inch units to millimetres", () => {
@@ -94,6 +138,40 @@ LWPOLYLINE
     expect(result.units).toBe("in");
     expect(result.primitives).toHaveLength(3);
     expect(result.points[1]!.x).toBeCloseTo(25.4);
+    expect(
+      new Set(
+        result.primitives.map((primitive) =>
+          primitive.type === "line" ? primitive.polylineId : undefined,
+        ),
+      ).size,
+    ).toBe(1);
+  });
+
+  it("maps the DXF layer table and entity layer/linetype", () => {
+    const result = importDxfToSketch(
+      dxfWithLayers(`0
+LINE
+8
+WALLS
+10
+0
+20
+0
+11
+5
+21
+0`),
+      id,
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const walls = result.layers.find((layer) => layer.name === "WALLS");
+    expect(walls).toMatchObject({
+      color: "#ef4444",
+      visible: true,
+      linetype: "dashed",
+    });
+    expect(result.primitives[0]?.layerId).toBe(walls?.id);
   });
 
   it("rejects non-DXF input and reports unsupported entities", () => {

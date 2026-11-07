@@ -7,7 +7,9 @@ import {
   isSketchPoint,
   PLANE_SELECTOR,
   type ConstraintType,
+  type HatchPattern,
   type SketchImageUnderlay,
+  type SketchLayer,
   type SketchPrimitive,
   worldToScreen,
 } from "@vitekk02/cadjs";
@@ -32,6 +34,7 @@ import {
   sketchCommandAvailability,
   type SketchCommand,
 } from "../../model/sketchControls";
+import { describeConstraintIds } from "../../model/sketchDiagnostics";
 import { mirrorSelectedPrimitives } from "../../model/sketchMirror";
 import {
   cornerModifyArcArc,
@@ -61,7 +64,16 @@ import TextInputModal from "../../navbar/TextInputModal";
 import ImageUnderlayModal from "../../navbar/ImageUnderlayModal";
 import { textToSketchPrimitives } from "../../model/sketchText";
 import { importDxfToSketch } from "../../model/dxfImport";
+import { sketchToDxf } from "../../model/sketchDxf";
 import { includeSelectedEdges } from "../../model/sketchInclude";
+import {
+  assignLayerToSelection,
+  createBlockFromSelection,
+  ensureSketchLayers,
+  explodeBlockSelection,
+  hatchFromSelection,
+  insertBlock,
+} from "../../model/sketchEntities";
 import type { ModeContentProps } from ".";
 
 const SketchModeContent: FC<ModeContentProps> = ({
@@ -104,6 +116,11 @@ const SketchModeContent: FC<ModeContentProps> = ({
   const { showToast } = useToast();
   const [polygonSides, setPolygonSides] = useState(6);
   const [conicRho, setConicRho] = useState(0.5);
+  const [hatchPattern, setHatchPattern] = useState<HatchPattern>("lines");
+  const [hatchSpacing, setHatchSpacing] = useState(0.75);
+  const [hatchAngle, setHatchAngle] = useState(45);
+  const [layersOpen, setLayersOpen] = useState(false);
+  const [activeLayerId, setActiveLayerId] = useState("");
 
   const {
     sketchSubMode,
@@ -136,9 +153,21 @@ const SketchModeContent: FC<ModeContentProps> = ({
     toggleFixPoint,
     editingConstraintId,
     constraintFeedback,
+    clearConstraintFeedback,
   } = useSketchMode(false, polygonSides, conicRho);
 
   // Local UI state for the plane-selection overlay's offset input.
+  const layers = activeSketch ? ensureSketchLayers(activeSketch) : [];
+  const activeLayer =
+    layers.find((layer) => layer.id === activeLayerId) ?? layers[0];
+
+  useEffect(() => {
+    if (!activeSketch) return;
+    if (!layers.some((layer) => layer.id === activeLayerId)) {
+      setActiveLayerId(layers[0]?.id ?? "");
+    }
+  }, [activeSketch, activeLayerId, layers]);
+
   const [planeOffset, setPlaneOffset] = useState(0);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -1161,9 +1190,142 @@ const SketchModeContent: FC<ModeContentProps> = ({
     );
   };
 
+  const entityId = (prefix: string) =>
+    `${prefix}_${Date.now().toString(36)}_${++cornerSeqRef.current}`;
+
+  const handleHatch = () => {
+    if (!activeSketch) return;
+    const result = hatchFromSelection(
+      activeSketch,
+      selectedPrimitives,
+      entityId("hatch"),
+      {
+        pattern: hatchPattern,
+        spacing: hatchSpacing,
+        angle: (hatchAngle * Math.PI) / 180,
+        ...(activeLayer ? { layerId: activeLayer.id } : {}),
+      },
+    );
+    if (!result.ok) {
+      showToast(result.reason, "warning");
+      return;
+    }
+    pushSketchUndo();
+    addPrimitive(result.hatch);
+    void solveSketch();
+    showToast(`Hatch: ${hatchPattern}`, "success");
+  };
+
+  const handleBlockCreate = () => {
+    if (!activeSketch) return;
+    const result = createBlockFromSelection(
+      activeSketch,
+      selectedPrimitives,
+      `Block ${(activeSketch.blocks?.length ?? 0) + 1}`,
+      entityId,
+    );
+    if (!result.ok) {
+      showToast(result.reason, "warning");
+      return;
+    }
+    pushSketchUndo();
+    updateSketch(() => result.sketch);
+    showToast(
+      `Created ${result.definition.name} with ${result.definition.primitives.length} primitives`,
+      "success",
+    );
+  };
+
+  const handleBlockInsert = () => {
+    if (!activeSketch) return;
+    const definition = activeSketch.blocks?.at(-1);
+    if (!definition) {
+      showToast("Create a block before inserting one.", "warning");
+      return;
+    }
+    const result = insertBlock(
+      activeSketch,
+      definition.id,
+      { x: 2, y: 2 },
+      entityId,
+    );
+    if (!result.ok) {
+      showToast(result.reason, "warning");
+      return;
+    }
+    pushSketchUndo();
+    updateSketch(() => result.sketch);
+    void solveSketch();
+    showToast(`Inserted ${definition.name}`, "success");
+  };
+
+  const handleBlockExplode = () => {
+    if (!activeSketch) return;
+    const result = explodeBlockSelection(activeSketch, selectedPrimitives);
+    if (result.count === 0) {
+      showToast("Select a block instance to explode.", "warning");
+      return;
+    }
+    pushSketchUndo();
+    updateSketch(() => result.sketch);
+    showToast(`Exploded ${result.count} primitives`, "success");
+  };
+
+  const handleAssignLayer = (layerId: string) => {
+    if (!activeSketch || selectedPrimitives.length === 0) {
+      showToast("Select geometry before assigning a layer.", "warning");
+      return;
+    }
+    pushSketchUndo();
+    updateSketch((sketch) =>
+      assignLayerToSelection(sketch, selectedPrimitives, layerId),
+    );
+  };
+
+  const handleAddLayer = () => {
+    if (!activeSketch) return;
+    const id = entityId("layer");
+    const layer: SketchLayer = {
+      id,
+      name: `Layer ${layers.length}`,
+      color: "#7dd3fc",
+      visible: true,
+      linetype: "continuous",
+    };
+    pushSketchUndo();
+    updateSketch((sketch) => ({
+      ...sketch,
+      layers: [...ensureSketchLayers(sketch), layer],
+    }));
+    setActiveLayerId(id);
+  };
+
+  const handleLayerUpdate = (id: string, updates: Partial<SketchLayer>) => {
+    updateSketch((sketch) => ({
+      ...sketch,
+      layers: ensureSketchLayers(sketch).map((layer) =>
+        layer.id === id ? { ...layer, ...updates } : layer,
+      ),
+    }));
+  };
+
   const handleImportDxf = () => {
     if (!activeSketch) return;
     dxfInputRef.current?.click();
+  };
+
+  const handleExportDxf = () => {
+    if (!activeSketch) return;
+    const text = sketchToDxf(activeSketch);
+    const url = URL.createObjectURL(
+      new Blob([text], { type: "application/dxf" }),
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "sketch.dxf";
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast("Sketch exported as DXF", "success");
   };
 
   const handleDxfFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1180,6 +1342,17 @@ const SketchModeContent: FC<ModeContentProps> = ({
         return;
       }
       pushSketchUndo();
+      updateSketch((sketch) => {
+        const existing = ensureSketchLayers(sketch);
+        const ids = new Set(existing.map((layer) => layer.id));
+        return {
+          ...sketch,
+          layers: [
+            ...existing,
+            ...result.layers.filter((layer) => !ids.has(layer.id)),
+          ],
+        };
+      });
       for (const point of result.points) addPrimitive(point);
       for (const primitive of result.primitives) addPrimitive(primitive);
       void solveSketch();
@@ -1289,8 +1462,26 @@ const SketchModeContent: FC<ModeContentProps> = ({
       case "text":
         setTextDialogOpen(true);
         break;
+      case "hatch":
+        handleHatch();
+        break;
+      case "block-create":
+        handleBlockCreate();
+        break;
+      case "block-insert":
+        handleBlockInsert();
+        break;
+      case "block-explode":
+        handleBlockExplode();
+        break;
+      case "layers":
+        setLayersOpen(true);
+        break;
       case "import-dxf":
         handleImportDxf();
+        break;
+      case "export-dxf":
+        handleExportDxf();
         break;
       case "toggle-construction":
         // The engine owns the construction rules (origin points excluded).
@@ -1359,19 +1550,49 @@ const SketchModeContent: FC<ModeContentProps> = ({
   };
 
   const showPanel = !isSelectingPlane && !!activeSketch;
+  const conflictLabels = describeConstraintIds(
+    constraintFeedback?.constraintIds,
+    activeSketch?.constraints ?? [],
+  );
 
   return (
     <>
       {/* Constraint feedback toast (redundant / conflicting). */}
       {constraintFeedback && (
         <div
-          className={`absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded shadow-lg text-sm font-medium z-50 pointer-events-none ${
+          role="alert"
+          data-testid="constraint-feedback"
+          className={`absolute top-4 left-1/2 -translate-x-1/2 max-w-lg px-4 py-2 rounded shadow-lg text-sm font-medium z-50 pointer-events-auto ${
             constraintFeedback.type === "redundant"
               ? "bg-yellow-500 text-black"
               : "bg-red-500 text-white"
           }`}
         >
-          {constraintFeedback.message}
+          <div>{constraintFeedback.message}</div>
+          {conflictLabels.length > 0 && (
+            <div className="mt-1 text-xs font-normal">
+              Named: {conflictLabels.join(", ")}
+            </div>
+          )}
+          {constraintFeedback.type === "conflicting" &&
+            constraintFeedback.constraintIds && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {constraintFeedback.constraintIds.map((id) => (
+                  <button
+                    key={id}
+                    className="rounded bg-black/20 px-2 py-0.5 text-xs hover:bg-black/35"
+                    title={`Remove conflicting constraint ${id}`}
+                    onClick={() => {
+                      removeSketchConstraint(id);
+                      clearConstraintFeedback();
+                      showToast("Conflicting constraint removed", "success");
+                    }}
+                  >
+                    Remove {id}
+                  </button>
+                ))}
+              </div>
+            )}
         </div>
       )}
 
@@ -1538,7 +1759,19 @@ const SketchModeContent: FC<ModeContentProps> = ({
             onPatternCircular={handleCircularPattern}
             onPatternPath={handlePathPattern}
             onText={() => setTextDialogOpen(true)}
+            onHatch={handleHatch}
+            hatchPattern={hatchPattern}
+            onHatchPatternChange={setHatchPattern}
+            hatchSpacing={hatchSpacing}
+            onHatchSpacingChange={setHatchSpacing}
+            hatchAngle={hatchAngle}
+            onHatchAngleChange={setHatchAngle}
+            onBlockCreate={handleBlockCreate}
+            onBlockInsert={handleBlockInsert}
+            onBlockExplode={handleBlockExplode}
+            onOpenLayers={() => setLayersOpen(true)}
             onImportDxf={handleImportDxf}
+            onExportDxf={handleExportDxf}
             onAddImage={handleAddImage}
             onEditUnderlay={handleEditUnderlay}
             onInclude={() => void handleInclude()}
@@ -1775,6 +2008,113 @@ const SketchModeContent: FC<ModeContentProps> = ({
               onConfirm={(value) => applyCorner(value)}
               onCancel={() => setPendingCorner(null)}
             />
+          </div>
+        </div>
+      )}
+
+      {layersOpen && activeSketch && (
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setLayersOpen(false);
+          }}
+        >
+          <div
+            className="w-[28rem] max-w-[calc(100vw-2rem)] rounded border border-gray-600 bg-gray-800 p-4 shadow-xl"
+            role="dialog"
+            aria-label="Sketch layers"
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-gray-100">
+                Sketch layers
+              </h2>
+              <button
+                className="text-gray-400 hover:text-white"
+                onClick={() => setLayersOpen(false)}
+                aria-label="Close layers"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="space-y-2">
+              {layers.map((layer) => (
+                <div
+                  key={layer.id}
+                  className={`flex items-center gap-2 rounded border p-2 ${
+                    layer.id === activeLayer?.id
+                      ? "border-blue-500 bg-blue-950/30"
+                      : "border-gray-700"
+                  }`}
+                >
+                  <input
+                    type="color"
+                    value={layer.color}
+                    aria-label={`${layer.name} colour`}
+                    onChange={(event) =>
+                      handleLayerUpdate(layer.id, { color: event.target.value })
+                    }
+                    className="h-6 w-8 cursor-pointer rounded border border-gray-600 bg-transparent"
+                  />
+                  <input
+                    value={layer.name}
+                    aria-label={`${layer.name} name`}
+                    onChange={(event) =>
+                      handleLayerUpdate(layer.id, { name: event.target.value })
+                    }
+                    className="min-w-0 flex-1 rounded bg-gray-700 px-2 py-1 text-xs text-white"
+                  />
+                  <select
+                    value={layer.linetype}
+                    aria-label={`${layer.name} linetype`}
+                    onChange={(event) =>
+                      handleLayerUpdate(layer.id, {
+                        linetype: event.target.value as SketchLayer["linetype"],
+                      })
+                    }
+                    className="rounded bg-gray-700 px-1 py-1 text-xs text-white"
+                  >
+                    <option value="continuous">Continuous</option>
+                    <option value="dashed">Dashed</option>
+                    <option value="dotted">Dotted</option>
+                    <option value="center">Center</option>
+                  </select>
+                  <label className="flex items-center gap-1 text-[10px] text-gray-400">
+                    <input
+                      type="checkbox"
+                      aria-label={`${layer.name} visible`}
+                      checked={layer.visible}
+                      onChange={(event) =>
+                        handleLayerUpdate(layer.id, {
+                          visible: event.target.checked,
+                        })
+                      }
+                    />
+                    Vis
+                  </label>
+                  <button
+                    className="rounded bg-gray-700 px-2 py-1 text-[10px] text-gray-200 hover:bg-blue-600"
+                    onClick={() => {
+                      setActiveLayerId(layer.id);
+                      handleAssignLayer(layer.id);
+                    }}
+                    title="Assign selected geometry to this layer"
+                  >
+                    Assign
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 flex items-center justify-between">
+              <button
+                className="rounded bg-blue-600 px-3 py-1 text-xs text-white hover:bg-blue-500"
+                onClick={handleAddLayer}
+              >
+                + Layer
+              </button>
+              <span className="text-[10px] text-gray-400">
+                {selectedPrimitives.length} selected
+              </span>
+            </div>
           </div>
         </div>
       )}

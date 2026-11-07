@@ -40,6 +40,8 @@ function pointIdsFor(primitive: SketchPrimitive): string[] {
   switch (primitive.type) {
     case "point":
       return [primitive.id];
+    case "hatch":
+      return [];
     case "line":
       return [primitive.p1Id, primitive.p2Id];
     case "circle":
@@ -69,6 +71,8 @@ function pointIdsForCopy(
 ): SketchPrimitive {
   switch (primitive.type) {
     case "point":
+      return primitive;
+    case "hatch":
       return primitive;
     case "line":
       return {

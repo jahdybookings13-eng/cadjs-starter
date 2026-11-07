@@ -378,7 +378,14 @@ export function useSketchSession(deps: SketchSessionDeps): SketchSessionApi {
             if (preConstraintSketch) {
               setActiveSketch(preConstraintSketch);
             }
-            return { sketch: null, status };
+            return {
+              sketch: null,
+              status,
+              constraintIds:
+                (isConflicting
+                  ? solveResult.conflictingConstraintIds
+                  : solveResult.redundantConstraintIds) ?? [],
+            };
           }
 
           setActiveSketch(solveResult.sketch);
@@ -437,6 +444,10 @@ export function useSketchSession(deps: SketchSessionDeps): SketchSessionApi {
             return {
               sketch: null,
               status: isConflicting ? "conflicting" : "redundant",
+              constraintIds:
+                (isConflicting
+                  ? solveResult.conflictingConstraintIds
+                  : solveResult.redundantConstraintIds) ?? [],
             };
           }
           setActiveSketch(solveResult.sketch);

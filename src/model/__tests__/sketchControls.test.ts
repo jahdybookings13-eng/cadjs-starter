@@ -50,6 +50,7 @@ describe("sketch control registry", () => {
     for (const mode of [
       "select",
       "line",
+      "polyline",
       "midpointLine",
       "rectangle",
       "centerRectangle",
@@ -116,7 +117,7 @@ describe("sketch control registry", () => {
   });
 
   it("lists real parity gaps instead of dead buttons", () => {
-    expect(SKETCH_PARITY_GAPS.length).toBeGreaterThan(5);
+    expect(SKETCH_PARITY_GAPS.length).toBeGreaterThan(2);
     const commandAliases = new Set(
       lower(SKETCH_COMMANDS.flatMap((command) => command.autocad)),
     );
@@ -195,7 +196,9 @@ describe("sketch command lookup", () => {
   it("returns null for unknown or empty queries", () => {
     expect(findSketchCommand("")).toBeNull();
     expect(findSketchCommand("   ")).toBeNull();
-    expect(findSketchCommand("polyline")).toBeNull();
+    expect(findSketchCommand("polyline")?.id).toBe("sketch.polyline");
+    expect(findSketchCommand("hatch")?.id).toBe("sketch.hatch");
+    expect(findSketchCommand("block")?.id).toBe("sketch.blockCreate");
   });
 
   it("searches by prefix for the palette", () => {

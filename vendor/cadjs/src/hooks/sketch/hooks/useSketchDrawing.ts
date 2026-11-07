@@ -76,12 +76,17 @@ interface UseSketchDrawingParams {
   generateId: (prefix: string) => string;
   sketchTo3DRef: React.MutableRefObject<SketchTo3D>;
   cleanupInferenceObjects: () => void;
-  showConstraintFeedback: (status: ConstraintResultStatus) => void;
+  showConstraintFeedback: (
+    status: ConstraintResultStatus,
+    constraintIds?: string[],
+  ) => void;
   // Ctrl-held suppresses auto-constraints; lastSnapRef reflects the latest inference snap.
   ctrlHeldRef: React.MutableRefObject<boolean>;
   lastSnapRef: React.MutableRefObject<InferencePoint | null>;
   polygonSides?: number;
   conicRho?: number;
+  /** Chained line mode that tags every segment with one polyline id. */
+  polylineMode?: boolean;
 }
 
 export function useSketchDrawing({
@@ -93,6 +98,7 @@ export function useSketchDrawing({
   lastSnapRef,
   polygonSides = 6,
   conicRho = 0.5,
+  polylineMode = false,
 }: UseSketchDrawingParams) {
   void _cleanupInferenceObjects;
   const {
@@ -113,6 +119,9 @@ export function useSketchDrawing({
   const centerPointRef = useRef<THREE.Vector3 | null>(null);
 
   const [isChaining, setIsChaining] = useState(false);
+  const polylineModeRef = useRef(polylineMode);
+  polylineModeRef.current = polylineMode;
+  const activePolylineIdRef = useRef<string | null>(null);
   const chainStartPointRef = useRef<THREE.Vector3 | null>(null);
   const chainStartPointIdRef = useRef<string | null>(null);
   const chainStartIsExistingRef = useRef<boolean>(false);
@@ -540,6 +549,7 @@ export function useSketchDrawing({
             chainStartPointRef.current = null;
             chainStartPointIdRef.current = null;
             chainStartIsExistingRef.current = false;
+            activePolylineIdRef.current = null;
             lastClickTimeRef.current = 0;
             return;
           }
@@ -549,6 +559,9 @@ export function useSketchDrawing({
 
         if (!isChaining) {
           pushSketchUndo();
+          activePolylineIdRef.current = polylineModeRef.current
+            ? generateId("pline")
+            : null;
           const { id: p1Id, isExisting: p1IsExisting } =
             getOrCreatePoint(point);
           const p1Prim = activeSketch?.primitives.find((p) => p.id === p1Id);
@@ -580,6 +593,9 @@ export function useSketchDrawing({
               type: "line",
               p1Id: chainStartPointIdRef.current!,
               p2Id,
+              ...(activePolylineIdRef.current
+                ? { polylineId: activePolylineIdRef.current }
+                : {}),
             };
             addPrimitive(line);
 
@@ -2234,7 +2250,11 @@ export function useSketchDrawing({
         }
 
         if (isSketchEllipticalArc(primitive)) {
-          const nearest = nearestOnEllipticalArc(activeSketch, primitive, point);
+          const nearest = nearestOnEllipticalArc(
+            activeSketch,
+            primitive,
+            point,
+          );
           if (nearest && nearest.distance <= closest) {
             closest = nearest.distance;
             target = { kind: "ellipticalArc", primitive };
@@ -2381,6 +2401,7 @@ export function useSketchDrawing({
       chainStartPointRef.current = null;
       chainStartPointIdRef.current = null;
       chainStartIsExistingRef.current = false;
+      activePolylineIdRef.current = null;
       lastClickTimeRef.current = 0;
     }
 
@@ -2430,7 +2451,7 @@ export function useSketchDrawing({
         driving: true,
       };
       const result = await addConstraintAndSolve(constraint);
-      showConstraintFeedback(result.status);
+      showConstraintFeedback(result.status, result.constraintIds);
       clearPendingLineDimension();
     },
     [

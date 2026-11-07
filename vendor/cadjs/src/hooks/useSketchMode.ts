@@ -92,7 +92,11 @@ export interface UseSketchModeResult {
   sketchObjects: THREE.Object3D[];
   startNewSketch: () => void;
   selectedPrimitives: string[];
-  selectPrimitive: (id: string, addToSelection: boolean) => void;
+  selectPrimitive: (
+    id: string,
+    addToSelection: boolean,
+    nested?: boolean,
+  ) => void;
   clearSelection: () => void;
   applyConstraint: (type: ConstraintType, value?: number) => void;
   isChaining: boolean;
@@ -139,7 +143,9 @@ export interface UseSketchModeResult {
   constraintFeedback: {
     message: string;
     type: "redundant" | "conflicting";
+    constraintIds?: string[];
   } | null;
+  clearConstraintFeedback: () => void;
   // Editing constraint value (double-click)
   editingConstraintId: string | null;
 }
@@ -256,6 +262,7 @@ export function useSketchMode(
   const [constraintFeedback, setConstraintFeedback] = useState<{
     message: string;
     type: "redundant" | "conflicting";
+    constraintIds?: string[];
   } | null>(null);
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -283,19 +290,32 @@ export function useSketchMode(
   const { cleanupInferenceObjects, renderInferencePoint, renderGuidelines } =
     inferenceRender;
 
+  const clearConstraintFeedback = useCallback(() => {
+    if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    feedbackTimerRef.current = null;
+    setConstraintFeedback(null);
+  }, []);
+
   const showConstraintFeedback = useCallback(
-    (status: ConstraintResultStatus) => {
+    (status: ConstraintResultStatus, constraintIds?: string[]) => {
       if (status === "applied" || status === "failed") return;
       if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
       const message =
         status === "redundant"
           ? "Constraint already satisfied"
           : "Constraint conflicts with existing constraints";
-      setConstraintFeedback({ message, type: status });
-      feedbackTimerRef.current = setTimeout(() => {
-        setConstraintFeedback(null);
-        feedbackTimerRef.current = null;
-      }, 3000);
+      setConstraintFeedback({
+        message,
+        type: status,
+        ...(constraintIds?.length ? { constraintIds } : {}),
+      });
+      feedbackTimerRef.current = setTimeout(
+        () => {
+          setConstraintFeedback(null);
+          feedbackTimerRef.current = null;
+        },
+        constraintIds?.length ? 8000 : 3000,
+      );
     },
     [],
   );
@@ -349,6 +369,7 @@ export function useSketchMode(
     lastSnapRef,
     polygonSides,
     conicRho,
+    polylineMode: sketchSubMode === "polyline",
   });
   const {
     isChaining,
@@ -604,6 +625,7 @@ export function useSketchMode(
     toggleFixPoint,
     // Constraint feedback (redundant/conflicting rollback)
     constraintFeedback,
+    clearConstraintFeedback,
     // Editing constraint value (double-click)
     editingConstraintId,
   };

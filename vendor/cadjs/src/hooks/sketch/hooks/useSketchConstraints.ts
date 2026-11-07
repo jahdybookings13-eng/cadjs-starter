@@ -31,7 +31,10 @@ interface UseSketchConstraintsParams {
   setContextMenu: React.Dispatch<React.SetStateAction<SketchContextMenu>>;
   closeContextMenu: () => void;
   setSelectedConstraintId: (id: string | null) => void;
-  showConstraintFeedback: (status: ConstraintResultStatus) => void;
+  showConstraintFeedback: (
+    status: ConstraintResultStatus,
+    constraintIds?: string[],
+  ) => void;
   /** Constraint preview lifecycle (parent-owned so closeContextMenu can use them). */
   isPreviewingRef: React.MutableRefObject<boolean>;
   previewDebounceRef: React.MutableRefObject<ReturnType<
@@ -120,7 +123,10 @@ export function useSketchConstraints({
       const getPrimitive = (id: string) =>
         activeSketch.primitives.find((p) => p.id === id);
 
-      let lastResult: { status: ConstraintResultStatus } = {
+      let lastResult: {
+        status: ConstraintResultStatus;
+        constraintIds?: string[];
+      } = {
         status: "applied",
       };
 
@@ -284,7 +290,7 @@ export function useSketchConstraints({
         lastResult = await addConstraintAndSolve(constraint);
       }
 
-      showConstraintFeedback(lastResult.status);
+      showConstraintFeedback(lastResult.status, lastResult.constraintIds);
       clearSelection();
     },
     [
@@ -468,7 +474,10 @@ export function useSketchConstraints({
 
       pushSketchUndo();
 
-      let lastResult: { status: ConstraintResultStatus } = {
+      let lastResult: {
+        status: ConstraintResultStatus;
+        constraintIds?: string[];
+      } = {
         status: "applied",
       };
 
@@ -507,7 +516,7 @@ export function useSketchConstraints({
         lastResult = await addConstraintAndSolve(constraint);
       }
 
-      showConstraintFeedback(lastResult.status);
+      showConstraintFeedback(lastResult.status, lastResult.constraintIds);
       closeContextMenu();
     },
     [

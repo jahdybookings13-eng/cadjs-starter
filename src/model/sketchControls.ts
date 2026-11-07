@@ -36,7 +36,13 @@ export type SketchCommandAction =
   | { type: "patternCircular" }
   | { type: "patternPath" }
   | { type: "text" }
+  | { type: "hatch" }
+  | { type: "block-create" }
+  | { type: "block-insert" }
+  | { type: "block-explode" }
+  | { type: "layers" }
   | { type: "import-dxf" }
+  | { type: "export-dxf" }
   | { type: "toggle-construction" }
   | { type: "toggle-fix" }
   | { type: "constraint"; constraint: ConstraintType; needsValue: boolean }
@@ -99,6 +105,17 @@ export const SKETCH_COMMANDS: readonly SketchCommand[] = [
     autocad: ["MIDLINE", "ML"],
     cadjs: ["sketch.midpointLine"],
     action: { type: "tool", mode: "midpointLine" },
+  },
+  {
+    id: "sketch.polyline",
+    label: "Polyline",
+    group: "draw",
+    description:
+      "Draw connected line segments as one polyline; Enter or Esc ends the chain.",
+    keys: [],
+    autocad: ["PL", "PLINE", "POLYLINE"],
+    cadjs: ["sketch.polyline"],
+    action: { type: "tool", mode: "polyline" },
   },
   {
     id: "sketch.rectangle",
@@ -431,6 +448,61 @@ export const SKETCH_COMMANDS: readonly SketchCommand[] = [
     action: { type: "text" },
   },
   {
+    id: "sketch.hatch",
+    label: "Hatch",
+    group: "draw",
+    description:
+      "Fill a selected closed loop with a solid, line or cross hatch pattern.",
+    keys: [],
+    autocad: ["H", "HATCH"],
+    cadjs: ["sketch.hatch"],
+    action: { type: "hatch" },
+    requires: "selection",
+  },
+  {
+    id: "sketch.blockCreate",
+    label: "Create block",
+    group: "modify",
+    description: "Turn the selected geometry into a named reusable block.",
+    keys: [],
+    autocad: ["B", "BLOCK"],
+    cadjs: ["sketch.blockCreate"],
+    action: { type: "block-create" },
+    requires: "selection",
+  },
+  {
+    id: "sketch.blockInsert",
+    label: "Insert block",
+    group: "modify",
+    description: "Insert the most recently defined block at a 2,2 offset.",
+    keys: [],
+    autocad: ["INSERT"],
+    cadjs: ["sketch.blockInsert"],
+    action: { type: "block-insert" },
+  },
+  {
+    id: "sketch.blockExplode",
+    label: "Explode block",
+    group: "modify",
+    description: "Dissolve the selected block instance into ordinary geometry.",
+    keys: [],
+    autocad: ["EXPLODE"],
+    cadjs: ["sketch.blockExplode"],
+    action: { type: "block-explode" },
+    requires: "selection",
+  },
+  {
+    id: "sketch.layers",
+    label: "Layers",
+    group: "modify",
+    description:
+      "Create layers, assign the selection, set colour, visibility and linetype.",
+    keys: [],
+    autocad: ["LA", "LAYER"],
+    cadjs: ["sketch.layers"],
+    action: { type: "layers" },
+  },
+  {
     id: "sketch.importDxf",
     label: "Import DXF",
     group: "draw",
@@ -440,6 +512,17 @@ export const SKETCH_COMMANDS: readonly SketchCommand[] = [
     autocad: ["DXFIN", "IMPORT"],
     cadjs: ["sketch.importDxf"],
     action: { type: "import-dxf" },
+  },
+  {
+    id: "sketch.exportDxf",
+    label: "Export DXF",
+    group: "draw",
+    description:
+      "Export the sketch, its layers and its polylines as an ASCII DXF.",
+    keys: [],
+    autocad: ["DXFOUT", "EXPORT"],
+    cadjs: ["sketch.exportDxf"],
+    action: { type: "export-dxf" },
   },
   {
     id: "sketch.construction",
@@ -806,29 +889,9 @@ export interface SketchParityGap {
 
 export const SKETCH_PARITY_GAPS: readonly SketchParityGap[] = [
   {
-    name: "Polyline",
-    autocad: "PL",
-    note: "The engine draws individual lines; there is no polyline primitive or vertex editing.",
-  },
-  {
-    name: "Hatch",
-    autocad: "H",
-    note: "No filled hatch region.",
-  },
-  {
-    name: "Block",
-    autocad: "B",
-    note: "No sketch block definition or insert.",
-  },
-  {
     name: "Explode",
     autocad: "X",
-    note: "X is Construction here; there is no explode for sketch geometry.",
-  },
-  {
-    name: "Layers / Linetypes",
-    autocad: "LA / LT",
-    note: "Sketch geometry has no layer or linetype model.",
+    note: "X is Construction here; block instances explode from the toolbar or INSERT palette command.",
   },
   {
     name: "Plot",

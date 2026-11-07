@@ -62,6 +62,7 @@ function distance(a: Point2D, b: Point2D): number {
 function referencesPoint(primitive: SketchPrimitive, pointId: string): boolean {
   switch (primitive.type) {
     case "point":
+    case "hatch":
       return false;
     case "line":
       return primitive.p1Id === pointId || primitive.p2Id === pointId;

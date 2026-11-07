@@ -2,7 +2,7 @@
 
 Primary-function checklist for ScadGen.
 
-This is not a command sheet. The 603 passing automated checks (plus 4 skipped) are the regression net;
+This is not a command sheet. The 613 passing automated checks (plus 4 skipped) are the regression net;
 this file distils them into the **primary functions a person must confirm with
 their own eyes** before release. One line = one behaviour. Work top to bottom,
 one at a time, and mark it.
