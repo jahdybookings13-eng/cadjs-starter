@@ -5,6 +5,7 @@ import {
   isDimensionalConstraint,
   isSketchLine,
   isSketchPoint,
+  createSketchPlaneFromNormal,
   PLANE_SELECTOR,
   type ConstraintType,
   type HatchPattern,
@@ -67,7 +68,10 @@ import ImageUnderlayModal from "../../navbar/ImageUnderlayModal";
 import { textToSketchPrimitives } from "../../model/sketchText";
 import { importDxfToSketch } from "../../model/dxfImport";
 import { sketchToDxf } from "../../model/sketchDxf";
-import { includeSelectedEdges } from "../../model/sketchInclude";
+import {
+  includeSelectedEdges,
+  refreshIncludedGeometry,
+} from "../../model/sketchInclude";
 import {
   assignLayerToSelection,
   createBlockFromSelection,
@@ -173,6 +177,7 @@ const SketchModeContent: FC<ModeContentProps> = ({
   }, [activeSketch, activeLayerId, layers]);
 
   const [planeOffset, setPlaneOffset] = useState(0);
+  const [customNormal, setCustomNormal] = useState({ x: 0, y: 0, z: 1 });
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [pendingPaletteConstraint, setPendingPaletteConstraint] = useState<{
@@ -1276,6 +1281,19 @@ const SketchModeContent: FC<ModeContentProps> = ({
     }
   };
 
+  useEffect(() => {
+    if (
+      !activeSketch?.primitives.some(
+        (primitive) =>
+          (primitive.type === "point" || primitive.type === "line") &&
+          primitive.includeSource,
+      )
+    ) {
+      return;
+    }
+    updateSketch((sketch) => refreshIncludedGeometry(sketch, elements));
+  }, [elements, activeSketch?.id, updateSketch]);
+
   const handleInclude = async () => {
     if (!activeSketch) return;
     const selected = elements.filter((element) =>
@@ -1801,6 +1819,25 @@ const SketchModeContent: FC<ModeContentProps> = ({
                   className="w-16 px-1 py-0.5 text-xs rounded bg-gray-700 border border-gray-600 text-white text-center"
                 />
               </div>
+              <div className="mt-2 flex items-center justify-center gap-1 pointer-events-auto">
+                <span className="text-xs text-gray-400">Custom normal</span>
+                {(["x", "y", "z"] as const).map((axis) => (
+                  <input
+                    key={axis}
+                    type="number"
+                    step="0.1"
+                    aria-label={`Custom plane normal ${axis}`}
+                    value={customNormal[axis]}
+                    onChange={(e) =>
+                      setCustomNormal((normal) => ({
+                        ...normal,
+                        [axis]: parseFloat(e.target.value) || 0,
+                      }))
+                    }
+                    className="w-12 px-1 py-0.5 text-xs rounded bg-gray-700 border border-gray-600 text-white text-center"
+                  />
+                ))}
+              </div>
               <div className="mt-2 flex justify-center gap-2 pointer-events-auto">
                 <button
                   className="px-3 py-1 text-xs rounded bg-blue-600 hover:bg-blue-500"
@@ -1825,6 +1862,31 @@ const SketchModeContent: FC<ModeContentProps> = ({
                   }
                 >
                   YZ
+                </button>
+                <button
+                  className="px-3 py-1 text-xs rounded bg-purple-600 hover:bg-purple-500"
+                  onClick={() => {
+                    const normal = new THREE.Vector3(
+                      customNormal.x,
+                      customNormal.y,
+                      customNormal.z,
+                    ).normalize();
+                    if (normal.lengthSq() === 0) {
+                      showToast(
+                        "Custom plane normal cannot be zero.",
+                        "warning",
+                      );
+                      return;
+                    }
+                    selectPlaneAndStartSketch(
+                      createSketchPlaneFromNormal(
+                        normal,
+                        normal.clone().multiplyScalar(planeOffset),
+                      ),
+                    );
+                  }}
+                >
+                  Custom
                 </button>
                 <button
                   className="px-3 py-1 text-xs rounded bg-gray-600 hover:bg-gray-500"

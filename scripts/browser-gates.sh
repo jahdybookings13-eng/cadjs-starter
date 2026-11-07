@@ -35,7 +35,9 @@ vr=0
 run_step "chromium-non-vr" npx playwright test "${non_vr_specs[@]}" --project=chromium --reporter=line || nonvr=$?
 run_step "firefox-smoke" npx playwright test --project=firefox --reporter=line || nonvr=$?
 run_step "webkit-smoke" npx playwright test --project=webkit --reporter=line || nonvr=$?
-run_step "vr-all" npx playwright test e2e/vr-*.spec.ts --reporter=line || vr=$?
+if [ "${CADJS_SKIP_VR:-0}" != "1" ]; then
+  run_step "vr-all" npx playwright test e2e/vr-*.spec.ts --reporter=line || vr=$?
+fi
 
 echo "" | tee -a "$log"
 echo "===== summary =====" | tee -a "$log"

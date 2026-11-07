@@ -76,6 +76,13 @@ export interface SketchHatch {
   blockInstancePath?: string[] | undefined;
 }
 
+export interface SketchIncludeSource {
+  nodeId: string;
+  kind: "edge" | "point";
+  /** Offset from the source element's position at include time. */
+  offset: { x: number; y: number; z: number };
+}
+
 export interface SketchPoint {
   id: string;
   type: "point";
@@ -83,6 +90,7 @@ export interface SketchPoint {
   y: number;
   fixed?: boolean | undefined;
   origin?: boolean | undefined; // Origin construction geometry, undeletable, excluded from BRep
+  includeSource?: SketchIncludeSource | undefined;
 }
 
 export interface SketchLine {
@@ -92,6 +100,7 @@ export interface SketchLine {
   p2Id: string;
   construction?: boolean | undefined; // Construction line (orange dashed, excluded from BRep)
   origin?: boolean | undefined; // Origin axis line, undeletable, excluded from BRep, solid colored rendering
+  includeSource?: SketchIncludeSource | undefined;
 }
 
 export interface SketchCircle {

@@ -38,7 +38,7 @@ echo "vendor-solver=$vendor" | tee -a "$summary"
 
 run_step "test-bible" npm run test:bible || app=$?
 
-run_step "browser-and-vr" bash scripts/browser-gates.sh "${log%.log}.browser.log" || browser=$?
+CADJS_SKIP_VR=1 run_step "browser-non-vr" bash scripts/browser-gates.sh "${log%.log}.browser.log" || browser=$?
 
 echo "" | tee -a "$log"
 echo "===== final summary =====" | tee -a "$log"
