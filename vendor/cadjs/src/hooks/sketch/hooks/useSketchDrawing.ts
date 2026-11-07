@@ -396,6 +396,49 @@ export function useSketchDrawing({
     [activeSketch, generateId, addConstraintAndSolve],
   );
 
+  const autoApplyParallelConstraint = useCallback(
+    async (
+      lineId: string,
+      p1: THREE.Vector3,
+      p2: THREE.Vector3,
+    ): Promise<boolean> => {
+      if (!activeSketch) return false;
+
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      const angle = Math.atan2(dy, dx);
+      const tolerance = SKETCH_CONFIG.ALIGNMENT_TOLERANCE;
+
+      for (const prim of activeSketch.primitives) {
+        if (!isSketchLine(prim) || prim.id === lineId || prim.origin) continue;
+
+        const pt1 = activeSketch.primitives.find((p) => p.id === prim.p1Id);
+        const pt2 = activeSketch.primitives.find((p) => p.id === prim.p2Id);
+        if (!pt1 || !pt2 || !isSketchPoint(pt1) || !isSketchPoint(pt2))
+          continue;
+
+        const existingAngle = Math.atan2(pt2.y - pt1.y, pt2.x - pt1.x);
+        let diff = Math.abs(angle - existingAngle) % Math.PI;
+        if (diff > Math.PI / 2) diff = Math.PI - diff;
+
+        if (diff < tolerance) {
+          const constraint: SketchConstraint = {
+            id: generateId("const"),
+            type: "parallel",
+            primitiveIds: [lineId, prim.id],
+            driving: true,
+          };
+          const result = await addConstraintAndSolve(constraint);
+          if (result.status === "applied") {
+            return true;
+          }
+        }
+      }
+      return false;
+    },
+    [activeSketch, generateId, addConstraintAndSolve],
+  );
+
   const autoApplyTangentConstraint = useCallback(
     async (
       lineId: string,
@@ -599,7 +642,7 @@ export function useSketchDrawing({
             };
             addPrimitive(line);
 
-            // Auto-constraint priority: H/V → perpendicular → tangent → coincident.
+            // Auto-constraint priority: H/V → perpendicular → parallel → tangent → coincident.
             // Ctrl suppresses all; snapping to an existing endpoint suppresses H/V (the
             // existing geometry already pins the orientation).
             const suppressAuto = ctrlHeldRef.current;
@@ -625,7 +668,21 @@ export function useSketchDrawing({
               );
             }
 
+            let parallelApplied = false;
             if (!suppressAuto && !hvApplied && !perpApplied) {
+              parallelApplied = await autoApplyParallelConstraint(
+                lineId,
+                startPoint,
+                actualP2,
+              );
+            }
+
+            if (
+              !suppressAuto &&
+              !hvApplied &&
+              !perpApplied &&
+              !parallelApplied
+            ) {
               await autoApplyTangentConstraint(lineId, startPoint, actualP2);
             }
 
@@ -703,6 +760,7 @@ export function useSketchDrawing({
       autoApplyHVConstraint,
       autoApplyCoincidentConstraint,
       autoApplyPerpendicularConstraint,
+      autoApplyParallelConstraint,
       autoApplyTangentConstraint,
       activeSketch,
       pushSketchUndo,

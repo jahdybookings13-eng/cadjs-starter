@@ -855,6 +855,40 @@ describe("SketchSolverService", () => {
     });
   });
 
+  describe("Phase 2.2 acceptance", () => {
+    it("solves one sketch carrying fifteen independent constraints", async () => {
+      const sketch = createEmptySketch();
+      const primitives: Sketch["primitives"] = [];
+      const constraints: SketchConstraint[] = [];
+
+      for (let i = 0; i < 15; i++) {
+        const p1 = createPoint(`p${i}a`, i, i * 0.25);
+        const p2 = createPoint(`p${i}b`, i + 1, i * 0.25 + 0.2);
+        primitives.push(p1, p2, createLine(`line${i}`, p1.id, p2.id));
+        constraints.push(
+          createConstraint(`c${i}`, "horizontal", [`line${i}`]),
+        );
+      }
+
+      sketch.primitives = primitives;
+      sketch.constraints = constraints;
+      const result = await solver.solve(sketch);
+
+      expect(result.success).toBe(true);
+      expect(result.sketch.constraints).toHaveLength(15);
+      expect(result.status).not.toBe("overconstrained");
+      for (let i = 0; i < 15; i++) {
+        const p1 = result.sketch.primitives.find(
+          (p) => p.id === `p${i}a`,
+        ) as SketchPoint;
+        const p2 = result.sketch.primitives.find(
+          (p) => p.id === `p${i}b`,
+        ) as SketchPoint;
+        expect(p1.y).toBeCloseTo(p2.y, 4);
+      }
+    });
+  });
+
   describe("Over-constrained Detection", () => {
     /**
      * MOCK LIMITATION: The planegcs mock always returns false for
