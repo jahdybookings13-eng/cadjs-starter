@@ -855,6 +855,35 @@ describe("SketchSolverService", () => {
     });
   });
 
+  describe("Phase 2.3 reference dimensions", () => {
+    it("measures a reference dimension without driving the geometry", async () => {
+      const sketch = createEmptySketch();
+      const p1 = createPoint("p1", 0, 0);
+      const p2 = createPoint("p2", 3, 4);
+      const line = createLine("line1", "p1", "p2");
+      const reference: SketchConstraint = {
+        id: "ref1",
+        type: "distance",
+        primitiveIds: ["line1"],
+        value: 0,
+        driving: false,
+      };
+
+      sketch.primitives = [p1, p2, line];
+      sketch.constraints = [reference];
+
+      const result = await solver.solve(sketch);
+
+      expect(result.success).toBe(true);
+      const movedP2 = result.sketch.primitives.find(
+        (p) => p.id === "p2",
+      ) as SketchPoint;
+      expect(movedP2.x).toBeCloseTo(3, 5);
+      expect(movedP2.y).toBeCloseTo(4, 5);
+      expect(result.sketch.constraints[0]?.value).toBeCloseTo(5, 5);
+    });
+  });
+
   describe("Phase 2.2 acceptance", () => {
     it("solves one sketch carrying fifteen independent constraints", async () => {
       const sketch = createEmptySketch();
@@ -865,9 +894,7 @@ describe("SketchSolverService", () => {
         const p1 = createPoint(`p${i}a`, i, i * 0.25);
         const p2 = createPoint(`p${i}b`, i + 1, i * 0.25 + 0.2);
         primitives.push(p1, p2, createLine(`line${i}`, p1.id, p2.id));
-        constraints.push(
-          createConstraint(`c${i}`, "horizontal", [`line${i}`]),
-        );
+        constraints.push(createConstraint(`c${i}`, "horizontal", [`line${i}`]));
       }
 
       sketch.primitives = primitives;

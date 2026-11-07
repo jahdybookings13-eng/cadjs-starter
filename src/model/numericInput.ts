@@ -5,6 +5,7 @@ import {
   dimLabel,
   dimsEqual,
   evalExpr,
+  type Scope,
 } from "./expression";
 
 /** What the surrounding sketch field expects the entered value to mean. */
@@ -23,12 +24,12 @@ export type ParsedNumericInput =
  *   "1/2"       -> 0.5
  *
  * Dimension mismatches are rejected instead of silently adding metres to
- * radians. Named-variable binding is a separate gap; no implicit variables are
- * invented here.
+ * radians. Scoped names come from the active sketch's variables.
  */
 export function parseNumericInput(
   text: string,
   mode: NumericInputMode,
+  scope: Scope = {},
 ): ParsedNumericInput {
   const raw = text.trim();
   if (!raw) return { ok: false, error: "Enter a value." };
@@ -37,7 +38,7 @@ export function parseNumericInput(
   const plain = Number(raw);
   if (Number.isFinite(plain)) return { ok: true, value: plain };
 
-  const result = evalExpr(raw);
+  const result = evalExpr(raw, scope);
   if (!result.ok) return result;
 
   if (dimsEqual(result.dim, DIM_NONE)) {

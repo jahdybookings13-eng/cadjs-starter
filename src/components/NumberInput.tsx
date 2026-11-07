@@ -3,13 +3,18 @@ import {
   parseNumericInput,
   type NumericInputMode,
 } from "../model/numericInput";
+import type { Scope } from "../model/expression";
 
 export interface NumberInputProps {
   initialValue?: number | undefined;
+  /** Raw expression to preserve when reopening an editor. */
+  initialText?: string | undefined;
   externalValue?: number | undefined;
   validate?: ((v: number) => boolean) | undefined;
-  onSubmit: (value: number) => void;
+  onSubmit: (value: number, expression: string) => void;
   onCancel: () => void;
+  /** Named values available to expressions. */
+  scope?: Scope | undefined;
   onChange?: ((value: number) => void) | undefined;
   /** Unit family the surrounding feature expects. Defaults to length. */
   expressionMode?: NumericInputMode | undefined;
@@ -33,11 +38,13 @@ const DEFAULT_CONFIRM_CLASS =
 
 export const NumberInput: FC<NumberInputProps> = ({
   initialValue,
+  initialText,
   externalValue,
   validate = (v) => v > 0,
   onSubmit,
   onCancel,
   onChange,
+  scope = {},
   expressionMode = "length",
   showConfirmButton,
   confirmLabel = "OK",
@@ -49,7 +56,9 @@ export const NumberInput: FC<NumberInputProps> = ({
   className = "flex items-center gap-2",
   autoFocus = true,
 }) => {
-  const [text, setText] = useState<string>(initialValue?.toFixed(2) ?? "");
+  const [text, setText] = useState<string>(
+    initialText ?? initialValue?.toFixed(2) ?? "",
+  );
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -61,9 +70,9 @@ export const NumberInput: FC<NumberInputProps> = ({
   }, [autoFocus]);
 
   useEffect(() => {
-    setText(initialValue?.toFixed(2) ?? "");
+    setText(initialText ?? initialValue?.toFixed(2) ?? "");
     setError(null);
-  }, [initialValue]);
+  }, [initialValue, initialText]);
 
   useEffect(() => {
     if (externalValue !== undefined) {
@@ -73,7 +82,7 @@ export const NumberInput: FC<NumberInputProps> = ({
   }, [externalValue]);
 
   const trySubmit = () => {
-    const parsed = parseNumericInput(text, expressionMode);
+    const parsed = parseNumericInput(text, expressionMode, scope);
     if (!parsed.ok) {
       setError(parsed.error);
       return;
@@ -83,7 +92,7 @@ export const NumberInput: FC<NumberInputProps> = ({
       return;
     }
     setError(null);
-    onSubmit(parsed.value);
+    onSubmit(parsed.value, text.trim());
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -99,7 +108,7 @@ export const NumberInput: FC<NumberInputProps> = ({
       (e.key === "ArrowUp" || e.key === "ArrowDown")
     ) {
       e.preventDefault();
-      const parsed = parseNumericInput(text, expressionMode);
+      const parsed = parseNumericInput(text, expressionMode, scope);
       const current = parsed.ok ? parsed.value : 0;
       const step = e.shiftKey ? 0.1 : 1;
       const next =
@@ -117,7 +126,7 @@ export const NumberInput: FC<NumberInputProps> = ({
     const value = e.target.value;
     setText(value);
     if (!onChange) return;
-    const parsed = parseNumericInput(value, expressionMode);
+    const parsed = parseNumericInput(value, expressionMode, scope);
     if (!parsed.ok) return;
     setError(null);
     if (validate(parsed.value)) onChange(parsed.value);

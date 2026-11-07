@@ -25,7 +25,9 @@ import {
 } from "@vitekk02/cadjs/react";
 import { useToast } from "../../contexts/ToastContext";
 import SketchToolbar from "../../navbar/SketchToolbar";
-import DimensionInput from "../../components/DimensionInput";
+import DimensionInput, {
+  type DimensionSubmitOptions,
+} from "../../components/DimensionInput";
 import SketchCommandPalette from "../../components/SketchCommandPalette";
 import SketchContextMenu from "../../components/SketchContextMenu";
 import SketchControlsHelp from "../../components/SketchControlsHelp";
@@ -121,6 +123,8 @@ const SketchModeContent: FC<ModeContentProps> = ({
   const [hatchAngle, setHatchAngle] = useState(45);
   const [layersOpen, setLayersOpen] = useState(false);
   const [activeLayerId, setActiveLayerId] = useState("");
+  const [newVariableName, setNewVariableName] = useState("");
+  const [newVariableValue, setNewVariableValue] = useState("");
 
   const {
     sketchSubMode,
@@ -220,6 +224,16 @@ const SketchModeContent: FC<ModeContentProps> = ({
   });
   const [dimensionInputLabel, setDimensionInputLabel] = useState("");
   const [dimensionInputValue, setDimensionInputValue] = useState<
+    number | undefined
+  >(undefined);
+  const [dimensionInputExpression, setDimensionInputExpression] = useState<
+    string | undefined
+  >(undefined);
+  const [dimensionInputDriving, setDimensionInputDriving] = useState(true);
+  const [dimensionInputMin, setDimensionInputMin] = useState<
+    number | undefined
+  >(undefined);
+  const [dimensionInputMax, setDimensionInputMax] = useState<
     number | undefined
   >(undefined);
   const [pendingDimensionPrimitiveId, setPendingDimensionPrimitiveId] =
@@ -494,6 +508,10 @@ const SketchModeContent: FC<ModeContentProps> = ({
       setDimensionInputPosition(worldToScreen(worldPos, camera, renderer));
       setDimensionInputLabel(label);
       setDimensionInputValue(value);
+      setDimensionInputExpression(undefined);
+      setDimensionInputDriving(true);
+      setDimensionInputMin(undefined);
+      setDimensionInputMax(undefined);
       setPendingDimensionPrimitiveId(primitiveId);
       setDimensionSource("dimensionMode");
       setDimensionInputVisible(true);
@@ -523,6 +541,10 @@ const SketchModeContent: FC<ModeContentProps> = ({
     );
     setDimensionInputLabel("Length");
     setDimensionInputValue(pendingLineDimension.length);
+    setDimensionInputExpression(undefined);
+    setDimensionInputDriving(true);
+    setDimensionInputMin(undefined);
+    setDimensionInputMax(undefined);
     setPendingDimensionPrimitiveId(pendingLineDimension.lineId);
     setDimensionSource("lineCreation");
     setDimensionInputVisible(true);
@@ -596,20 +618,43 @@ const SketchModeContent: FC<ModeContentProps> = ({
       constraint.type.charAt(0).toUpperCase() + constraint.type.slice(1),
     );
     setDimensionInputValue(displayValue);
+    setDimensionInputExpression(constraint.expression);
+    setDimensionInputDriving(constraint.driving ?? true);
+    setDimensionInputMin(constraint.min);
+    setDimensionInputMax(constraint.max);
     setPendingDimensionPrimitiveId(constraint.id);
     setDimensionSource("constraintEdit");
     setDimensionInputVisible(true);
   }, [editingConstraintId, activeSketch, renderer, camera]);
 
-  const handleDimensionSubmit = async (value: number) => {
+  const handleDimensionSubmit = async (
+    value: number,
+    expression: string,
+    options: DimensionSubmitOptions,
+  ) => {
     handleConstraintPreviewCancel();
+    const editingType = editingConstraintRef.current?.type;
+    const angleMode = editingType === "angle";
+    const finalValue = angleMode ? (value * Math.PI) / 180 : value;
+    const min =
+      options.min === undefined
+        ? undefined
+        : angleMode
+          ? (options.min * Math.PI) / 180
+          : options.min;
+    const max =
+      options.max === undefined
+        ? undefined
+        : angleMode
+          ? (options.max * Math.PI) / 180
+          : options.max;
+
     if (
       dimensionSource === "constraintEdit" &&
       editingConstraintRef.current &&
       activeSketch
     ) {
       const { id: oldId, type, primitiveIds } = editingConstraintRef.current;
-      const finalValue = type === "angle" ? (value * Math.PI) / 180 : value;
       const oldConstraint = activeSketch.constraints.find(
         (c) => c.id === oldId,
       );
@@ -621,7 +666,10 @@ const SketchModeContent: FC<ModeContentProps> = ({
         type: type as ConstraintType,
         primitiveIds,
         value: finalValue,
-        driving: true,
+        driving: options.driving,
+        ...(expression ? { expression } : {}),
+        ...(min === undefined ? {} : { min }),
+        ...(max === undefined ? {} : { max }),
         ...(oldLabelOffset ? { labelOffset: oldLabelOffset } : {}),
       });
       editingConstraintRef.current = null;
@@ -634,23 +682,86 @@ const SketchModeContent: FC<ModeContentProps> = ({
     if (!pendingDimensionPrimitiveId) return;
 
     if (dimensionSource === "lineCreation") {
-      applyLineLengthConstraint(pendingDimensionPrimitiveId, value);
+      await applyLineLengthConstraint(pendingDimensionPrimitiveId, value, {
+        ...(expression ? { expression } : {}),
+        driving: options.driving,
+        ...(min === undefined ? {} : { min }),
+        ...(max === undefined ? {} : { max }),
+      });
     } else if (dimensionSource === "dimensionMode" && activeSketch) {
       const primitive = activeSketch.primitives.find(
         (p) => p.id === pendingDimensionPrimitiveId,
       );
       if (!primitive) return;
 
-      if (primitive.type === "line") {
-        await applyConstraint("distance", value);
-      } else if (primitive.type === "circle" || primitive.type === "arc") {
-        await applyConstraint("radius", value);
+      if (
+        primitive.type === "line" ||
+        primitive.type === "circle" ||
+        primitive.type === "arc"
+      ) {
+        const type: ConstraintType =
+          primitive.type === "line" ? "distance" : "radius";
+        pushSketchUndo();
+        const result = await addConstraintAndSolve({
+          id: `const_${Date.now()}`,
+          type,
+          primitiveIds: [primitive.id],
+          value: finalValue,
+          driving: options.driving,
+          ...(expression ? { expression } : {}),
+          ...(min === undefined ? {} : { min }),
+          ...(max === undefined ? {} : { max }),
+        });
+        if (result.status !== "applied") {
+          showToast(`Dimension ${result.status}`, "warning");
+        }
       }
     }
 
     setDimensionInputVisible(false);
     setPendingDimensionPrimitiveId(null);
     setDimensionSource(null);
+  };
+
+  const handleAddVariable = () => {
+    const name = newVariableName.trim();
+    const value = Number(newVariableValue);
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) {
+      showToast(
+        "Variable names must start with a letter or underscore.",
+        "warning",
+      );
+      return;
+    }
+    if (!Number.isFinite(value)) {
+      showToast("Enter a numeric variable value.", "warning");
+      return;
+    }
+    pushSketchUndo();
+    updateSketch((sketch) => ({
+      ...sketch,
+      variables: { ...(sketch.variables ?? {}), [name]: value },
+    }));
+    setNewVariableName("");
+    setNewVariableValue("");
+  };
+
+  const handleVariableValue = (name: string, raw: string) => {
+    const value = Number(raw);
+    if (!Number.isFinite(value)) return;
+    updateSketch((sketch) => ({
+      ...sketch,
+      variables: { ...(sketch.variables ?? {}), [name]: value },
+    }));
+  };
+
+  const handleRemoveVariable = (name: string) => {
+    pushSketchUndo();
+    updateSketch((sketch) => {
+      const variables = { ...(sketch.variables ?? {}) };
+      delete variables[name];
+      return { ...sketch, variables };
+    });
   };
 
   const handleDimensionCancel = () => {
@@ -1602,6 +1713,11 @@ const SketchModeContent: FC<ModeContentProps> = ({
         position={dimensionInputPosition}
         label={dimensionInputLabel}
         initialValue={dimensionInputValue}
+        initialExpression={dimensionInputExpression}
+        initialDriving={dimensionInputDriving}
+        initialMin={dimensionInputMin}
+        initialMax={dimensionInputMax}
+        scope={activeSketch?.variables}
         onSubmit={handleDimensionSubmit}
         onCancel={handleDimensionCancel}
         onChange={handleDimensionChange}
@@ -2114,6 +2230,63 @@ const SketchModeContent: FC<ModeContentProps> = ({
               <span className="text-[10px] text-gray-400">
                 {selectedPrimitives.length} selected
               </span>
+            </div>
+            <div className="mt-4 border-t border-gray-700 pt-3">
+              <h3 className="text-xs font-semibold text-gray-200">
+                Sketch variables
+              </h3>
+              <p className="mt-1 text-[10px] text-gray-400">
+                Use these names in dimension expressions, for example{" "}
+                <span className="font-mono">width / 2</span>.
+              </p>
+              <div className="mt-2 space-y-1">
+                {Object.entries(activeSketch.variables ?? {}).map(
+                  ([name, value]) => (
+                    <div key={name} className="flex items-center gap-1">
+                      <span className="w-24 truncate font-mono text-xs text-gray-200">
+                        {name}
+                      </span>
+                      <input
+                        defaultValue={value}
+                        onChange={(event) =>
+                          handleVariableValue(name, event.target.value)
+                        }
+                        aria-label={`${name} value`}
+                        className="min-w-0 flex-1 rounded bg-gray-700 px-2 py-1 text-xs text-white"
+                      />
+                      <button
+                        onClick={() => handleRemoveVariable(name)}
+                        className="rounded bg-gray-700 px-2 py-1 text-[10px] text-gray-200 hover:bg-red-600"
+                        aria-label={`Remove ${name}`}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ),
+                )}
+              </div>
+              <div className="mt-2 flex items-center gap-1">
+                <input
+                  value={newVariableName}
+                  onChange={(event) => setNewVariableName(event.target.value)}
+                  placeholder="name"
+                  aria-label="New variable name"
+                  className="min-w-0 flex-1 rounded bg-gray-700 px-2 py-1 text-xs text-white"
+                />
+                <input
+                  value={newVariableValue}
+                  onChange={(event) => setNewVariableValue(event.target.value)}
+                  placeholder="value"
+                  aria-label="New variable value"
+                  className="w-20 rounded bg-gray-700 px-2 py-1 text-xs text-white"
+                />
+                <button
+                  onClick={handleAddVariable}
+                  className="rounded bg-blue-600 px-2 py-1 text-[10px] text-white hover:bg-blue-500"
+                >
+                  + Variable
+                </button>
+              </div>
             </div>
           </div>
         </div>

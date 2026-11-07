@@ -22,6 +22,7 @@ import {
   isSketchLine,
   isSketchCircle,
   isSketchArc,
+  isDimensionalConstraint,
   findSketchPoint,
   findSketchLine,
 } from "../types/sketch-types";
@@ -91,7 +92,9 @@ export class SketchSolverService {
 
     const dof = gcs.gcs.dof();
 
-    const updatedSketch = this.applyGcsSolution(sketch, gcs);
+    const updatedSketch = this.refreshReferenceDimensions(
+      this.applyGcsSolution(sketch, gcs),
+    );
 
     const redundantIds: string[] = gcs.get_gcs_redundant_constraints?.()
       ? (gcs.get_gcs_redundant_constraints() as string[])
@@ -236,6 +239,9 @@ export class SketchSolverService {
     const result: GcsSketchPrimitive[] = [];
 
     for (const constraint of constraints) {
+      // Reference dimensions are measurements, not equations. Sending them to
+      // planegcs would make it enforce their stale value (usually zero).
+      if (constraint.driving === false) continue;
       const gcsConstraint = this.constraintToGcs(constraint, primitives);
       if (gcsConstraint) {
         result.push(gcsConstraint);
@@ -454,7 +460,10 @@ export class SketchSolverService {
           let p1Id = constraint.primitiveIds[0];
           let p2Id = constraint.primitiveIds[1];
           if (constraint.primitiveIds.length === 1) {
-            const line = findSketchLine(primitives, constraint.primitiveIds[0]!);
+            const line = findSketchLine(
+              primitives,
+              constraint.primitiveIds[0]!,
+            );
             p1Id = line?.p1Id;
             p2Id = line?.p2Id;
           }
@@ -477,7 +486,10 @@ export class SketchSolverService {
           let p1Id = constraint.primitiveIds[0];
           let p2Id = constraint.primitiveIds[1];
           if (constraint.primitiveIds.length === 1) {
-            const line = findSketchLine(primitives, constraint.primitiveIds[0]!);
+            const line = findSketchLine(
+              primitives,
+              constraint.primitiveIds[0]!,
+            );
             p1Id = line?.p1Id;
             p2Id = line?.p2Id;
           }
@@ -721,6 +733,100 @@ export class SketchSolverService {
 
     console.warn(`Unsupported constraint type: ${constraint.type}`);
     return null;
+  }
+
+  /**
+   * Reference dimensions (driving: false) are observations, not constraints.
+   * Re-measure them after every solve so they follow dragged geometry and
+   * remain correct after undo/reload without adding solver equations.
+   */
+  private refreshReferenceDimensions(sketch: Sketch): Sketch {
+    let changed = false;
+    const constraints = sketch.constraints.map((constraint) => {
+      if (
+        !isDimensionalConstraint(constraint) ||
+        constraint.driving !== false
+      ) {
+        return constraint;
+      }
+      const value = this.measureConstraint(
+        constraint.primitiveIds,
+        constraint.type,
+        sketch.primitives,
+      );
+      if (
+        value === undefined ||
+        !Number.isFinite(value) ||
+        Math.abs(value - constraint.value) < 1e-12
+      ) {
+        return constraint;
+      }
+      changed = true;
+      return { ...constraint, value };
+    });
+    return changed ? { ...sketch, constraints } : sketch;
+  }
+
+  private measureConstraint(
+    primitiveIds: string[],
+    type: SketchConstraint["type"],
+    primitives: SketchPrimitive[],
+  ): number | undefined {
+    const pointsFor = (): [SketchPoint, SketchPoint] | undefined => {
+      if (primitiveIds.length >= 2) {
+        const a = findSketchPoint(primitives, primitiveIds[0]!);
+        const b = findSketchPoint(primitives, primitiveIds[1]!);
+        if (a && b) return [a, b];
+      }
+      if (primitiveIds.length === 1) {
+        const line = findSketchLine(primitives, primitiveIds[0]!);
+        if (!line) return undefined;
+        const a = findSketchPoint(primitives, line.p1Id);
+        const b = findSketchPoint(primitives, line.p2Id);
+        if (a && b) return [a, b];
+      }
+      return undefined;
+    };
+
+    if (type === "distance" || type === "distanceX" || type === "distanceY") {
+      const points = pointsFor();
+      if (!points) return undefined;
+      const dx = points[1].x - points[0].x;
+      const dy = points[1].y - points[0].y;
+      if (type === "distanceX") return Math.abs(dx);
+      if (type === "distanceY") return Math.abs(dy);
+      return Math.hypot(dx, dy);
+    }
+
+    if (type === "angle") {
+      if (primitiveIds.length < 2) return undefined;
+      const l1 = findSketchLine(primitives, primitiveIds[0]!);
+      const l2 = findSketchLine(primitives, primitiveIds[1]!);
+      if (!l1 || !l2) return undefined;
+      const a1 = findSketchPoint(primitives, l1.p1Id);
+      const a2 = findSketchPoint(primitives, l1.p2Id);
+      const b1 = findSketchPoint(primitives, l2.p1Id);
+      const b2 = findSketchPoint(primitives, l2.p2Id);
+      if (!a1 || !a2 || !b1 || !b2) return undefined;
+      const ax = a2.x - a1.x;
+      const ay = a2.y - a1.y;
+      const bx = b2.x - b1.x;
+      const by = b2.y - b1.y;
+      return Math.atan2(Math.abs(ax * by - ay * bx), ax * bx + ay * by);
+    }
+
+    if (type === "radius" || type === "diameter") {
+      const primitive = primitives.find((p) => p.id === primitiveIds[0]);
+      if (!primitive) return undefined;
+      const radius =
+        primitive.type === "circle" || primitive.type === "arc"
+          ? primitive.radius
+          : undefined;
+      if (radius === undefined) return undefined;
+      return type === "diameter" ? radius * 2 : radius;
+    }
+
+    return undefined;
   }
 
   private applyGcsSolution(sketch: Sketch, gcs: GcsWrapper): Sketch {

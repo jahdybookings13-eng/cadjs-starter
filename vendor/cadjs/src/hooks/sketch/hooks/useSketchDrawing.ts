@@ -2499,14 +2499,26 @@ export function useSketchDrawing({
   }, []);
 
   const applyLineLengthConstraint = useCallback(
-    async (lineId: string, length: number) => {
+    async (
+      lineId: string,
+      length: number,
+      options?: {
+        expression?: string;
+        driving?: boolean;
+        min?: number;
+        max?: number;
+      },
+    ) => {
       pushSketchUndo();
       const constraint: SketchConstraint = {
         id: generateId("const"),
         type: "distance",
         primitiveIds: [lineId],
         value: length,
-        driving: true,
+        driving: options?.driving ?? true,
+        ...(options?.expression ? { expression: options.expression } : {}),
+        ...(options?.min !== undefined ? { min: options.min } : {}),
+        ...(options?.max !== undefined ? { max: options.max } : {}),
       };
       const result = await addConstraintAndSolve(constraint);
       showConstraintFeedback(result.status, result.constraintIds);

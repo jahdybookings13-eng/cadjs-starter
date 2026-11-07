@@ -236,6 +236,12 @@ export interface DimensionalConstraint extends SketchConstraintBase {
   type: DimensionalConstraintType;
   /** Required for dimensional constraints, the value is what the constraint enforces. */
   value: number;
+  /** Original expression (for example `width / 2` or `10 mm`). */
+  expression?: string | undefined;
+  /** Optional inclusive lower limit in the constraint's native units. */
+  min?: number | undefined;
+  /** Optional inclusive upper limit in the constraint's native units. */
+  max?: number | undefined;
 }
 
 export type SketchConstraint = GeometricConstraint | DimensionalConstraint;
@@ -311,6 +317,8 @@ export interface Sketch {
   plane: SketchPlane;
   primitives: SketchPrimitive[];
   constraints: SketchConstraint[];
+  /** Sketch-local named values usable in dimension expressions. */
+  variables?: Record<string, number> | undefined;
   /** Named layer table. Missing on older documents; use the default layer. */
   layers?: SketchLayer[] | undefined;
   /** Reusable block definitions; instances live on primitive metadata. */

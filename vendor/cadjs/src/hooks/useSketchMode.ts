@@ -106,7 +106,16 @@ export interface UseSketchModeResult {
   // New: For dimension input after line creation
   pendingLineDimension: PendingLineDimension | null;
   clearPendingLineDimension: () => void;
-  applyLineLengthConstraint: (lineId: string, length: number) => Promise<void>;
+  applyLineLengthConstraint: (
+    lineId: string,
+    length: number,
+    options?: {
+      expression?: string;
+      driving?: boolean;
+      min?: number;
+      max?: number;
+    },
+  ) => Promise<void>;
   // Context menu for right-click constraints
   contextMenu: SketchContextMenu;
   closeContextMenu: () => void;

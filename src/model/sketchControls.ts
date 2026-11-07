@@ -898,11 +898,6 @@ export const SKETCH_PARITY_GAPS: readonly SketchParityGap[] = [
     autocad: "PLOT",
     note: "No 2D plotting or sheet output.",
   },
-  {
-    name: "Expressions",
-    autocad: "EXPR",
-    note: "Arithmetic and unit expressions work in numeric sketch fields; project-variable references are not wired in yet.",
-  },
 ];
 
 export function normalizeCommandQuery(query: string): string {

@@ -54,6 +54,18 @@ describe("parseNumericInput", () => {
     expect(parseNumericInput("10 mm", "unitless").ok).toBe(false);
   });
 
+  it("resolves sketch variables in dimension expressions", () => {
+    expect(parseNumericInput("width / 2", "length", { width: 20 })).toEqual({
+      ok: true,
+      value: 10,
+    });
+    expect(parseNumericInput("2 * gap", "length", { gap: 0.02 })).toEqual({
+      ok: true,
+      value: 0.04,
+    });
+    expect(parseNumericInput("missing * 2", "length", {}).ok).toBe(false);
+  });
+
   it("rejects malformed expressions", () => {
     expect(parseNumericInput("2*", "length").ok).toBe(false);
     expect(parseNumericInput("", "length").ok).toBe(false);
