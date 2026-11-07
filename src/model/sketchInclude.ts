@@ -1,10 +1,10 @@
 import * as THREE from "three";
-import { sectionBRep } from "@vitekk02/cadjs";
-import type {
-  SketchLine,
-  SketchPlane,
-  SketchPoint,
-  SketchPrimitive,
+import {
+  sectionBRep,
+  type SketchLine,
+  type SketchPlane,
+  type SketchPoint,
+  type SketchPrimitive,
 } from "@vitekk02/cadjs";
 
 type Body = Parameters<typeof sectionBRep>[0];

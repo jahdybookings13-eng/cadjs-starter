@@ -280,6 +280,7 @@ const SketchContextMenu: FC<SketchContextMenuProps> = ({
               <button
                 key={`${option.type}-${option.label}-${index}`}
                 onClick={() => handleConstraintClick(option)}
+                aria-label={option.label}
                 className="w-full px-3 py-2 text-left text-sm text-white hover:bg-gray-700 flex items-center justify-between"
               >
                 <span>{option.label}</span>

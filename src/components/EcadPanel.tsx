@@ -191,6 +191,7 @@ export function EcadPanel({
             <button
               key={t}
               onClick={() => setTab(t)}
+              aria-label={`ECAD ${t} tab`}
               className={`rounded px-2 py-0.5 ${tab === t ? "bg-blue-600" : "bg-neutral-800 hover:bg-neutral-700"}`}
             >
               {t}
@@ -198,6 +199,7 @@ export function EcadPanel({
           ))}
           <button
             onClick={onClose}
+            aria-label="Close ECAD panel"
             className="rounded bg-neutral-800 px-2 py-0.5 hover:bg-neutral-700"
           >
             ✕
@@ -243,6 +245,7 @@ export function EcadPanel({
               >
                 <button
                   className="flex-1 text-left"
+                  aria-label={`Select ${row.name ?? row.part}`}
                   onClick={() => setSelected(row.id)}
                 >
                   <span className="mr-2 rounded bg-neutral-700 px-1">
@@ -257,6 +260,7 @@ export function EcadPanel({
                     if (selected === row.id) setSelected(null);
                     refresh();
                   }}
+                  aria-label={`Remove ${row.name ?? row.part}`}
                   className="px-1 text-red-400 hover:text-red-300"
                 >
                   ✕

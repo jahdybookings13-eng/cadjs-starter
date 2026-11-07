@@ -1,0 +1,55 @@
+{
+  "4.1": {
+    "owner": "Document & local data",
+    "evidence": [
+      "src/document/__tests__/document.test.ts",
+      "e2e/document-tabs.spec.ts"
+    ]
+  },
+  "4.2": {
+    "owner": "Sketch",
+    "evidence": [
+      "src/model/__tests__/sketchGeometry.test.ts",
+      "src/model/__tests__/sketchConstraints*",
+      "e2e/sketch-controls.spec.ts"
+    ]
+  },
+  "4.3": {
+    "owner": "Part Studio",
+    "evidence": [
+      "src/model/__tests__/primitives.test.ts",
+      "src/model/__tests__/executor.test.ts",
+      "e2e/parity-ops.spec.ts"
+    ]
+  },
+  "4.4": {
+    "owner": "Assembly",
+    "evidence": ["src/assemblies/__tests__/", "src/components/AssemblyPanel.tsx"]
+  },
+  "4.5": {
+    "owner": "Drawing",
+    "evidence": [
+      "src/manufacture/__tests__/index.test.ts",
+      "src/manufacture/__tests__/dxf.test.ts"
+    ]
+  },
+  "4.6": {
+    "owner": "Specialized studios",
+    "evidence": ["src/ecad/__tests__/"]
+  },
+  "4.7": {
+    "owner": "Interoperability",
+    "evidence": [
+      "src/manufacture/__tests__/index.test.ts",
+      "e2e/step-import.spec.ts"
+    ]
+  },
+  "4.8": {
+    "owner": "Browser UI platform",
+    "evidence": [
+      "e2e/app-boot.spec.ts",
+      "e2e/document-tabs.spec.ts",
+      "scripts/control-inventory.mjs"
+    ]
+  }
+}

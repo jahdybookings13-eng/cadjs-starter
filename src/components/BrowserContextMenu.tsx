@@ -107,6 +107,7 @@ const BrowserContextMenu: FC<BrowserContextMenuProps> = ({
           onToggleVisibility(nodeId);
           onClose();
         }}
+        aria-label={nodeVisible ? "Hide node" : "Show node"}
         className="w-full px-3 py-1.5 text-left text-sm text-gray-200 hover:bg-gray-700 flex items-center gap-2"
       >
         {nodeVisible ? (

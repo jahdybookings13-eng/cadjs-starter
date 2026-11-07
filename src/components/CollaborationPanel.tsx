@@ -374,6 +374,7 @@ export function CollaborationPanel({
                 type="checkbox"
                 checked={linkVr}
                 onChange={(e) => setLinkVr(e.target.checked)}
+                aria-label="Include VR gate in share link"
               />
               Include the VR gate in this link
             </label>
@@ -391,6 +392,7 @@ export function CollaborationPanel({
               {lastLink && (
                 <button
                   onClick={() => void copy(lastLink)}
+                  aria-label="Copy share link"
                   className="rounded bg-gray-700 px-2 py-1 text-xs text-gray-100 hover:bg-gray-600"
                 >
                   {copied === lastLink ? "Copied" : "Copy"}

@@ -130,6 +130,7 @@ const FileMenu: React.FC = () => {
     <>
       <div className="relative flex-none" ref={menuRef}>
         <button
+          aria-label="File menu"
           className={`px-3 py-1.5 text-sm rounded flex items-center gap-1 ${
             loading
               ? "bg-gray-600 text-gray-400 cursor-wait"

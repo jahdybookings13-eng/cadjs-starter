@@ -106,6 +106,7 @@ const RevolveModePanel: FC<RevolveModePanelProps> = ({
           <div className="w-px h-4 bg-gray-600" />
           <input
             type="number"
+            aria-label="Revolve angle"
             className="w-20 px-2 py-1 text-sm bg-gray-700 text-white rounded border border-gray-600"
             value={revolveAngle}
             onChange={(e) => setRevolveAngle(parseFloat(e.target.value) || 360)}
@@ -117,6 +118,7 @@ const RevolveModePanel: FC<RevolveModePanelProps> = ({
             <>
               <input
                 type="number"
+                aria-label="Second revolve angle"
                 className="w-20 px-2 py-1 text-sm bg-gray-700 text-white rounded border border-gray-600"
                 value={revolveAngle2}
                 onChange={(e) =>

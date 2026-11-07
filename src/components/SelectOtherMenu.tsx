@@ -100,6 +100,7 @@ const SelectOtherMenu: FC<SelectOtherMenuProps> = ({
             onHover?.(null);
             onPick(item);
           }}
+          aria-label={item.label}
           className="w-full px-3 py-1.5 text-left text-sm text-white hover:bg-gray-700 flex justify-between items-center gap-3"
         >
           <span className="truncate">{item.label}</span>

@@ -41,11 +41,18 @@ export const DocumentTabBar: React.FC<DocumentTabBarProps> = ({
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [query, setQuery] = useState("");
+  const [dragId, setDragId] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
 
   const locked = readOnly || busy;
   const menuIndex = menuFor ? doc.tabs.findIndex((t) => t.id === menuFor) : -1;
   const menuTab = menuIndex >= 0 ? doc.tabs[menuIndex]! : null;
+  const visibleTabs = query.trim()
+    ? doc.tabs.filter((tab) =>
+        tab.name.toLowerCase().includes(query.trim().toLowerCase()),
+      )
+    : doc.tabs;
 
   useEffect(() => {
     if (!createOpen && !menuFor) return;
@@ -95,6 +102,26 @@ export const DocumentTabBar: React.FC<DocumentTabBarProps> = ({
         <span className="text-gray-500 hidden md:inline">
           {doc.tabs.length} {doc.tabs.length === 1 ? "tab" : "tabs"}
         </span>
+        <div className="relative flex items-center">
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Find tab"
+            aria-label="Search tabs"
+            data-testid="document-tab-search"
+            className="w-20 rounded border border-gray-700 bg-gray-800 px-1.5 py-0.5 text-[11px] text-gray-200 outline-none focus:border-blue-500 lg:w-24"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              aria-label="Clear tab search"
+              className="absolute right-0.5 rounded px-1 text-[10px] text-gray-500 hover:text-gray-200"
+            >
+              ×
+            </button>
+          )}
+        </div>
       </div>
 
       <div
@@ -102,13 +129,16 @@ export const DocumentTabBar: React.FC<DocumentTabBarProps> = ({
         aria-label="Document tabs"
         className="flex items-stretch overflow-x-auto min-w-0"
       >
-        {doc.tabs.map((tab) => {
+        {visibleTabs.map((tab) => {
           const isActive = tab.id === doc.activeTabId;
           const isRenaming = renaming === tab.id;
+          const tabIndex = doc.tabs.findIndex((item) => item.id === tab.id);
           return (
             <div
               key={tab.id}
-              className="relative flex items-stretch border-r border-gray-800"
+              className={`relative flex items-stretch border-r border-gray-800 ${
+                dragId === tab.id ? "opacity-50" : ""
+              }`}
             >
               {isRenaming ? (
                 <input
@@ -133,6 +163,29 @@ export const DocumentTabBar: React.FC<DocumentTabBarProps> = ({
                   title={`${TAB_KIND_LABEL[tab.kind]} — ${tab.name}`}
                   data-testid={`document-tab-${tab.id}`}
                   disabled={busy && !isActive}
+                  draggable={!locked}
+                  onDragStart={() => setDragId(tab.id)}
+                  onDragOver={(event) => {
+                    if (dragId && dragId !== tab.id) event.preventDefault();
+                  }}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    if (dragId && dragId !== tab.id) onMove(dragId, tabIndex);
+                    setDragId(null);
+                  }}
+                  onDragEnd={() => setDragId(null)}
+                  onKeyDown={(event) => {
+                    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight")
+                      return;
+                    event.preventDefault();
+                    const direction = event.key === "ArrowLeft" ? -1 : 1;
+                    if (event.altKey) {
+                      onMove(tab.id, tabIndex + direction);
+                      return;
+                    }
+                    const next = doc.tabs[tabIndex + direction];
+                    if (next) onSelect(next.id);
+                  }}
                   onClick={() => {
                     if (isActive) return;
                     onSelect(tab.id);
@@ -175,6 +228,11 @@ export const DocumentTabBar: React.FC<DocumentTabBarProps> = ({
             </div>
           );
         })}
+        {visibleTabs.length === 0 && (
+          <span className="flex items-center px-3 text-[11px] text-gray-500">
+            No tabs match
+          </span>
+        )}
       </div>
 
       {/* Rendered outside the scrolling tab strip so the menu is never clipped
@@ -292,6 +350,7 @@ const MenuItem: React.FC<{
 }> = ({ label, disabled, onClick }) => (
   <button
     role="menuitem"
+    aria-label={label}
     disabled={disabled}
     onClick={onClick}
     className={`w-full px-3 py-1.5 text-left ${

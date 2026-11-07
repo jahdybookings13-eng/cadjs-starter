@@ -9,6 +9,7 @@ import {
 import LoadingScreen from "./components/LoadingScreen";
 import SimpleCadScene from "./scenes/simpleCadScene";
 import { ToastProvider, useToast } from "./contexts/ToastContext";
+import { hydrateDocuments } from "./document";
 
 // cadjs auto-resolves the OpenCascade and planegcs WASM URLs from
 // node_modules. To override (CDN, custom path, exotic bundler), call
@@ -47,6 +48,7 @@ const AppLoader: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       await Promise.all([
         OccWorkerClient.getInstance().waitForReady(),
         SketchSolverService.getInstance().getGCS(),
+        hydrateDocuments(),
       ]);
       setState("ready");
     } catch (err) {

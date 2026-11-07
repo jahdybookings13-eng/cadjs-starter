@@ -124,6 +124,7 @@ const CoordinateEditor: FC<CoordinateEditorProps> = ({
         <input
           type="number"
           step="0.1"
+          aria-label={`${label} X`}
           className={inputCls}
           value={xStr}
           onChange={handleXChange}
@@ -137,6 +138,7 @@ const CoordinateEditor: FC<CoordinateEditorProps> = ({
         <input
           type="number"
           step="0.1"
+          aria-label={`${label} Y`}
           className={inputCls}
           value={yStr}
           onChange={handleYChange}
@@ -209,6 +211,7 @@ const RadiusEditor: FC<RadiusEditorProps> = ({
         type="number"
         step="0.1"
         min="0.001"
+        aria-label={`${label} radius`}
         className={inputCls}
         value={valStr}
         onChange={handleChange}

@@ -42,6 +42,7 @@ const ImageUnderlayModal: React.FC<ImageUnderlayModalProps> = ({
       <input
         type="number"
         step={step}
+        aria-label={label}
         value={selected[key] ?? 0}
         onChange={(event) =>
           onUpdate(selected.id, {

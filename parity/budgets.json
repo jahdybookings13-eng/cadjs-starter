@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "note": "Milliseconds are upper bounds; FPS is a lower bound. null means the surface does not exist yet.",
+  "browsers": {
+    "chromium": "full",
+    "firefox": "smoke",
+    "webkit": "smoke"
+  },
+  "viewports": [
+    { "name": "desktop", "width": 1440, "height": 900 },
+    { "name": "laptop", "width": 1280, "height": 800 }
+  ],
+  "budgets": {
+    "bootInteractiveMs": 12000,
+    "documentOpenMs": 8000,
+    "documentReloadMs": 15000,
+    "regenerateBoxMs": 5000,
+    "orbitFpsMin": 30,
+    "assemblyOpenMs": null
+  }
+}

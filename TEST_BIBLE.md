@@ -2,7 +2,7 @@
 
 Primary-function checklist for ScadGen.
 
-This is not a command sheet. The 590 passing automated checks (plus 4 skipped) are the regression net;
+This is not a command sheet. The 603 passing automated checks (plus 4 skipped) are the regression net;
 this file distils them into the **primary functions a person must confirm with
 their own eyes** before release. One line = one behaviour. Work top to bottom,
 one at a time, and mark it.
@@ -31,6 +31,11 @@ headset, it stays unchecked.
 - [ ] **A9** Undo and redo walk a multi-feature chain forwards and backwards without losing geometry.
 - [ ] **A10** The document tab bar creates a second Part Studio; each tab keeps its own bodies, and switching restores them.
 - [ ] **A11** Renaming, duplicating, reordering and deleting tabs works; the last tab cannot be deleted, and a reload reopens the same active tab with its geometry.
+- [ ] **A12** The Documents page creates, opens, renames, duplicates, exports, trashes and restores a local document; the change survives reload through IndexedDB.
+- [ ] **A13** A corrupt localStorage mirror is replaced from the good IndexedDB copy on reload instead of hiding the document.
+- [ ] **A14** A full or unavailable localStorage write shows a clear storage error and leaves the last good save intact.
+- [ ] **A15** A named snapshot survives reload and restores the document's geometry when applied.
+- [ ] **A16** Tab search filters the bar; Alt+Arrow reorders, drag reorder lands at the target, and panel multi-select duplicates the selected tabs.
 
 ## B — Viewport and navigation
 
@@ -298,6 +303,9 @@ headset, it stays unchecked.
 - [ ] **R6** The divider solve stays under 250 µs/tick, transistor+LED+cap under 400 µs/tick, AC sweep under 4 ms.
 - [ ] **R7** Chromium browser gates pass; Firefox and WebKit pass the boot/sketch/undo smoke set; flaky VR specs pass twice.
 - [ ] **R8** A cold load on the target headset reaches the viewport without a console crash.
+- [ ] **R9** `npm run check:controls` reports 255 visible controls, zero dead and zero unlabeled; adding a handler-less button makes it fail.
+- [ ] **R10** `npm run check:parity` reports 97 capability rows, all with an owner and acceptance evidence; an invalid status makes it fail.
+- [ ] **R11** `npx playwright test e2e/perf-budget.spec.ts --project=chromium` passes boot ≤12 s, document reload ≤15 s, box regeneration ≤5 s and orbit ≥30 fps.
 
 ---
 

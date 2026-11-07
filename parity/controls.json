@@ -1,0 +1,5717 @@
+{
+  "summary": {
+    "generatedAt": "2026-11-07T01:36:28.354Z",
+    "files": 66,
+    "controls": 295,
+    "byStatus": {
+      "wired": 295
+    },
+    "byFamily": {
+      "Sketch toolbar": 30,
+      "Print wizard": 26,
+      "Feature toolbar": 23,
+      "ECAD panel": 20,
+      "Other: DocumentsPage": 19,
+      "Collaboration": 14,
+      "Other: DocumentPanel": 13,
+      "Feature tree": 10,
+      "Feature dialog: RevolveMode": 10,
+      "Document tabs": 8,
+      "Document menu": 7,
+      "Other: DocumentToolbar": 6,
+      "Undo/redo": 6,
+      "Other: PlaneSelector": 5,
+      "Sketch properties": 5,
+      "Feature dialog: CombineMode": 5,
+      "Input dialog: ImageUnderlay": 5,
+      "Feature dialog: MeasureMode": 5,
+      "Input dialog: PathPatternInput": 5,
+      "Input dialog: PatternInput": 5,
+      "Feature dialog: SweepMode": 5,
+      "Mode panel: SketchMode": 5,
+      "Navigation": 4,
+      "Other: SketchContextMenu": 4,
+      "Input dialog: CircularPatternInput": 4,
+      "Input dialog: TextInput": 4,
+      "Input dialog: VectorInput": 4,
+      "Mode panel: MeasureMode": 4,
+      "Assembly panel": 3,
+      "Sharing": 3,
+      "Other: orchestratorView": 3,
+      "Feature dialog: LoftMode": 3,
+      "Other: NumberInput": 2,
+      "Command palette": 2,
+      "Viewer toolbar": 2,
+      "Other: chatPanel": 2,
+      "Feature dialog: ExtrudeMode": 2,
+      "Feature dialog: FilletMode": 2,
+      "Other: simpleCadScene": 2,
+      "Other: LoadingScreen": 1,
+      "Other: ModeInfoCard": 1,
+      "Selection": 1,
+      "Sketch help": 1,
+      "VR: VRButton": 1,
+      "Other: ToastContext": 1,
+      "Feature dialog: Constraint": 1,
+      "Input dialog: ValueInput": 1
+    },
+    "evidence": {
+      "direct": 8,
+      "any": 18,
+      "missing": 277
+    },
+    "dead": 0,
+    "unlabeled": 0,
+    "allowlisted": 0,
+    "staleAllowlist": 0
+  },
+  "controls": [
+    {
+      "file": "src/components/AssemblyPanel.tsx",
+      "line": 85,
+      "tag": "button",
+      "role": "",
+      "label": "+ Instance",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Assembly panel"
+    },
+    {
+      "file": "src/components/AssemblyPanel.tsx",
+      "line": 97,
+      "tag": "button",
+      "role": "",
+      "label": "+ Coincident mate ( → )",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Assembly panel"
+    },
+    {
+      "file": "src/components/AssemblyPanel.tsx",
+      "line": 111,
+      "tag": "button",
+      "role": "",
+      "label": "Solve &amp; Place",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Assembly panel"
+    },
+    {
+      "file": "src/components/BrowserContextMenu.tsx",
+      "line": 74,
+      "tag": "button",
+      "role": "",
+      "label": "Edit Sketch",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature tree"
+    },
+    {
+      "file": "src/components/BrowserContextMenu.tsx",
+      "line": 86,
+      "tag": "button",
+      "role": "",
+      "label": "Rename",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature tree"
+    },
+    {
+      "file": "src/components/BrowserContextMenu.tsx",
+      "line": 95,
+      "tag": "button",
+      "role": "",
+      "label": "Delete",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature tree"
+    },
+    {
+      "file": "src/components/BrowserContextMenu.tsx",
+      "line": 105,
+      "tag": "button",
+      "role": "",
+      "label": "nodeVisible ? \"Hide node\" : \"Show node\"",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature tree"
+    },
+    {
+      "file": "src/components/BrowserSidePanel.tsx",
+      "line": 45,
+      "tag": "button",
+      "role": "",
+      "label": "Show Browser",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature tree"
+    },
+    {
+      "file": "src/components/BrowserSidePanel.tsx",
+      "line": 68,
+      "tag": "button",
+      "role": "",
+      "label": "Collapse Browser",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature tree"
+    },
+    {
+      "file": "src/components/CollaborationPanel.tsx",
+      "line": 175,
+      "tag": "button",
+      "role": "",
+      "label": "Close collaboration panel",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Collaboration"
+    },
+    {
+      "file": "src/components/CollaborationPanel.tsx",
+      "line": 217,
+      "tag": "select",
+      "role": "",
+      "label": "Access for ${seat.name}",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Collaboration"
+    },
+    {
+      "file": "src/components/CollaborationPanel.tsx",
+      "line": 299,
+      "tag": "select",
+      "role": "",
+      "label": "Access for ${member.name}",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Collaboration"
+    },
+    {
+      "file": "src/components/CollaborationPanel.tsx",
+      "line": 349,
+      "tag": "input",
+      "role": "",
+      "label": "Dave, reviewing",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Collaboration"
+    },
+    {
+      "file": "src/components/CollaborationPanel.tsx",
+      "line": 358,
+      "tag": "select",
+      "role": "",
+      "label": "Share link permission",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Collaboration"
+    },
+    {
+      "file": "src/components/CollaborationPanel.tsx",
+      "line": 373,
+      "tag": "input",
+      "role": "",
+      "label": "Include VR gate in share link",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Collaboration"
+    },
+    {
+      "file": "src/components/CollaborationPanel.tsx",
+      "line": 385,
+      "tag": "button",
+      "role": "",
+      "label": "share-create-link",
+      "labelKind": "testid",
+      "testid": "share-create-link",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Collaboration"
+    },
+    {
+      "file": "src/components/CollaborationPanel.tsx",
+      "line": 393,
+      "tag": "button",
+      "role": "",
+      "label": "Copy share link",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Collaboration"
+    },
+    {
+      "file": "src/components/CollaborationPanel.tsx",
+      "line": 402,
+      "tag": "button",
+      "role": "",
+      "label": "Enter VR",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Collaboration"
+    },
+    {
+      "file": "src/components/CollaborationPanel.tsx",
+      "line": 411,
+      "tag": "input",
+      "role": "",
+      "label": "Generated share link",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onFocus",
+      "enabledRule": "",
+      "readOnly": true,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Collaboration"
+    },
+    {
+      "file": "src/components/CollaborationPanel.tsx",
+      "line": 437,
+      "tag": "button",
+      "role": "",
+      "label": "Revoke",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Collaboration"
+    },
+    {
+      "file": "src/components/CollaborationPanel.tsx",
+      "line": 470,
+      "tag": "textarea",
+      "role": "",
+      "label": "New project note",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Collaboration"
+    },
+    {
+      "file": "src/components/CollaborationPanel.tsx",
+      "line": 481,
+      "tag": "button",
+      "role": "",
+      "label": "Add note",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{!noteDraft.trim()}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Collaboration"
+    },
+    {
+      "file": "src/components/CollaborationPanel.tsx",
+      "line": 510,
+      "tag": "button",
+      "role": "",
+      "label": "Delete",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Collaboration"
+    },
+    {
+      "file": "src/components/DocumentPanel.tsx",
+      "line": 175,
+      "tag": "input",
+      "role": "",
+      "label": "Select ${tab.name}",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentPanel"
+    },
+    {
+      "file": "src/components/DocumentPanel.tsx",
+      "line": 182,
+      "tag": "button",
+      "role": "",
+      "label": "tab.name",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentPanel"
+    },
+    {
+      "file": "src/components/DocumentPanel.tsx",
+      "line": 190,
+      "tag": "button",
+      "role": "",
+      "label": "Move ${tab.name} left",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{index === 0}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentPanel"
+    },
+    {
+      "file": "src/components/DocumentPanel.tsx",
+      "line": 199,
+      "tag": "button",
+      "role": "",
+      "label": "Move ${tab.name} right",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{index === doc.tabs.length - 1}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentPanel"
+    },
+    {
+      "file": "src/components/DocumentPanel.tsx",
+      "line": 224,
+      "tag": "button",
+      "role": "",
+      "label": "Close document panel",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "aria",
+        "files": [
+          "e2e/document-tabs.spec.ts",
+          "e2e/documents-page.spec.ts"
+        ]
+      },
+      "family": "Other: DocumentPanel"
+    },
+    {
+      "file": "src/components/DocumentPanel.tsx",
+      "line": 238,
+      "tag": "input",
+      "role": "",
+      "label": "Document name",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "aria",
+        "files": [
+          "e2e/documents-page.spec.ts"
+        ]
+      },
+      "family": "Other: DocumentPanel"
+    },
+    {
+      "file": "src/components/DocumentPanel.tsx",
+      "line": 289,
+      "tag": "input",
+      "role": "",
+      "label": "Find tab",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentPanel"
+    },
+    {
+      "file": "src/components/DocumentPanel.tsx",
+      "line": 296,
+      "tag": "button",
+      "role": "",
+      "label": "Duplicate",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{selectedTabs.size === 0}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentPanel"
+    },
+    {
+      "file": "src/components/DocumentPanel.tsx",
+      "line": 304,
+      "tag": "button",
+      "role": "",
+      "label": "Delete",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{selectedTabs.size === 0}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentPanel"
+    },
+    {
+      "file": "src/components/DocumentPanel.tsx",
+      "line": 326,
+      "tag": "input",
+      "role": "",
+      "label": "Snapshot name",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "aria",
+        "files": [
+          "e2e/documents-page.spec.ts"
+        ]
+      },
+      "family": "Other: DocumentPanel"
+    },
+    {
+      "file": "src/components/DocumentPanel.tsx",
+      "line": 333,
+      "tag": "button",
+      "role": "",
+      "label": "Create",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentPanel"
+    },
+    {
+      "file": "src/components/DocumentPanel.tsx",
+      "line": 358,
+      "tag": "button",
+      "role": "",
+      "label": "Restore ${snapshot.name}",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentPanel"
+    },
+    {
+      "file": "src/components/DocumentPanel.tsx",
+      "line": 366,
+      "tag": "button",
+      "role": "",
+      "label": "Delete ${snapshot.name}",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentPanel"
+    },
+    {
+      "file": "src/components/DocumentTabBar.tsx",
+      "line": 106,
+      "tag": "input",
+      "role": "",
+      "label": "Search tabs",
+      "labelKind": "literal",
+      "testid": "document-tab-search",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "direct",
+        "files": [
+          "e2e/document-tabs.spec.ts"
+        ]
+      },
+      "family": "Document tabs"
+    },
+    {
+      "file": "src/components/DocumentTabBar.tsx",
+      "line": 115,
+      "tag": "button",
+      "role": "",
+      "label": "Clear tab search",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Document tabs"
+    },
+    {
+      "file": "src/components/DocumentTabBar.tsx",
+      "line": 144,
+      "tag": "input",
+      "role": "",
+      "label": "Rename ${tab.name}",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Document tabs"
+    },
+    {
+      "file": "src/components/DocumentTabBar.tsx",
+      "line": 160,
+      "tag": "button",
+      "role": "tab",
+      "label": "${TAB_KIND_LABEL[tab.kind]} — ${tab.name}",
+      "labelKind": "dynamic",
+      "testid": "document-tab-${tab.id}",
+      "handler": "onClick",
+      "enabledRule": "{busy && !isActive}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Document tabs"
+    },
+    {
+      "file": "src/components/DocumentTabBar.tsx",
+      "line": 213,
+      "tag": "button",
+      "role": "",
+      "label": "Tab actions for ${tab.name}",
+      "labelKind": "dynamic",
+      "testid": "document-tab-menu",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "direct",
+        "files": [
+          "e2e/document-tabs.spec.ts"
+        ]
+      },
+      "family": "Document tabs"
+    },
+    {
+      "file": "src/components/DocumentTabBar.tsx",
+      "line": 287,
+      "tag": "button",
+      "role": "",
+      "label": "Create tab",
+      "labelKind": "literal",
+      "testid": "document-tab-add",
+      "handler": "onClick",
+      "enabledRule": "{locked}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "direct",
+        "files": [
+          "e2e/document-tabs.spec.ts"
+        ]
+      },
+      "family": "Document tabs"
+    },
+    {
+      "file": "src/components/DocumentTabBar.tsx",
+      "line": 313,
+      "tag": "button",
+      "role": "menuitem",
+      "label": "enabled\n                      ? \"Create a Part Studio tab\"\n                      : `${TAB_KIND_LABEL[kind]} tabs are not implemented yet — see ONSHAPE_PARITY.md`",
+      "labelKind": "dynamic",
+      "testid": "document-tab-create-${kind}",
+      "handler": "onClick",
+      "enabledRule": "{!enabled}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Document tabs"
+    },
+    {
+      "file": "src/components/DocumentTabBar.tsx",
+      "line": 351,
+      "tag": "button",
+      "role": "menuitem",
+      "label": "label",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{disabled}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "aria",
+        "files": [
+          "src/components/vr/__tests__/paramPanelCanvas.test.ts"
+        ]
+      },
+      "family": "Document tabs"
+    },
+    {
+      "file": "src/components/DocumentToolbar.tsx",
+      "line": 40,
+      "tag": "button",
+      "role": "",
+      "label": "Open the local Documents page",
+      "labelKind": "literal",
+      "testid": "open-documents",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "direct",
+        "files": [
+          "e2e/documents-page.spec.ts"
+        ]
+      },
+      "family": "Other: DocumentToolbar"
+    },
+    {
+      "file": "src/components/DocumentToolbar.tsx",
+      "line": 68,
+      "tag": "button",
+      "role": "",
+      "label": "document-save",
+      "labelKind": "testid",
+      "testid": "document-save",
+      "handler": "onClick",
+      "enabledRule": "{!canEdit || saving}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentToolbar"
+    },
+    {
+      "file": "src/components/DocumentToolbar.tsx",
+      "line": 77,
+      "tag": "button",
+      "role": "",
+      "label": "document-export",
+      "labelKind": "testid",
+      "testid": "document-export",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentToolbar"
+    },
+    {
+      "file": "src/components/DocumentToolbar.tsx",
+      "line": 85,
+      "tag": "button",
+      "role": "",
+      "label": "document-panel-toggle",
+      "labelKind": "testid",
+      "testid": "document-panel-toggle",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "direct",
+        "files": [
+          "e2e/document-tabs.spec.ts",
+          "e2e/documents-page.spec.ts"
+        ]
+      },
+      "family": "Other: DocumentToolbar"
+    },
+    {
+      "file": "src/components/DocumentToolbar.tsx",
+      "line": 94,
+      "tag": "button",
+      "role": "",
+      "label": "document-help",
+      "labelKind": "testid",
+      "testid": "document-help",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentToolbar"
+    },
+    {
+      "file": "src/components/DocumentToolbar.tsx",
+      "line": 102,
+      "tag": "button",
+      "role": "",
+      "label": "Toggle perspective / orthographic",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentToolbar"
+    },
+    {
+      "file": "src/components/DocumentsPage.tsx",
+      "line": 299,
+      "tag": "button",
+      "role": "",
+      "label": "trashed ? `${doc.name} is in trash` : `Open ${doc.name}`",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{trashed}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentsPage"
+    },
+    {
+      "file": "src/components/DocumentsPage.tsx",
+      "line": 350,
+      "tag": "button",
+      "role": "",
+      "label": "Open",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentsPage"
+    },
+    {
+      "file": "src/components/DocumentsPage.tsx",
+      "line": 360,
+      "tag": "button",
+      "role": "",
+      "label": "Restore",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentsPage"
+    },
+    {
+      "file": "src/components/DocumentsPage.tsx",
+      "line": 367,
+      "tag": "button",
+      "role": "",
+      "label": "Delete forever",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentsPage"
+    },
+    {
+      "file": "src/components/DocumentsPage.tsx",
+      "line": 377,
+      "tag": "button",
+      "role": "",
+      "label": "Rename",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentsPage"
+    },
+    {
+      "file": "src/components/DocumentsPage.tsx",
+      "line": 386,
+      "tag": "button",
+      "role": "",
+      "label": "Duplicate",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentsPage"
+    },
+    {
+      "file": "src/components/DocumentsPage.tsx",
+      "line": 393,
+      "tag": "button",
+      "role": "",
+      "label": "Export",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentsPage"
+    },
+    {
+      "file": "src/components/DocumentsPage.tsx",
+      "line": 400,
+      "tag": "button",
+      "role": "",
+      "label": "Delete",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentsPage"
+    },
+    {
+      "file": "src/components/DocumentsPage.tsx",
+      "line": 429,
+      "tag": "button",
+      "role": "",
+      "label": "← Back to editor",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentsPage"
+    },
+    {
+      "file": "src/components/DocumentsPage.tsx",
+      "line": 439,
+      "tag": "button",
+      "role": "",
+      "label": "documents-new",
+      "labelKind": "testid",
+      "testid": "documents-new",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "direct",
+        "files": [
+          "e2e/documents-page.spec.ts"
+        ]
+      },
+      "family": "Other: DocumentsPage"
+    },
+    {
+      "file": "src/components/DocumentsPage.tsx",
+      "line": 447,
+      "tag": "button",
+      "role": "",
+      "label": "documents-import",
+      "labelKind": "testid",
+      "testid": "documents-import",
+      "handler": "onClick",
+      "enabledRule": "{importing}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentsPage"
+    },
+    {
+      "file": "src/components/DocumentsPage.tsx",
+      "line": 470,
+      "tag": "input",
+      "role": "",
+      "label": "Search documents",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "aria",
+        "files": [
+          "e2e/documents-page.spec.ts"
+        ]
+      },
+      "family": "Other: DocumentsPage"
+    },
+    {
+      "file": "src/components/DocumentsPage.tsx",
+      "line": 479,
+      "tag": "button",
+      "role": "",
+      "label": "Show ${SCOPE_LABEL[value]}",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentsPage"
+    },
+    {
+      "file": "src/components/DocumentsPage.tsx",
+      "line": 495,
+      "tag": "select",
+      "role": "",
+      "label": "Filter by tab kind",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentsPage"
+    },
+    {
+      "file": "src/components/DocumentsPage.tsx",
+      "line": 510,
+      "tag": "select",
+      "role": "",
+      "label": "Sort documents",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentsPage"
+    },
+    {
+      "file": "src/components/DocumentsPage.tsx",
+      "line": 522,
+      "tag": "button",
+      "role": "",
+      "label": "${value} view",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentsPage"
+    },
+    {
+      "file": "src/components/DocumentsPage.tsx",
+      "line": 581,
+      "tag": "input",
+      "role": "",
+      "label": "Document name",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "aria",
+        "files": [
+          "e2e/documents-page.spec.ts"
+        ]
+      },
+      "family": "Other: DocumentsPage"
+    },
+    {
+      "file": "src/components/DocumentsPage.tsx",
+      "line": 595,
+      "tag": "button",
+      "role": "",
+      "label": "Cancel",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentsPage"
+    },
+    {
+      "file": "src/components/DocumentsPage.tsx",
+      "line": 602,
+      "tag": "button",
+      "role": "",
+      "label": "dialog.mode === \"create\"\n                    ? \"Create document\"\n                    : \"Rename document\"",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: DocumentsPage"
+    },
+    {
+      "file": "src/components/EcadPanel.tsx",
+      "line": 191,
+      "tag": "button",
+      "role": "",
+      "label": "ECAD ${t} tab",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "ECAD panel"
+    },
+    {
+      "file": "src/components/EcadPanel.tsx",
+      "line": 200,
+      "tag": "button",
+      "role": "",
+      "label": "Close ECAD panel",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "ECAD panel"
+    },
+    {
+      "file": "src/components/EcadPanel.tsx",
+      "line": 223,
+      "tag": "button",
+      "role": "",
+      "label": "\"mcu\" in p ? p.mcu : p.name",
+      "labelKind": "dynamic",
+      "testid": "ecad-add-${p.id}",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "ECAD panel"
+    },
+    {
+      "file": "src/components/EcadPanel.tsx",
+      "line": 246,
+      "tag": "button",
+      "role": "",
+      "label": "Select ${row.name ?? row.part}",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "ECAD panel"
+    },
+    {
+      "file": "src/components/EcadPanel.tsx",
+      "line": 256,
+      "tag": "button",
+      "role": "",
+      "label": "Remove ${row.name ?? row.part}",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "ECAD panel"
+    },
+    {
+      "file": "src/components/EcadPanel.tsx",
+      "line": 276,
+      "tag": "input",
+      "role": "",
+      "label": "b1.13",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "ECAD panel"
+    },
+    {
+      "file": "src/components/EcadPanel.tsx",
+      "line": 283,
+      "tag": "input",
+      "role": "",
+      "label": "p2.A",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "ECAD panel"
+    },
+    {
+      "file": "src/components/EcadPanel.tsx",
+      "line": 289,
+      "tag": "button",
+      "role": "",
+      "label": "wire",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "ECAD panel"
+    },
+    {
+      "file": "src/components/EcadPanel.tsx",
+      "line": 320,
+      "tag": "button",
+      "role": "",
+      "label": "press",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "ECAD panel"
+    },
+    {
+      "file": "src/components/EcadPanel.tsx",
+      "line": 328,
+      "tag": "button",
+      "role": "",
+      "label": "release",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "ECAD panel"
+    },
+    {
+      "file": "src/components/EcadPanel.tsx",
+      "line": 336,
+      "tag": "button",
+      "role": "",
+      "label": "pot 50%",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "ECAD panel"
+    },
+    {
+      "file": "src/components/EcadPanel.tsx",
+      "line": 359,
+      "tag": "select",
+      "role": "",
+      "label": "ecad-fw-select",
+      "labelKind": "testid",
+      "testid": "ecad-fw-select",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "ECAD panel"
+    },
+    {
+      "file": "src/components/EcadPanel.tsx",
+      "line": 374,
+      "tag": "button",
+      "role": "",
+      "label": "deploy",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "ECAD panel"
+    },
+    {
+      "file": "src/components/EcadPanel.tsx",
+      "line": 461,
+      "tag": "button",
+      "role": "",
+      "label": "Compile this sketch as Arduino C++ to AVR machine code in the browser (ATmega328P)",
+      "labelKind": "literal",
+      "testid": "ecad-build-cpp",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "ATmega328P",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "ECAD panel"
+    },
+    {
+      "file": "src/components/EcadPanel.tsx",
+      "line": 471,
+      "tag": "button",
+      "role": "",
+      "label": "Load a C++ blink sketch",
+      "labelKind": "literal",
+      "testid": "ecad-cpp-example",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "ECAD panel"
+    },
+    {
+      "file": "src/components/EcadPanel.tsx",
+      "line": 486,
+      "tag": "textarea",
+      "role": "",
+      "label": "ecad-code",
+      "labelKind": "testid",
+      "testid": "ecad-code",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "ECAD panel"
+    },
+    {
+      "file": "src/components/EcadPanel.tsx",
+      "line": 505,
+      "tag": "button",
+      "role": "",
+      "label": "ecad-run",
+      "labelKind": "testid",
+      "testid": "ecad-run",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "ECAD panel"
+    },
+    {
+      "file": "src/components/EcadPanel.tsx",
+      "line": 526,
+      "tag": "button",
+      "role": "",
+      "label": "ecad-stop",
+      "labelKind": "testid",
+      "testid": "ecad-stop",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "ECAD panel"
+    },
+    {
+      "file": "src/components/EcadPanel.tsx",
+      "line": 536,
+      "tag": "button",
+      "role": "",
+      "label": "Check this firmware against the board, its pins and the wiring",
+      "labelKind": "literal",
+      "testid": "ecad-validate",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "ECAD panel"
+    },
+    {
+      "file": "src/components/EcadPanel.tsx",
+      "line": 601,
+      "tag": "button",
+      "role": "",
+      "label": "clear",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "ECAD panel"
+    },
+    {
+      "file": "src/components/FeatureTree.tsx",
+      "line": 108,
+      "tag": "input",
+      "role": "",
+      "label": "Rename feature",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature tree"
+    },
+    {
+      "file": "src/components/FeatureTree.tsx",
+      "line": 214,
+      "tag": "button",
+      "role": "",
+      "label": "hasChildren ? \"Toggle children\" : \"No children\"",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature tree"
+    },
+    {
+      "file": "src/components/FeatureTree.tsx",
+      "line": 259,
+      "tag": "button",
+      "role": "",
+      "label": "item.visible ? \"Hide\" : \"Show\"",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature tree"
+    },
+    {
+      "file": "src/components/FeatureTree.tsx",
+      "line": 308,
+      "tag": "button",
+      "role": "",
+      "label": "section.label",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature tree"
+    },
+    {
+      "file": "src/components/FileMenu.tsx",
+      "line": 132,
+      "tag": "button",
+      "role": "",
+      "label": "File menu",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{loading || isLocked}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Document menu"
+    },
+    {
+      "file": "src/components/FileMenu.tsx",
+      "line": 161,
+      "tag": "button",
+      "role": "",
+      "label": "Open Project (.cadjs.json)...",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Document menu"
+    },
+    {
+      "file": "src/components/FileMenu.tsx",
+      "line": 167,
+      "tag": "button",
+      "role": "",
+      "label": "Save Project (.cadjs.json)",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{!hasProjectContent}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Document menu"
+    },
+    {
+      "file": "src/components/FileMenu.tsx",
+      "line": 179,
+      "tag": "button",
+      "role": "",
+      "label": "STEP geometry only — colors and assembly tree are not preserved",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Document menu"
+    },
+    {
+      "file": "src/components/FileMenu.tsx",
+      "line": 186,
+      "tag": "button",
+      "role": "",
+      "label": "STEP geometry only — colors and assembly tree are not preserved",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{!hasElements}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Document menu"
+    },
+    {
+      "file": "src/components/FileMenu.tsx",
+      "line": 199,
+      "tag": "button",
+      "role": "",
+      "label": "Import STL...",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Document menu"
+    },
+    {
+      "file": "src/components/FileMenu.tsx",
+      "line": 205,
+      "tag": "button",
+      "role": "",
+      "label": "Export STL (.stl)",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{!hasElements}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Document menu"
+    },
+    {
+      "file": "src/components/LoadingScreen.tsx",
+      "line": 17,
+      "tag": "button",
+      "role": "",
+      "label": "Retry",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: LoadingScreen"
+    },
+    {
+      "file": "src/components/ModeInfoCard.tsx",
+      "line": 166,
+      "tag": "button",
+      "role": "",
+      "label": "Dismiss",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: ModeInfoCard"
+    },
+    {
+      "file": "src/components/NavigationBar.tsx",
+      "line": 103,
+      "tag": "button",
+      "role": "",
+      "label": "Orbit (Alt+Left-click)",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "Alt+Left-click",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Navigation"
+    },
+    {
+      "file": "src/components/NavigationBar.tsx",
+      "line": 110,
+      "tag": "button",
+      "role": "",
+      "label": "Pan",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Navigation"
+    },
+    {
+      "file": "src/components/NavigationBar.tsx",
+      "line": 117,
+      "tag": "button",
+      "role": "",
+      "label": "Zoom",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Navigation"
+    },
+    {
+      "file": "src/components/NavigationBar.tsx",
+      "line": 125,
+      "tag": "button",
+      "role": "",
+      "label": "Fit All (F)",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "F",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Navigation"
+    },
+    {
+      "file": "src/components/NumberInput.tsx",
+      "line": 128,
+      "tag": "input",
+      "role": "",
+      "label": "error ?? undefined",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: NumberInput"
+    },
+    {
+      "file": "src/components/NumberInput.tsx",
+      "line": 140,
+      "tag": "button",
+      "role": "",
+      "label": "confirmLabel",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: NumberInput"
+    },
+    {
+      "file": "src/components/PlaneSelector.tsx",
+      "line": 291,
+      "tag": "input",
+      "role": "",
+      "label": "0",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: PlaneSelector"
+    },
+    {
+      "file": "src/components/PlaneSelector.tsx",
+      "line": 303,
+      "tag": "button",
+      "role": "",
+      "label": "Top (XY)",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: PlaneSelector"
+    },
+    {
+      "file": "src/components/PlaneSelector.tsx",
+      "line": 309,
+      "tag": "button",
+      "role": "",
+      "label": "Front (XZ)",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: PlaneSelector"
+    },
+    {
+      "file": "src/components/PlaneSelector.tsx",
+      "line": 315,
+      "tag": "button",
+      "role": "",
+      "label": "Right (YZ)",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: PlaneSelector"
+    },
+    {
+      "file": "src/components/PlaneSelector.tsx",
+      "line": 324,
+      "tag": "button",
+      "role": "",
+      "label": "Cancel (Esc)",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: PlaneSelector"
+    },
+    {
+      "file": "src/components/PrimaryToolbar.tsx",
+      "line": 236,
+      "tag": "button",
+      "role": "",
+      "label": "Fasteners",
+      "labelKind": "literal",
+      "testid": "tool-fasteners",
+      "handler": "onClick",
+      "enabledRule": "{isLocked}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature toolbar"
+    },
+    {
+      "file": "src/components/PrimaryToolbar.tsx",
+      "line": 252,
+      "tag": "select",
+      "role": "",
+      "label": "Fastener family",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature toolbar"
+    },
+    {
+      "file": "src/components/PrimaryToolbar.tsx",
+      "line": 265,
+      "tag": "select",
+      "role": "",
+      "label": "Fastener standard",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature toolbar"
+    },
+    {
+      "file": "src/components/PrimaryToolbar.tsx",
+      "line": 278,
+      "tag": "select",
+      "role": "",
+      "label": "Fastener size",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature toolbar"
+    },
+    {
+      "file": "src/components/PrimaryToolbar.tsx",
+      "line": 296,
+      "tag": "select",
+      "role": "",
+      "label": "Fastener head",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature toolbar"
+    },
+    {
+      "file": "src/components/PrimaryToolbar.tsx",
+      "line": 314,
+      "tag": "select",
+      "role": "",
+      "label": "Fastener tip",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature toolbar"
+    },
+    {
+      "file": "src/components/PrimaryToolbar.tsx",
+      "line": 332,
+      "tag": "button",
+      "role": "",
+      "label": "fastener-confirm",
+      "labelKind": "testid",
+      "testid": "fastener-confirm",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature toolbar"
+    },
+    {
+      "file": "src/components/PrimaryToolbar.tsx",
+      "line": 391,
+      "tag": "button",
+      "role": "",
+      "label": "tool-share",
+      "labelKind": "testid",
+      "testid": "tool-share",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature toolbar"
+    },
+    {
+      "file": "src/components/PrimaryToolbar.tsx",
+      "line": 402,
+      "tag": "button",
+      "role": "",
+      "label": "tool-sketch",
+      "labelKind": "testid",
+      "testid": "tool-sketch",
+      "handler": "onClick",
+      "enabledRule": "{isOperationPending}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "direct",
+        "files": [
+          "e2e/extrude-profile.spec.ts",
+          "e2e/sketch-controls.spec.ts",
+          "e2e/sketch-rectangle.spec.ts",
+          "e2e/undo-chain.spec.ts"
+        ]
+      },
+      "family": "Feature toolbar"
+    },
+    {
+      "file": "src/components/PrimaryToolbar.tsx",
+      "line": 416,
+      "tag": "button",
+      "role": "",
+      "label": "tool-extrude",
+      "labelKind": "testid",
+      "testid": "tool-extrude",
+      "handler": "onClick",
+      "enabledRule": "{isLocked}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "direct",
+        "files": [
+          "e2e/extrude-profile.spec.ts"
+        ]
+      },
+      "family": "Feature toolbar"
+    },
+    {
+      "file": "src/components/PrimaryToolbar.tsx",
+      "line": 430,
+      "tag": "button",
+      "role": "",
+      "label": "Move",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{isLocked}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature toolbar"
+    },
+    {
+      "file": "src/components/PrimaryToolbar.tsx",
+      "line": 453,
+      "tag": "button",
+      "role": "",
+      "label": "tool-combine",
+      "labelKind": "testid",
+      "testid": "tool-combine",
+      "handler": "onClick",
+      "enabledRule": "{isLocked}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature toolbar"
+    },
+    {
+      "file": "src/components/PrimaryToolbar.tsx",
+      "line": 468,
+      "tag": "button",
+      "role": "",
+      "label": "Fillet",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{isLocked}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature toolbar"
+    },
+    {
+      "file": "src/components/PrimaryToolbar.tsx",
+      "line": 481,
+      "tag": "button",
+      "role": "",
+      "label": "Sweep",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{isLocked}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature toolbar"
+    },
+    {
+      "file": "src/components/PrimaryToolbar.tsx",
+      "line": 494,
+      "tag": "button",
+      "role": "",
+      "label": "Loft",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{isLocked}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature toolbar"
+    },
+    {
+      "file": "src/components/PrimaryToolbar.tsx",
+      "line": 507,
+      "tag": "button",
+      "role": "",
+      "label": "Revolve",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{isLocked}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature toolbar"
+    },
+    {
+      "file": "src/components/PrimaryToolbar.tsx",
+      "line": 523,
+      "tag": "button",
+      "role": "",
+      "label": "Measure",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{isLocked}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature toolbar"
+    },
+    {
+      "file": "src/components/PrimaryToolbar.tsx",
+      "line": 539,
+      "tag": "button",
+      "role": "",
+      "label": "showGroundPlane ? \"Hide Grid\" : \"Show Grid\"",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature toolbar"
+    },
+    {
+      "file": "src/components/PrimaryToolbar.tsx",
+      "line": 563,
+      "tag": "button",
+      "role": "",
+      "label": "Fit All (F)",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "F",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature toolbar"
+    },
+    {
+      "file": "src/components/PrimaryToolbar.tsx",
+      "line": 586,
+      "tag": "button",
+      "role": "",
+      "label": "More tools",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature toolbar"
+    },
+    {
+      "file": "src/components/PrimaryToolbar.tsx",
+      "line": 608,
+      "tag": "button",
+      "role": "",
+      "label": "item.label",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{isLocked}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature toolbar"
+    },
+    {
+      "file": "src/components/PrimaryToolbar.tsx",
+      "line": 628,
+      "tag": "button",
+      "role": "",
+      "label": "showGroundPlane ? \"Hide grid\" : \"Show grid\"",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature toolbar"
+    },
+    {
+      "file": "src/components/PrimaryToolbar.tsx",
+      "line": 640,
+      "tag": "button",
+      "role": "",
+      "label": "Fit All",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature toolbar"
+    },
+    {
+      "file": "src/components/PrintWizard.tsx",
+      "line": 81,
+      "tag": "input",
+      "role": "",
+      "label": "label",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "aria",
+        "files": [
+          "src/components/vr/__tests__/paramPanelCanvas.test.ts"
+        ]
+      },
+      "family": "Print wizard"
+    },
+    {
+      "file": "src/components/PrintWizard.tsx",
+      "line": 538,
+      "tag": "select",
+      "role": "",
+      "label": "Support: none Support: normal Support: organic Support: tree",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Print wizard"
+    },
+    {
+      "file": "src/components/PrintWizard.tsx",
+      "line": 549,
+      "tag": "button",
+      "role": "",
+      "label": "Save",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Print wizard"
+    },
+    {
+      "file": "src/components/PrintWizard.tsx",
+      "line": 555,
+      "tag": "button",
+      "role": "",
+      "label": "Cancel",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Print wizard"
+    },
+    {
+      "file": "src/components/PrintWizard.tsx",
+      "line": 576,
+      "tag": "button",
+      "role": "",
+      "label": "Close",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Print wizard"
+    },
+    {
+      "file": "src/components/PrintWizard.tsx",
+      "line": 609,
+      "tag": "select",
+      "role": "",
+      "label": "Printer kind",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Print wizard"
+    },
+    {
+      "file": "src/components/PrintWizard.tsx",
+      "line": 626,
+      "tag": "input",
+      "role": "",
+      "label": "Printer IP or URL",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Print wizard"
+    },
+    {
+      "file": "src/components/PrintWizard.tsx",
+      "line": 637,
+      "tag": "input",
+      "role": "",
+      "label": "Printer API key",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Print wizard"
+    },
+    {
+      "file": "src/components/PrintWizard.tsx",
+      "line": 647,
+      "tag": "button",
+      "role": "",
+      "label": "Detect",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{busy}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Print wizard"
+    },
+    {
+      "file": "src/components/PrintWizard.tsx",
+      "line": 664,
+      "tag": "select",
+      "role": "",
+      "label": "Printer profile",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Print wizard"
+    },
+    {
+      "file": "src/components/PrintWizard.tsx",
+      "line": 681,
+      "tag": "button",
+      "role": "",
+      "label": "Edit",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{!state.profile && profileList.length === 0}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Print wizard"
+    },
+    {
+      "file": "src/components/PrintWizard.tsx",
+      "line": 692,
+      "tag": "button",
+      "role": "",
+      "label": "Reset",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Print wizard"
+    },
+    {
+      "file": "src/components/PrintWizard.tsx",
+      "line": 700,
+      "tag": "button",
+      "role": "",
+      "label": "Next →",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{busy || (!state.profile && profileList.length === 0)}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Print wizard"
+    },
+    {
+      "file": "src/components/PrintWizard.tsx",
+      "line": 717,
+      "tag": "select",
+      "role": "",
+      "label": "Slicer",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Print wizard"
+    },
+    {
+      "file": "src/components/PrintWizard.tsx",
+      "line": 745,
+      "tag": "button",
+      "role": "",
+      "label": "Slice",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{busy || slicerBusy}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Print wizard"
+    },
+    {
+      "file": "src/components/PrintWizard.tsx",
+      "line": 762,
+      "tag": "button",
+      "role": "",
+      "label": "Upload",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{busy}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Print wizard"
+    },
+    {
+      "file": "src/components/PrintWizard.tsx",
+      "line": 769,
+      "tag": "button",
+      "role": "",
+      "label": "Download .gcode",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Print wizard"
+    },
+    {
+      "file": "src/components/PrintWizard.tsx",
+      "line": 784,
+      "tag": "button",
+      "role": "",
+      "label": "Start print",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{busy}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Print wizard"
+    },
+    {
+      "file": "src/components/PrintWizard.tsx",
+      "line": 791,
+      "tag": "button",
+      "role": "",
+      "label": "Download .gcode",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Print wizard"
+    },
+    {
+      "file": "src/components/PrintWizard.tsx",
+      "line": 824,
+      "tag": "button",
+      "role": "",
+      "label": "Pause",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{busy}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Print wizard"
+    },
+    {
+      "file": "src/components/PrintWizard.tsx",
+      "line": 831,
+      "tag": "button",
+      "role": "",
+      "label": "Resume",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{busy}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Print wizard"
+    },
+    {
+      "file": "src/components/PrintWizard.tsx",
+      "line": 838,
+      "tag": "button",
+      "role": "",
+      "label": "Cancel",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{busy}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Print wizard"
+    },
+    {
+      "file": "src/components/PrintWizard.tsx",
+      "line": 854,
+      "tag": "button",
+      "role": "",
+      "label": "Download .gcode",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Print wizard"
+    },
+    {
+      "file": "src/components/PrintWizard.tsx",
+      "line": 860,
+      "tag": "button",
+      "role": "",
+      "label": "Close",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Print wizard"
+    },
+    {
+      "file": "src/components/PrintWizard.tsx",
+      "line": 877,
+      "tag": "button",
+      "role": "",
+      "label": "Close",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Print wizard"
+    },
+    {
+      "file": "src/components/PrintWizard.tsx",
+      "line": 890,
+      "tag": "button",
+      "role": "",
+      "label": "Close",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Print wizard"
+    },
+    {
+      "file": "src/components/SelectOtherMenu.tsx",
+      "line": 88,
+      "tag": "button",
+      "role": "",
+      "label": "item.label",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Selection"
+    },
+    {
+      "file": "src/components/ShareGate.tsx",
+      "line": 48,
+      "tag": "button",
+      "role": "",
+      "label": "Open my project",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sharing"
+    },
+    {
+      "file": "src/components/ShareGate.tsx",
+      "line": 95,
+      "tag": "button",
+      "role": "",
+      "label": "Continue in 2D",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sharing"
+    },
+    {
+      "file": "src/components/ShareGate.tsx",
+      "line": 102,
+      "tag": "button",
+      "role": "",
+      "label": "share-enter-vr",
+      "labelKind": "testid",
+      "testid": "share-enter-vr",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sharing"
+    },
+    {
+      "file": "src/components/SketchCommandPalette.tsx",
+      "line": 109,
+      "tag": "input",
+      "role": "",
+      "label": "Search sketch commands",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Command palette"
+    },
+    {
+      "file": "src/components/SketchCommandPalette.tsx",
+      "line": 164,
+      "tag": "button",
+      "role": "option",
+      "label": "state.reason",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Command palette"
+    },
+    {
+      "file": "src/components/SketchContextMenu.tsx",
+      "line": 231,
+      "tag": "button",
+      "role": "",
+      "label": "Delete Constraint",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: SketchContextMenu"
+    },
+    {
+      "file": "src/components/SketchContextMenu.tsx",
+      "line": 268,
+      "tag": "button",
+      "role": "",
+      "label": "Fix/Unfix Point",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: SketchContextMenu"
+    },
+    {
+      "file": "src/components/SketchContextMenu.tsx",
+      "line": 280,
+      "tag": "button",
+      "role": "",
+      "label": "option.label",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: SketchContextMenu"
+    },
+    {
+      "file": "src/components/SketchContextMenu.tsx",
+      "line": 298,
+      "tag": "button",
+      "role": "",
+      "label": "Delete Del",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: SketchContextMenu"
+    },
+    {
+      "file": "src/components/SketchControlsHelp.tsx",
+      "line": 68,
+      "tag": "button",
+      "role": "",
+      "label": "Close controls",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch help"
+    },
+    {
+      "file": "src/components/SketchPropertiesPanel.tsx",
+      "line": 124,
+      "tag": "input",
+      "role": "",
+      "label": "${label} X",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch properties"
+    },
+    {
+      "file": "src/components/SketchPropertiesPanel.tsx",
+      "line": 138,
+      "tag": "input",
+      "role": "",
+      "label": "${label} Y",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch properties"
+    },
+    {
+      "file": "src/components/SketchPropertiesPanel.tsx",
+      "line": 210,
+      "tag": "input",
+      "role": "",
+      "label": "${label} radius",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch properties"
+    },
+    {
+      "file": "src/components/SketchPropertiesSidePanel.tsx",
+      "line": 42,
+      "tag": "button",
+      "role": "",
+      "label": "Show Properties",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch properties"
+    },
+    {
+      "file": "src/components/SketchPropertiesSidePanel.tsx",
+      "line": 65,
+      "tag": "button",
+      "role": "",
+      "label": "Close Properties",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch properties"
+    },
+    {
+      "file": "src/components/UndoRedoMenus.tsx",
+      "line": 81,
+      "tag": "button",
+      "role": "",
+      "label": "undoTitle",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{!effectiveCanUndo}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Undo/redo"
+    },
+    {
+      "file": "src/components/UndoRedoMenus.tsx",
+      "line": 109,
+      "tag": "button",
+      "role": "",
+      "label": "Undo history",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{!canUndo}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Undo/redo"
+    },
+    {
+      "file": "src/components/UndoRedoMenus.tsx",
+      "line": 141,
+      "tag": "button",
+      "role": "",
+      "label": "Undo to ${snapshot.actionName}",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Undo/redo"
+    },
+    {
+      "file": "src/components/UndoRedoMenus.tsx",
+      "line": 162,
+      "tag": "button",
+      "role": "",
+      "label": "redoTitle",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{!effectiveCanRedo}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Undo/redo"
+    },
+    {
+      "file": "src/components/UndoRedoMenus.tsx",
+      "line": 190,
+      "tag": "button",
+      "role": "",
+      "label": "Redo history",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{!canRedo}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Undo/redo"
+    },
+    {
+      "file": "src/components/UndoRedoMenus.tsx",
+      "line": 222,
+      "tag": "button",
+      "role": "",
+      "label": "Redo to ${snapshot.actionName}",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Undo/redo"
+    },
+    {
+      "file": "src/components/ViewerToolbar.tsx",
+      "line": 36,
+      "tag": "button",
+      "role": "",
+      "label": "Fit",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Viewer toolbar"
+    },
+    {
+      "file": "src/components/ViewerToolbar.tsx",
+      "line": 42,
+      "tag": "button",
+      "role": "",
+      "label": "tool-share",
+      "labelKind": "testid",
+      "testid": "tool-share",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Viewer toolbar"
+    },
+    {
+      "file": "src/components/vr/VRButton.tsx",
+      "line": 17,
+      "tag": "button",
+      "role": "",
+      "label": "vrSupported ? (inVR ? \"Exit VR\" : \"Enter VR\") : \"WebXR not detected\"",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "VR: VRButton"
+    },
+    {
+      "file": "src/contexts/ToastContext.tsx",
+      "line": 97,
+      "tag": "button",
+      "role": "",
+      "label": "&times;",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: ToastContext"
+    },
+    {
+      "file": "src/flux/ui/chatPanel.tsx",
+      "line": 182,
+      "tag": "input",
+      "role": "",
+      "label": "ask the orchestrator…",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "{busy}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: chatPanel"
+    },
+    {
+      "file": "src/flux/ui/chatPanel.tsx",
+      "line": 195,
+      "tag": "button",
+      "role": "",
+      "label": "Send message",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{busy || !input.trim()}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: chatPanel"
+    },
+    {
+      "file": "src/flux/ui/orchestratorView.tsx",
+      "line": 76,
+      "tag": "button",
+      "role": "",
+      "label": "Open the flux action menu",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: orchestratorView"
+    },
+    {
+      "file": "src/flux/ui/orchestratorView.tsx",
+      "line": 105,
+      "tag": "button",
+      "role": "",
+      "label": "a.desc",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: orchestratorView"
+    },
+    {
+      "file": "src/flux/ui/orchestratorView.tsx",
+      "line": 128,
+      "tag": "button",
+      "role": "",
+      "label": "humanSubmenu(name)",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "name",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: orchestratorView"
+    },
+    {
+      "file": "src/navbar/CircularPatternInputModal.tsx",
+      "line": 64,
+      "tag": "input",
+      "role": "",
+      "label": "Circular pattern count",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Input dialog: CircularPatternInput"
+    },
+    {
+      "file": "src/navbar/CircularPatternInputModal.tsx",
+      "line": 76,
+      "tag": "input",
+      "role": "",
+      "label": "Circular pattern angle",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Input dialog: CircularPatternInput"
+    },
+    {
+      "file": "src/navbar/CircularPatternInputModal.tsx",
+      "line": 85,
+      "tag": "button",
+      "role": "",
+      "label": "OK",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Input dialog: CircularPatternInput"
+    },
+    {
+      "file": "src/navbar/CircularPatternInputModal.tsx",
+      "line": 91,
+      "tag": "button",
+      "role": "",
+      "label": "Cancel",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Input dialog: CircularPatternInput"
+    },
+    {
+      "file": "src/navbar/CombineModePanel.tsx",
+      "line": 27,
+      "tag": "button",
+      "role": "",
+      "label": "Join",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: CombineMode"
+    },
+    {
+      "file": "src/navbar/CombineModePanel.tsx",
+      "line": 37,
+      "tag": "button",
+      "role": "",
+      "label": "Cut",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: CombineMode"
+    },
+    {
+      "file": "src/navbar/CombineModePanel.tsx",
+      "line": 47,
+      "tag": "button",
+      "role": "",
+      "label": "Intersect",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: CombineMode"
+    },
+    {
+      "file": "src/navbar/CombineModePanel.tsx",
+      "line": 67,
+      "tag": "input",
+      "role": "",
+      "label": "Keep combine tools",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: CombineMode"
+    },
+    {
+      "file": "src/navbar/CombineModePanel.tsx",
+      "line": 78,
+      "tag": "button",
+      "role": "",
+      "label": "()",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: CombineMode"
+    },
+    {
+      "file": "src/navbar/ConstraintPanel.tsx",
+      "line": 98,
+      "tag": "button",
+      "role": "",
+      "label": "label",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{!available}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: Constraint"
+    },
+    {
+      "file": "src/navbar/ExtrudeModePanel.tsx",
+      "line": 25,
+      "tag": "button",
+      "role": "",
+      "label": "Join",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: ExtrudeMode"
+    },
+    {
+      "file": "src/navbar/ExtrudeModePanel.tsx",
+      "line": 35,
+      "tag": "button",
+      "role": "",
+      "label": "Cut",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: ExtrudeMode"
+    },
+    {
+      "file": "src/navbar/FilletModePanel.tsx",
+      "line": 23,
+      "tag": "button",
+      "role": "",
+      "label": "Fillet",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: FilletMode"
+    },
+    {
+      "file": "src/navbar/FilletModePanel.tsx",
+      "line": 33,
+      "tag": "button",
+      "role": "",
+      "label": "Chamfer",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: FilletMode"
+    },
+    {
+      "file": "src/navbar/ImageUnderlayModal.tsx",
+      "line": 25,
+      "tag": "button",
+      "role": "",
+      "label": "Close",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Input dialog: ImageUnderlay"
+    },
+    {
+      "file": "src/navbar/ImageUnderlayModal.tsx",
+      "line": 42,
+      "tag": "input",
+      "role": "",
+      "label": "label",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "aria",
+        "files": [
+          "src/components/vr/__tests__/paramPanelCanvas.test.ts"
+        ]
+      },
+      "family": "Input dialog: ImageUnderlay"
+    },
+    {
+      "file": "src/navbar/ImageUnderlayModal.tsx",
+      "line": 63,
+      "tag": "button",
+      "role": "",
+      "label": "×",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Input dialog: ImageUnderlay"
+    },
+    {
+      "file": "src/navbar/ImageUnderlayModal.tsx",
+      "line": 68,
+      "tag": "select",
+      "role": "",
+      "label": "Select image underlay",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Input dialog: ImageUnderlay"
+    },
+    {
+      "file": "src/navbar/ImageUnderlayModal.tsx",
+      "line": 89,
+      "tag": "button",
+      "role": "",
+      "label": "Delete underlay",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Input dialog: ImageUnderlay"
+    },
+    {
+      "file": "src/navbar/LoftModePanel.tsx",
+      "line": 22,
+      "tag": "button",
+      "role": "",
+      "label": "Smooth",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: LoftMode"
+    },
+    {
+      "file": "src/navbar/LoftModePanel.tsx",
+      "line": 32,
+      "tag": "button",
+      "role": "",
+      "label": "Ruled",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: LoftMode"
+    },
+    {
+      "file": "src/navbar/LoftModePanel.tsx",
+      "line": 51,
+      "tag": "button",
+      "role": "",
+      "label": "Loft ()",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: LoftMode"
+    },
+    {
+      "file": "src/navbar/MeasureModePanel.tsx",
+      "line": 21,
+      "tag": "button",
+      "role": "",
+      "label": "Distance (D)",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "D",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: MeasureMode"
+    },
+    {
+      "file": "src/navbar/MeasureModePanel.tsx",
+      "line": 32,
+      "tag": "button",
+      "role": "",
+      "label": "Edge Length (E)",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "E",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: MeasureMode"
+    },
+    {
+      "file": "src/navbar/MeasureModePanel.tsx",
+      "line": 43,
+      "tag": "button",
+      "role": "",
+      "label": "Angle (A)",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "A",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: MeasureMode"
+    },
+    {
+      "file": "src/navbar/MeasureModePanel.tsx",
+      "line": 57,
+      "tag": "button",
+      "role": "",
+      "label": "Pin selected or last measurement (P)",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "P",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: MeasureMode"
+    },
+    {
+      "file": "src/navbar/MeasureModePanel.tsx",
+      "line": 64,
+      "tag": "button",
+      "role": "",
+      "label": "Clear temporary (C)",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "C",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: MeasureMode"
+    },
+    {
+      "file": "src/navbar/PathPatternInputModal.tsx",
+      "line": 71,
+      "tag": "select",
+      "role": "",
+      "label": "Pattern path",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Input dialog: PathPatternInput"
+    },
+    {
+      "file": "src/navbar/PathPatternInputModal.tsx",
+      "line": 86,
+      "tag": "input",
+      "role": "",
+      "label": "Path pattern count",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Input dialog: PathPatternInput"
+    },
+    {
+      "file": "src/navbar/PathPatternInputModal.tsx",
+      "line": 97,
+      "tag": "input",
+      "role": "",
+      "label": "Align to path tangent",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Input dialog: PathPatternInput"
+    },
+    {
+      "file": "src/navbar/PathPatternInputModal.tsx",
+      "line": 105,
+      "tag": "button",
+      "role": "",
+      "label": "OK",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Input dialog: PathPatternInput"
+    },
+    {
+      "file": "src/navbar/PathPatternInputModal.tsx",
+      "line": 111,
+      "tag": "button",
+      "role": "",
+      "label": "Cancel",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Input dialog: PathPatternInput"
+    },
+    {
+      "file": "src/navbar/PatternInputModal.tsx",
+      "line": 69,
+      "tag": "input",
+      "role": "",
+      "label": "Pattern count",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Input dialog: PatternInput"
+    },
+    {
+      "file": "src/navbar/PatternInputModal.tsx",
+      "line": 81,
+      "tag": "input",
+      "role": "",
+      "label": "X spacing",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Input dialog: PatternInput"
+    },
+    {
+      "file": "src/navbar/PatternInputModal.tsx",
+      "line": 92,
+      "tag": "input",
+      "role": "",
+      "label": "Y spacing",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Input dialog: PatternInput"
+    },
+    {
+      "file": "src/navbar/PatternInputModal.tsx",
+      "line": 101,
+      "tag": "button",
+      "role": "",
+      "label": "OK",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Input dialog: PatternInput"
+    },
+    {
+      "file": "src/navbar/PatternInputModal.tsx",
+      "line": 107,
+      "tag": "button",
+      "role": "",
+      "label": "Cancel",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Input dialog: PatternInput"
+    },
+    {
+      "file": "src/navbar/RevolveModePanel.tsx",
+      "line": 46,
+      "tag": "button",
+      "role": "",
+      "label": "X",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: RevolveMode"
+    },
+    {
+      "file": "src/navbar/RevolveModePanel.tsx",
+      "line": 52,
+      "tag": "button",
+      "role": "",
+      "label": "Y",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: RevolveMode"
+    },
+    {
+      "file": "src/navbar/RevolveModePanel.tsx",
+      "line": 58,
+      "tag": "button",
+      "role": "",
+      "label": "Z",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: RevolveMode"
+    },
+    {
+      "file": "src/navbar/RevolveModePanel.tsx",
+      "line": 68,
+      "tag": "button",
+      "role": "",
+      "label": "One Side",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: RevolveMode"
+    },
+    {
+      "file": "src/navbar/RevolveModePanel.tsx",
+      "line": 78,
+      "tag": "button",
+      "role": "",
+      "label": "Two Sides",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: RevolveMode"
+    },
+    {
+      "file": "src/navbar/RevolveModePanel.tsx",
+      "line": 88,
+      "tag": "button",
+      "role": "",
+      "label": "Symmetric",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: RevolveMode"
+    },
+    {
+      "file": "src/navbar/RevolveModePanel.tsx",
+      "line": 99,
+      "tag": "button",
+      "role": "",
+      "label": "Flip axis direction",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: RevolveMode"
+    },
+    {
+      "file": "src/navbar/RevolveModePanel.tsx",
+      "line": 107,
+      "tag": "input",
+      "role": "",
+      "label": "Revolve angle",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: RevolveMode"
+    },
+    {
+      "file": "src/navbar/RevolveModePanel.tsx",
+      "line": 119,
+      "tag": "input",
+      "role": "",
+      "label": "Second revolve angle",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: RevolveMode"
+    },
+    {
+      "file": "src/navbar/RevolveModePanel.tsx",
+      "line": 133,
+      "tag": "button",
+      "role": "",
+      "label": "Revolve",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: RevolveMode"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 204,
+      "tag": "button",
+      "role": "",
+      "label": "${label} (${shortcut})",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{isOperationPending}",
+      "readOnly": false,
+      "keyboard": "${shortcut}",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 227,
+      "tag": "button",
+      "role": "",
+      "label": "label",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{!available}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 261,
+      "tag": "button",
+      "role": "",
+      "label": "Insert single-stroke sketch text (TEXT / T)",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{isOperationPending}",
+      "readOnly": false,
+      "keyboard": "TEXT / T",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 273,
+      "tag": "button",
+      "role": "",
+      "label": "Import 2D DXF entities into this sketch",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{isOperationPending}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 285,
+      "tag": "button",
+      "role": "",
+      "label": "Insert a raster image underlay",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{isOperationPending}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 297,
+      "tag": "button",
+      "role": "",
+      "label": "Move, scale, fade or delete an image underlay",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{\n          (activeSketch.imageUnderlays?.length ?? 0) === 0 || isOperationPending\n        }",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 311,
+      "tag": "button",
+      "role": "",
+      "label": "Project selected 3D BRep edges into this sketch",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{isOperationPending}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 327,
+      "tag": "select",
+      "role": "",
+      "label": "Conic rho",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 343,
+      "tag": "select",
+      "role": "",
+      "label": "Polygon sides",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 365,
+      "tag": "button",
+      "role": "",
+      "label": "Mirror about the selected line (MI)",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{!mirrorEnabled}",
+      "readOnly": false,
+      "keyboard": "MI",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 377,
+      "tag": "button",
+      "role": "",
+      "label": "Move selected geometry by an X/Y vector (MOVE / M)",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{!transformEnabled}",
+      "readOnly": false,
+      "keyboard": "MOVE / M",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 389,
+      "tag": "button",
+      "role": "",
+      "label": "Copy selected geometry by an X/Y vector (COPY / CP)",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{!transformEnabled}",
+      "readOnly": false,
+      "keyboard": "COPY / CP",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 401,
+      "tag": "button",
+      "role": "",
+      "label": "Rotate selected geometry around a selected point or its centre (ROTATE / RO)",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{!transformEnabled}",
+      "readOnly": false,
+      "keyboard": "ROTATE / RO",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 413,
+      "tag": "button",
+      "role": "",
+      "label": "Scale selected geometry around a selected point or its centre (SCALE / SC)",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{!transformEnabled}",
+      "readOnly": false,
+      "keyboard": "SCALE / SC",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 425,
+      "tag": "button",
+      "role": "",
+      "label": "Create a linear pattern with count and X/Y spacing (PATTERN / AR)",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{!patternEnabled}",
+      "readOnly": false,
+      "keyboard": "PATTERN / AR",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 437,
+      "tag": "button",
+      "role": "",
+      "label": "Create a circular pattern around the selection centre (CIRCULAR)",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{!patternEnabled}",
+      "readOnly": false,
+      "keyboard": "CIRCULAR",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 449,
+      "tag": "button",
+      "role": "",
+      "label": "Copy selected geometry along a selected curve (PATHPATTERN)",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{!patternEnabled}",
+      "readOnly": false,
+      "keyboard": "PATHPATTERN",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 461,
+      "tag": "button",
+      "role": "",
+      "label": "Offset the selected line, circle or arc (OFFSET / O)",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{!offsetEnabled}",
+      "readOnly": false,
+      "keyboard": "OFFSET / O",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 473,
+      "tag": "button",
+      "role": "",
+      "label": "Join two collinear selected lines (JOIN / J)",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{!joinEnabled}",
+      "readOnly": false,
+      "keyboard": "JOIN / J",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 485,
+      "tag": "button",
+      "role": "",
+      "label": "Fillet a selected line/line, line/arc or arc/arc corner (FILLET / F)",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{!filletEnabled}",
+      "readOnly": false,
+      "keyboard": "FILLET / F",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 497,
+      "tag": "button",
+      "role": "",
+      "label": "Chamfer the corner between two selected lines (CHAMFER / CHA)",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{!cornerEnabled}",
+      "readOnly": false,
+      "keyboard": "CHAMFER / CHA",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 514,
+      "tag": "button",
+      "role": "",
+      "label": "Toggle Construction (X; AutoCAD X is EXPLODE)",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{isOperationPending}",
+      "readOnly": false,
+      "keyboard": "X; AutoCAD X is EXPLODE",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 538,
+      "tag": "button",
+      "role": "",
+      "label": "Fix/Unfix Point (palette: FIX)",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{!hasPointSelected || isOperationPending}",
+      "readOnly": false,
+      "keyboard": "palette: FIX",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 558,
+      "tag": "button",
+      "role": "",
+      "label": "gridSnapEnabled ? \"Disable Grid Snap\" : \"Enable Grid Snap\"",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 571,
+      "tag": "select",
+      "role": "",
+      "label": "Grid Spacing",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 602,
+      "tag": "button",
+      "role": "",
+      "label": "Constraints",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 632,
+      "tag": "button",
+      "role": "",
+      "label": "Open command palette",
+      "labelKind": "literal",
+      "testid": "sketch-command-palette",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 641,
+      "tag": "button",
+      "role": "",
+      "label": "Open 2D controls help",
+      "labelKind": "literal",
+      "testid": "sketch-controls-help",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 650,
+      "tag": "button",
+      "role": "",
+      "label": "Finish sketch and create 3D body (Esc / Enter)",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{isOperationPending}",
+      "readOnly": false,
+      "keyboard": "Esc / Enter",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SketchToolbar.tsx",
+      "line": 662,
+      "tag": "button",
+      "role": "",
+      "label": "Discard sketch",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{isOperationPending}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Sketch toolbar"
+    },
+    {
+      "file": "src/navbar/SweepModePanel.tsx",
+      "line": 31,
+      "tag": "button",
+      "role": "",
+      "label": "Perpendicular",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: SweepMode"
+    },
+    {
+      "file": "src/navbar/SweepModePanel.tsx",
+      "line": 41,
+      "tag": "button",
+      "role": "",
+      "label": "Parallel",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: SweepMode"
+    },
+    {
+      "file": "src/navbar/SweepModePanel.tsx",
+      "line": 52,
+      "tag": "button",
+      "role": "",
+      "label": "Right",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: SweepMode"
+    },
+    {
+      "file": "src/navbar/SweepModePanel.tsx",
+      "line": 62,
+      "tag": "button",
+      "role": "",
+      "label": "Round",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: SweepMode"
+    },
+    {
+      "file": "src/navbar/SweepModePanel.tsx",
+      "line": 83,
+      "tag": "button",
+      "role": "",
+      "label": "Sweep",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Feature dialog: SweepMode"
+    },
+    {
+      "file": "src/navbar/TextInputModal.tsx",
+      "line": 52,
+      "tag": "textarea",
+      "role": "",
+      "label": "Sketch text",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "aria",
+        "files": [
+          "e2e/sketch-controls.spec.ts"
+        ]
+      },
+      "family": "Input dialog: TextInput"
+    },
+    {
+      "file": "src/navbar/TextInputModal.tsx",
+      "line": 64,
+      "tag": "input",
+      "role": "",
+      "label": "Text height",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "aria",
+        "files": [
+          "e2e/sketch-controls.spec.ts"
+        ]
+      },
+      "family": "Input dialog: TextInput"
+    },
+    {
+      "file": "src/navbar/TextInputModal.tsx",
+      "line": 73,
+      "tag": "button",
+      "role": "",
+      "label": "OK",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Input dialog: TextInput"
+    },
+    {
+      "file": "src/navbar/TextInputModal.tsx",
+      "line": 79,
+      "tag": "button",
+      "role": "",
+      "label": "Cancel",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Input dialog: TextInput"
+    },
+    {
+      "file": "src/navbar/ValueInputModal.tsx",
+      "line": 61,
+      "tag": "button",
+      "role": "",
+      "label": "Cancel",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Input dialog: ValueInput"
+    },
+    {
+      "file": "src/navbar/VectorInputModal.tsx",
+      "line": 60,
+      "tag": "input",
+      "role": "",
+      "label": "X distance",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Input dialog: VectorInput"
+    },
+    {
+      "file": "src/navbar/VectorInputModal.tsx",
+      "line": 70,
+      "tag": "input",
+      "role": "",
+      "label": "Y distance",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Input dialog: VectorInput"
+    },
+    {
+      "file": "src/navbar/VectorInputModal.tsx",
+      "line": 78,
+      "tag": "button",
+      "role": "",
+      "label": "OK",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Input dialog: VectorInput"
+    },
+    {
+      "file": "src/navbar/VectorInputModal.tsx",
+      "line": 84,
+      "tag": "button",
+      "role": "",
+      "label": "Cancel",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Input dialog: VectorInput"
+    },
+    {
+      "file": "src/scenes/modes/MeasureModeContent.tsx",
+      "line": 106,
+      "tag": "button",
+      "role": "",
+      "label": "Pin",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Mode panel: MeasureMode"
+    },
+    {
+      "file": "src/scenes/modes/MeasureModeContent.tsx",
+      "line": 116,
+      "tag": "button",
+      "role": "",
+      "label": "Delete",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Mode panel: MeasureMode"
+    },
+    {
+      "file": "src/scenes/modes/MeasureModeContent.tsx",
+      "line": 148,
+      "tag": "button",
+      "role": "",
+      "label": "Unpin",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Mode panel: MeasureMode"
+    },
+    {
+      "file": "src/scenes/modes/MeasureModeContent.tsx",
+      "line": 158,
+      "tag": "button",
+      "role": "",
+      "label": "Delete",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Mode panel: MeasureMode"
+    },
+    {
+      "file": "src/scenes/modes/SketchModeContent.tsx",
+      "line": 1454,
+      "tag": "input",
+      "role": "",
+      "label": "Sketch plane offset",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onChange",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Mode panel: SketchMode"
+    },
+    {
+      "file": "src/scenes/modes/SketchModeContent.tsx",
+      "line": 1468,
+      "tag": "button",
+      "role": "",
+      "label": "XY",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Mode panel: SketchMode"
+    },
+    {
+      "file": "src/scenes/modes/SketchModeContent.tsx",
+      "line": 1476,
+      "tag": "button",
+      "role": "",
+      "label": "XZ",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Mode panel: SketchMode"
+    },
+    {
+      "file": "src/scenes/modes/SketchModeContent.tsx",
+      "line": 1484,
+      "tag": "button",
+      "role": "",
+      "label": "YZ",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Mode panel: SketchMode"
+    },
+    {
+      "file": "src/scenes/modes/SketchModeContent.tsx",
+      "line": 1492,
+      "tag": "button",
+      "role": "",
+      "label": "Cancel",
+      "labelKind": "text",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Mode panel: SketchMode"
+    },
+    {
+      "file": "src/scenes/simpleCadScene.tsx",
+      "line": 2588,
+      "tag": "button",
+      "role": "",
+      "label": "Toggle the Flux copilot (⚡)",
+      "labelKind": "literal",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: simpleCadScene"
+    },
+    {
+      "file": "src/scenes/simpleCadScene.tsx",
+      "line": 2598,
+      "tag": "button",
+      "role": "",
+      "label": "mode === \"sketch\"\n                  ? \"Orthographic enforced in sketch mode\"\n                  : `Switch to ${projectionType === \"perspective\" ? \"Orthographic\" : \"Perspective\"} (5)`",
+      "labelKind": "dynamic",
+      "testid": "",
+      "handler": "onClick",
+      "enabledRule": "{mode === \"sketch\"}",
+      "readOnly": false,
+      "keyboard": "",
+      "status": "wired",
+      "evidence": {
+        "level": "none",
+        "files": []
+      },
+      "family": "Other: simpleCadScene"
+    }
+  ],
+  "allowlist": []
+}

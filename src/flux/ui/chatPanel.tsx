@@ -195,6 +195,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         <button
           onClick={() => submitRow("ask")}
           disabled={busy || !input.trim()}
+          aria-label="Send message"
           className="px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-[11px] text-white font-medium"
         >
           {busy ? "…" : "Send"}

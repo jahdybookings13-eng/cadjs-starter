@@ -1454,6 +1454,7 @@ const SketchModeContent: FC<ModeContentProps> = ({
                 <input
                   type="number"
                   step="0.5"
+                  aria-label="Sketch plane offset"
                   value={planeOffset}
                   onChange={(e) => {
                     const v = parseFloat(e.target.value) || 0;

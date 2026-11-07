@@ -1,0 +1,4 @@
+{
+  "note": "Each entry must carry a real reason and is checked for staleness. Prefer fixing the control over allowlisting it.",
+  "entries": []
+}

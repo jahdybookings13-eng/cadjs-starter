@@ -84,19 +84,33 @@ import {
   activeTab as activeDocumentTab,
   addTab as addDocumentTab,
   deleteTab as deleteDocumentTab,
+  deleteTabs as deleteDocumentTabs,
   duplicateTab as duplicateDocumentTab,
+  duplicateTabs as duplicateDocumentTabs,
   ensureDocument,
+  getDocumentStorageStatus,
   moveTab as moveDocumentTab,
   newDocumentTab,
+  normalizeDocument,
+  renameDocument as renameCadDocument,
   renameTab as renameDocumentTab,
   saveDocument,
   setActiveTab as setActiveDocumentTab,
+  setDocumentThumbnail,
+  subscribeDocumentStorage,
   writeTabDesign,
   type CadDocument,
+  type DocumentSnapshot,
+  type DocumentStorageStatus,
   type DocumentTab,
   type DocumentTabKind,
 } from "../document";
+import { downloadDocumentFile } from "../document/file";
 import { DocumentTabBar } from "../components/DocumentTabBar";
+import DocumentToolbar from "../components/DocumentToolbar";
+import DocumentsPage from "../components/DocumentsPage";
+import DocumentPanel from "../components/DocumentPanel";
+import SketchControlsHelp from "../components/SketchControlsHelp";
 import {
   canRoleEdit,
   getAccount,
@@ -181,6 +195,7 @@ interface SimpleCadSceneProps {
 const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
   initialMode = "move",
 }) => {
+  const { showToast } = useToast();
   const mountRef = useRef<HTMLDivElement>(null);
   const pendingAuthorFixups = useRef(
     new Map<string, import("../model/executor").BodyOutput>(),
@@ -190,6 +205,7 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
     selectElement,
     deselectElement,
     elements,
+    sketches,
     addElement,
     getObject,
     idCounter,
@@ -331,6 +347,25 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
   // Boot hydration is one-shot: restoring a tab must not re-run every time a
   // tab edit updates the document object.
   const hydratedTabRef = useRef(false);
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [documentsOpen, setDocumentsOpen] = useState(false);
+  const [docPanelOpen, setDocPanelOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [storageStatus, setStorageStatus] = useState<DocumentStorageStatus>(
+    getDocumentStorageStatus(),
+  );
+  const suppressDirtyRef = useRef(true);
+  const dirtyKeyRef = useRef("");
+  const lastStorageErrorRef = useRef<string | null>(null);
+
+  useEffect(() => subscribeDocumentStorage(setStorageStatus), []);
+  useEffect(() => {
+    const error = storageStatus.lastError;
+    if (!error || error === lastStorageErrorRef.current) return;
+    lastStorageErrorRef.current = error;
+    showToast(error, "warning");
+  }, [showToast, storageStatus.lastError]);
 
   /**
    * Replace the whole scene with a serialized design. Dropping the authored
@@ -358,6 +393,7 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
     const timer = window.setTimeout(() => {
       if (hydratedTabRef.current) return;
       hydratedTabRef.current = true;
+      suppressDirtyRef.current = true;
       try {
         applyDesign(tab.design);
       } catch {
@@ -366,6 +402,19 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
     }, 0);
     return () => window.clearTimeout(timer);
   }, [sceneReady, cadDocument, applyDesign]);
+
+  const dirtyKey = `${undoStack.length}:${elements.length}:${sketches.length}`;
+  useEffect(() => {
+    if (!sceneReady) return;
+    if (suppressDirtyRef.current) {
+      suppressDirtyRef.current = false;
+      dirtyKeyRef.current = dirtyKey;
+      return;
+    }
+    if (dirtyKey === dirtyKeyRef.current) return;
+    dirtyKeyRef.current = dirtyKey;
+    setDirty(true);
+  }, [dirtyKey, sceneReady]);
 
   /**
    * One save path for the whole project: CAD nodes + the ECAD scene and its
@@ -403,10 +452,28 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
     if (current) {
       setDocument(writeTabDesign(current, current.activeTabId, text));
     }
+    setDirty(false);
     // Let the other surface reload instead of rendering stale bodies.
     announceDocSaved();
     return text;
   }, [setDocument]);
+
+  const saveCurrentDocument = useCallback(() => {
+    if (!canEdit) return;
+    setSaving(true);
+    try {
+      persistProject();
+      setDirty(false);
+      showToast("Document saved", "success");
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : String(error),
+        "error",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }, [canEdit, persistProject, showToast]);
 
   /* ---------------------------------------------------------------------- */
   /* Document tab operations                                                */
@@ -435,6 +502,8 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
 
   const loadTabDesign = (tab: DocumentTab) => {
     hydratedTabRef.current = true;
+    suppressDirtyRef.current = true;
+    setDirty(false);
     try {
       applyDesign(tab.design);
     } catch {
@@ -499,6 +568,47 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
       const tab = activeDocumentTab(next);
       if (tab) loadTabDesign(tab);
     }
+  };
+
+  const handleBulkDuplicate = (tabIds: string[]) => {
+    if (tabsLocked() || tabIds.length === 0) return;
+    const current = captureTabs();
+    if (!current) return;
+    const result = duplicateDocumentTabs(current, tabIds);
+    if (result.tabs.length === 0) return;
+    setDocument(result.document);
+    loadTabDesign(result.tabs[result.tabs.length - 1]!);
+  };
+
+  const handleBulkDelete = (tabIds: string[]) => {
+    if (tabsLocked() || tabIds.length === 0) return;
+    const current = captureTabs();
+    if (!current) return;
+    const wasActive = tabIds.includes(current.activeTabId);
+    const next = deleteDocumentTabs(current, tabIds);
+    if (!next) return;
+    setDocument(next);
+    if (wasActive) {
+      const tab = activeDocumentTab(next);
+      if (tab) loadTabDesign(tab);
+    }
+  };
+
+  const handleRestoreSnapshot = (snapshot: DocumentSnapshot) => {
+    if (!canEdit) return;
+    const current = documentRef.current;
+    if (!current) return;
+    const restored = normalizeDocument(snapshot.doc);
+    if (!restored) {
+      showToast("Snapshot is corrupt", "error");
+      return;
+    }
+    const next = { ...restored, id: current.id, updatedAt: Date.now() };
+    setDocument(next);
+    const tab = activeDocumentTab(next);
+    if (tab) loadTabDesign(tab);
+    setDirty(false);
+    showToast(`Restored “${snapshot.name}”`, "success");
   };
 
   // E2E test hook: only mounted in dev/test builds. Tree-shaken from production.
@@ -1735,7 +1845,6 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
       return null;
     });
   }, [mode, setSelectOtherMenu]);
-  const { showToast } = useToast();
   const [modePanelSlot, setModePanelSlot] = useState<HTMLDivElement | null>(
     null,
   );
@@ -2072,6 +2181,22 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
   const inActiveSketch = mode === "sketch" && !!activeSketch;
   const isLocked = inActiveSketch || isOperationPending;
 
+  // Debounced autosave. Explicit Save uses the same path; this just prevents a
+  // dropped tab/scene from losing the last edit when the page closes.
+  useEffect(() => {
+    if (!dirty || !canEdit || isLocked) return;
+    const timer = window.setTimeout(() => {
+      setSaving(true);
+      try {
+        persistProject();
+      } finally {
+        setSaving(false);
+        setDirty(false);
+      }
+    }, 1800);
+    return () => window.clearTimeout(timer);
+  }, [dirty, canEdit, isLocked, persistProject]);
+
   const showSecondaryBar =
     canEdit &&
     ((mode === "sketch" && !sketchIsSelectingPlane && activeSketch) ||
@@ -2126,6 +2251,50 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
   }
   const fluxSession = fluxSessionRef.current;
   const projectDoc = scadgenProjectRef.current;
+
+  const handleDocumentRename = (name: string) => {
+    if (!canEdit) return;
+    const current = documentRef.current;
+    if (!current) return;
+    const next = renameCadDocument(current, name);
+    if (next === current) return;
+    setDocument(next);
+    if (projectDoc) {
+      projectDoc.name = next.name;
+      projectDoc.updatedAt = Date.now();
+      saveProjectDoc(projectDoc);
+    }
+  };
+
+  const openDocumentsPage = () => {
+    const current = documentRef.current;
+    if (current && renderer && scene && camera) {
+      try {
+        renderer.render(scene, camera);
+        const thumbnail = renderer.domElement.toDataURL("image/jpeg", 0.6);
+        if (thumbnail.startsWith("data:image/") && thumbnail.length > 2000) {
+          setDocument(setDocumentThumbnail(current, thumbnail));
+        }
+      } catch {
+        /* canvas capture is best-effort; the page still opens */
+      }
+    }
+    setDocPanelOpen(false);
+    setDocumentsOpen(true);
+  };
+
+  const exportCurrentDocument = () => {
+    if (!cadDocument) return;
+    try {
+      downloadDocumentFile(cadDocument, projectDoc);
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : String(error),
+        "error",
+      );
+    }
+  };
+
   useEffect(() => {
     const bus = busRef.current;
     if (!bus) return;
@@ -2221,8 +2390,33 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
         onEditSketch={canEdit ? editSketch : () => {}}
       />
 
+      {documentsOpen && cadDocument && (
+        <DocumentsPage
+          currentProjectId={cadDocument.id}
+          onClose={() => setDocumentsOpen(false)}
+          onOpen={() => window.location.assign("/")}
+        />
+      )}
+
       {/* Center column: document tabs + toolbars + canvas */}
       <div className="flex-1 flex flex-col min-w-0">
+        {cadDocument && (
+          <DocumentToolbar
+            projectName={projectDoc?.name ?? "Untitled"}
+            documentName={cadDocument.name}
+            dirty={dirty}
+            saving={saving}
+            canEdit={canEdit}
+            panelOpen={docPanelOpen}
+            projectionType={projectionType}
+            onOpenDocuments={openDocumentsPage}
+            onSave={saveCurrentDocument}
+            onExport={exportCurrentDocument}
+            onTogglePanel={() => setDocPanelOpen((value) => !value)}
+            onHelp={() => setHelpOpen(true)}
+            onToggleProjection={toggleProjection}
+          />
+        )}
         {cadDocument && (
           <DocumentTabBar
             doc={cadDocument}
@@ -2325,6 +2519,23 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
 
             {/* Who is in the suit, and what they are touching. */}
             <SessionPresenceStrip />
+
+            {docPanelOpen && cadDocument && (
+              <DocumentPanel
+                doc={cadDocument}
+                projectId={cadDocument.id}
+                projectName={projectDoc?.name ?? cadDocument.name}
+                dirty={dirty}
+                storage={storageStatus}
+                onClose={() => setDocPanelOpen(false)}
+                onRenameDocument={handleDocumentRename}
+                onSelectTab={handleTabSelect}
+                onMoveTab={handleTabMove}
+                onDuplicateTabs={handleBulkDuplicate}
+                onDeleteTabs={handleBulkDelete}
+                onRestoreSnapshot={handleRestoreSnapshot}
+              />
+            )}
 
             {collabOpen && !shareDenied && projectDoc && (
               <CollaborationPanel
@@ -2454,6 +2665,7 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
         {/* end canvas + right panel row */}
       </div>
       {/* end center column */}
+      <SketchControlsHelp open={helpOpen} onClose={() => setHelpOpen(false)} />
     </div>
   );
 };

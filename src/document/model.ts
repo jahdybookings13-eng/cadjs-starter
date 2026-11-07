@@ -55,6 +55,10 @@ export interface CadDocument {
   tabs: DocumentTab[];
   activeTabId: string;
   updatedAt: number;
+  /** Small canvas preview captured before opening the Documents page. */
+  thumbnail?: string;
+  /** Set while the document is in the local trash (removed from the list). */
+  trashedAt?: number;
 }
 
 let tabSeq = 0;
@@ -265,6 +269,162 @@ export function writeTabDesign(
   };
 }
 
+export function renameDocument(
+  doc: CadDocument,
+  name: string,
+  now = Date.now(),
+): CadDocument {
+  const trimmed = name.trim();
+  if (!trimmed || trimmed === doc.name) return doc;
+  return { ...doc, name: trimmed, updatedAt: now };
+}
+
+export function trashDocument(doc: CadDocument, now = Date.now()): CadDocument {
+  if (doc.trashedAt) return doc;
+  return { ...doc, trashedAt: now, updatedAt: now };
+}
+
+export function restoreDocument(
+  doc: CadDocument,
+  now = Date.now(),
+): CadDocument {
+  if (!doc.trashedAt) return doc;
+  const next = { ...doc, updatedAt: now };
+  delete next.trashedAt;
+  return next;
+}
+
+export function setDocumentThumbnail(
+  doc: CadDocument,
+  thumbnail: string,
+  now = Date.now(),
+): CadDocument {
+  if (!thumbnail.startsWith("data:image/") || thumbnail.length > 1_500_000)
+    return doc;
+  return { ...doc, thumbnail, updatedAt: now };
+}
+
+/**
+ * Copy a document under a new project id, regenerating every tab id so the
+ * copy can be edited independently. The design payloads are immutable strings
+ * at this layer and are shared intentionally; writes always replace a tab.
+ */
+export function duplicateDocumentAs(
+  doc: CadDocument,
+  opts: { projectId: string; name?: string; now?: number },
+): CadDocument {
+  const now = opts.now ?? Date.now();
+  const idMap = new Map<string, string>();
+  const tabs = doc.tabs.map((tab) => {
+    const id = nextTabId(now);
+    idMap.set(tab.id, id);
+    return {
+      ...tab,
+      id,
+      createdAt: now,
+      updatedAt: now,
+      design: tab.design,
+    };
+  });
+  const activeTabId = idMap.get(doc.activeTabId) ?? tabs[0]!.id;
+  const next: CadDocument = {
+    ...doc,
+    id: opts.projectId,
+    name: opts.name?.trim() || doc.name,
+    tabs,
+    activeTabId,
+    updatedAt: now,
+  };
+  delete next.trashedAt;
+  return next;
+}
+
+/** Duplicate several tabs in one document operation. Unknown ids are ignored. */
+export function duplicateTabs(
+  doc: CadDocument,
+  tabIds: readonly string[],
+): { document: CadDocument; tabs: DocumentTab[] } {
+  let next = doc;
+  const tabs: DocumentTab[] = [];
+  for (const tabId of tabIds) {
+    const result = duplicateTab(next, tabId);
+    if (!result) continue;
+    next = result.document;
+    tabs.push(result.tab);
+  }
+  return { document: next, tabs };
+}
+
+/** Delete several tabs, activating the nearest surviving tab when necessary. */
+export function deleteTabs(
+  doc: CadDocument,
+  tabIds: readonly string[],
+  now = Date.now(),
+): CadDocument | null {
+  const ids = new Set(tabIds);
+  if (ids.size === 0) return doc;
+  const tabs = doc.tabs.filter((tab) => !ids.has(tab.id));
+  if (tabs.length === 0) return null;
+  const firstRemoved = doc.tabs.findIndex((tab) => ids.has(tab.id));
+  const activeTabId = ids.has(doc.activeTabId)
+    ? tabs[Math.min(Math.max(firstRemoved, 0), tabs.length - 1)]!.id
+    : doc.activeTabId;
+  return { ...doc, tabs, activeTabId, updatedAt: now };
+}
+
+export interface DocumentUsageAsset {
+  assetId: string;
+  name: string;
+  format: string;
+  tabs: string[];
+}
+
+export interface DocumentUsage {
+  assets: DocumentUsageAsset[];
+  nodeCount: number;
+  tabBytes: number;
+  parseErrors: string[];
+}
+
+/** Where-used report: which tabs carry each imported asset, plus document size. */
+export function documentUsage(doc: CadDocument): DocumentUsage {
+  const assets = new Map<string, DocumentUsageAsset>();
+  const parseErrors: string[] = [];
+  let nodeCount = 0;
+  let tabBytes = 0;
+
+  for (const tab of doc.tabs) {
+    tabBytes += new TextEncoder().encode(tab.design).length;
+    try {
+      const design = JSON.parse(tab.design) as {
+        nodes?: unknown[];
+        assets?: Array<{ assetId?: string; name?: string; format?: string }>;
+      };
+      nodeCount += Array.isArray(design.nodes) ? design.nodes.length : 0;
+      for (const asset of design.assets ?? []) {
+        if (typeof asset.assetId !== "string" || !asset.assetId) continue;
+        const existing = assets.get(asset.assetId) ?? {
+          assetId: asset.assetId,
+          name: asset.name ?? asset.assetId,
+          format: asset.format ?? "asset",
+          tabs: [],
+        };
+        if (!existing.tabs.includes(tab.name)) existing.tabs.push(tab.name);
+        assets.set(asset.assetId, existing);
+      }
+    } catch {
+      parseErrors.push(`${tab.name}: corrupt design`);
+    }
+  }
+
+  return {
+    assets: [...assets.values()].sort((a, b) => a.name.localeCompare(b.name)),
+    nodeCount,
+    tabBytes,
+    parseErrors,
+  };
+}
+
 /**
  * Repair anything read from storage. Tabs are user data, so repair is
  * conservative: keep every valid tab, drop duplicates, restore a missing
@@ -320,5 +480,13 @@ export function normalizeDocument(raw: unknown): CadDocument | null {
     tabs,
     activeTabId,
     updatedAt: typeof input.updatedAt === "number" ? input.updatedAt : now,
+    ...(typeof input.thumbnail === "string" &&
+    input.thumbnail.startsWith("data:image/") &&
+    input.thumbnail.length <= 1_500_000
+      ? { thumbnail: input.thumbnail }
+      : {}),
+    ...(typeof input.trashedAt === "number" && input.trashedAt > 0
+      ? { trashedAt: input.trashedAt }
+      : {}),
   };
 }

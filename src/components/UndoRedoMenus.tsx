@@ -117,6 +117,7 @@ export const UndoRedoMenus: React.FC<UndoRedoMenusProps> = ({
                 setRedoDropdownOpen(false);
               }}
               disabled={!canUndo}
+              aria-label="Undo history"
             >
               <svg
                 className="w-3 h-3"
@@ -139,6 +140,7 @@ export const UndoRedoMenus: React.FC<UndoRedoMenusProps> = ({
             {[...undoStack].reverse().map((snapshot, idx) => (
               <button
                 key={snapshot.timestamp}
+                aria-label={`Undo to ${snapshot.actionName}`}
                 className="w-full px-3 py-1.5 text-sm text-left text-gray-200 hover:bg-gray-700"
                 onClick={() => {
                   for (let i = 0; i <= idx; i++) {
@@ -196,6 +198,7 @@ export const UndoRedoMenus: React.FC<UndoRedoMenusProps> = ({
                 setUndoDropdownOpen(false);
               }}
               disabled={!canRedo}
+              aria-label="Redo history"
             >
               <svg
                 className="w-3 h-3"
@@ -218,6 +221,7 @@ export const UndoRedoMenus: React.FC<UndoRedoMenusProps> = ({
             {[...redoStack].reverse().map((snapshot, idx) => (
               <button
                 key={snapshot.timestamp}
+                aria-label={`Redo to ${snapshot.actionName}`}
                 className="w-full px-3 py-1.5 text-sm text-left text-gray-200 hover:bg-gray-700"
                 onClick={() => {
                   for (let i = 0; i <= idx; i++) {

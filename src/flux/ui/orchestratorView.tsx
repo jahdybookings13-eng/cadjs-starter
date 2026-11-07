@@ -127,6 +127,8 @@ const Submenu: React.FC<SubmenuProps> = ({ name, actions, onPick }) => {
     <div className="border-t border-gray-700/40">
       <button
         onClick={() => setOpen((v) => !v)}
+        aria-label={humanSubmenu(name)}
+        aria-expanded={open}
         className="w-full text-left px-3 py-1.5 text-[13px] font-semibold text-blue-300 hover:bg-gray-700/40 flex items-center justify-between"
       >
         <span>{humanSubmenu(name)}</span>

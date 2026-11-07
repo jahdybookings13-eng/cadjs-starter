@@ -80,6 +80,7 @@ const Nr: React.FC<{
     <span className="text-xs text-gray-400">{label}</span>
     <input
       type="number"
+      aria-label={label}
       className="w-20 bg-gray-800 text-gray-100 rounded px-1 py-0.5 text-xs"
       value={v}
       step={step ?? 1}
@@ -102,6 +103,13 @@ export const PrintWizard: React.FC<PrintWizardProps> = ({
 
   const [slicer, setSlicer] = useState<SlicerKind>("orca");
   const [slicerHealth, setSlicerHealth] = useState<string | null>(null);
+  const [printerKind, setPrinterKind] = useState<PrinterKind>(
+    defaultTarget?.kind ?? "octoprint",
+  );
+  const [printerUrl, setPrinterUrl] = useState(
+    defaultTarget?.baseUrl ?? "http://192.168.1.50:5000",
+  );
+  const [printerKey, setPrinterKey] = useState(defaultTarget?.apiKey ?? "");
   const [busy, setBusy] = useState(false);
   const [profileList, setProfileList] = useState<PrintProfile[]>([]);
   const [editing, setEditing] = useState<PrintProfile | null>(null);
@@ -195,10 +203,10 @@ export const PrintWizard: React.FC<PrintWizardProps> = ({
     run(async () => {
       const t: PrinterTarget = {
         id: defaultTarget?.id ?? `printer_${Date.now().toString(36)}`,
-        kind: (defaultTarget?.kind ?? "octoprint") as PrinterKind,
-        baseUrl: defaultTarget?.baseUrl ?? "http://192.168.1.50:5000",
+        kind: printerKind,
+        baseUrl: printerUrl.trim(),
       };
-      if (defaultTarget?.apiKey !== undefined) t.apiKey = defaultTarget.apiKey;
+      if (printerKey) t.apiKey = printerKey;
       if (defaultTarget?.name !== undefined) t.name = defaultTarget.name;
       return wizardDetect(state, t);
     });
@@ -599,12 +607,12 @@ export const PrintWizard: React.FC<PrintWizardProps> = ({
                 <label className="block">
                   <span className="text-xs text-gray-400">Printer kind</span>
                   <select
+                    aria-label="Printer kind"
                     className="w-full bg-gray-800 text-gray-100 rounded px-2 py-1 text-xs"
-                    value={defaultTarget?.kind ?? "octoprint"}
-                    onChange={(e) => {
-                      const kind = e.target.value as PrinterKind;
-                      // no setters on defaultTarget; will reset on re-open
-                    }}
+                    value={printerKind}
+                    onChange={(e) =>
+                      setPrinterKind(e.target.value as PrinterKind)
+                    }
                   >
                     {(Object.keys(KIND_LABEL) as PrinterKind[]).map((k) => (
                       <option key={k} value={k}>
@@ -617,19 +625,22 @@ export const PrintWizard: React.FC<PrintWizardProps> = ({
                   <span className="text-xs text-gray-400">IP / URL</span>
                   <input
                     type="text"
+                    aria-label="Printer IP or URL"
                     className="w-full bg-gray-800 text-gray-100 rounded px-2 py-1 text-xs"
                     placeholder="http://192.168.1.50:5000"
-                    defaultValue={
-                      defaultTarget?.baseUrl ?? "http://192.168.1.50:5000"
-                    }
+                    value={printerUrl}
+                    onChange={(e) => setPrinterUrl(e.target.value)}
                   />
                 </label>
                 <label className="block">
                   <span className="text-xs text-gray-400">API key</span>
                   <input
                     type="password"
+                    aria-label="Printer API key"
                     className="w-full bg-gray-800 text-gray-100 rounded px-2 py-1 text-xs"
                     placeholder="abc123…"
+                    value={printerKey}
+                    onChange={(e) => setPrinterKey(e.target.value)}
                   />
                 </label>
               </div>
@@ -651,6 +662,7 @@ export const PrintWizard: React.FC<PrintWizardProps> = ({
                   {state.detectInfo || KIND_LABEL[target.kind as PrinterKind]}
                 </p>
                 <select
+                  aria-label="Printer profile"
                   className="bg-gray-800 text-gray-100 rounded px-2 py-1 text-xs"
                   value={
                     editing?.id ?? state.profile?.id ?? profileList[0]?.id ?? ""
@@ -703,6 +715,7 @@ export const PrintWizard: React.FC<PrintWizardProps> = ({
             <div className="space-y-3">
               <p>Slicing with {state.profile.name} on:</p>
               <select
+                aria-label="Slicer"
                 className="bg-gray-800 text-gray-100 rounded px-2 py-1 text-xs"
                 value={slicer}
                 onChange={(e) => setSlicer(e.target.value as SlicerKind)}

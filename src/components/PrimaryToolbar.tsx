@@ -250,6 +250,7 @@ const FastenerDropdown: React.FC<{
         <div className="absolute top-full left-0 mt-1 w-72 bg-gray-800 border border-gray-600 rounded-md shadow-lg z-50 p-3 flex flex-col gap-2">
           <label className="text-xs text-gray-400">Family</label>
           <select
+            aria-label="Fastener family"
             className="w-full bg-gray-900 text-sm rounded px-2 py-1 text-gray-200"
             value={famIdx}
             onChange={(e) => pickFamily(Number(e.target.value))}
@@ -262,6 +263,7 @@ const FastenerDropdown: React.FC<{
           </select>
           <label className="text-xs text-gray-400">Standard</label>
           <select
+            aria-label="Fastener standard"
             className="w-full bg-gray-900 text-sm rounded px-2 py-1 text-gray-200"
             value={std}
             onChange={(e) => pickStd(e.target.value as ThreadStandard)}
@@ -274,6 +276,7 @@ const FastenerDropdown: React.FC<{
           </select>
           <label className="text-xs text-gray-400">Size</label>
           <select
+            aria-label="Fastener size"
             className="w-full bg-gray-900 text-sm rounded px-2 py-1 text-gray-200"
             value={size}
             onChange={(e) => {
@@ -291,6 +294,7 @@ const FastenerDropdown: React.FC<{
             <div className="flex-1">
               <label className="text-xs text-gray-400">Head</label>
               <select
+                aria-label="Fastener head"
                 className="w-full bg-gray-900 text-sm rounded px-2 py-1 text-gray-200"
                 value={head}
                 onChange={(e) => {
@@ -308,6 +312,7 @@ const FastenerDropdown: React.FC<{
             <div className="flex-1">
               <label className="text-xs text-gray-400">Tip</label>
               <select
+                aria-label="Fastener tip"
                 className="w-full bg-gray-900 text-sm rounded px-2 py-1 text-gray-200"
                 value={tip}
                 onChange={(e) => {
@@ -602,6 +607,7 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = (props) => {
               {overflowItems.map((item) => (
                 <button
                   key={item.mode}
+                  aria-label={item.label}
                   className={`w-full px-3 py-2 text-sm text-left ${
                     isLocked
                       ? "text-gray-500 cursor-not-allowed"
@@ -620,6 +626,7 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = (props) => {
               ))}
               <div className="border-t border-gray-600 my-1" />
               <button
+                aria-label={showGroundPlane ? "Hide grid" : "Show grid"}
                 className={`w-full px-3 py-2 text-sm text-left ${
                   showGroundPlane ? "text-blue-400" : "text-gray-200"
                 } hover:bg-gray-700`}

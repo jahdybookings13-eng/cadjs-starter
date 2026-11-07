@@ -137,7 +137,11 @@ export const NumberInput: FC<NumberInputProps> = ({
         title={error ?? undefined}
       />
       {showConfirmButton && (
-        <button onClick={trySubmit} className={confirmButtonClassName}>
+        <button
+          onClick={trySubmit}
+          aria-label={confirmLabel}
+          className={confirmButtonClassName}
+        >
           {confirmLabel}
         </button>
       )}

@@ -108,6 +108,7 @@ const InlineRename: FC<{
     <input
       ref={inputRef}
       value={value}
+      aria-label="Rename feature"
       onChange={(e) => setValue(e.target.value)}
       onKeyDown={handleKeyDown}
       onBlur={() => {
@@ -216,6 +217,7 @@ const BrowserItemRow: FC<{
             if (hasChildren && item.sourceNodeId)
               onToggleExpanded(item.sourceNodeId);
           }}
+          aria-label={hasChildren ? "Toggle children" : "No children"}
           className="w-4 h-4 flex items-center justify-center text-gray-500 hover:text-gray-300 flex-none mr-0.5"
         >
           {hasChildren ? (
@@ -305,6 +307,8 @@ const SectionHeader: FC<{
 }> = ({ section, onToggle }) => (
   <button
     onClick={() => onToggle(section.id)}
+    aria-label={section.label}
+    aria-expanded={section.expanded}
     className="w-full flex items-center py-1.5 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:bg-gray-700/30"
   >
     <Icon

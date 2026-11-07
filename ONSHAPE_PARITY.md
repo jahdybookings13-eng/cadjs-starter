@@ -1,6 +1,6 @@
 # ONSHAPE_PARITY — in-browser designer parity
 
-Status: **scope frozen; Phase 1 (document shell) started 2026-11-06**
+Status: **scope frozen; Phase 0 complete 2026-11-06; Phase 1 complete 2026-11-06**
 Baseline date: **2026-11-06**
 Target: **Onshape's browser designer (desktop web), current production behaviour**
 Current product: **ScadGen / cadjs-starter**
@@ -92,9 +92,13 @@ that silently does nothing is a defect, not partial parity.
 
 - A React/Three.js/OCC editor plus a persisted document/tab layer: one
   `CadDocument` per project, with Part Studio tabs that can be created,
-  renamed, duplicated, reordered, deleted and switched. Each tab owns its own
-  serialized design, so switching and reloading restore the right geometry
-  (localStorage today).
+  renamed, duplicated, reordered, deleted, searched, multi-selected and
+  switched. Each tab owns its own serialized design, so switching and
+  reloading restore the right geometry (IndexedDB with a localStorage mirror).
+- A local Documents page (grid/list, create, import, open, rename, duplicate,
+  export, trash/restore, recent, search, filter, sort) and a document panel
+  (properties, tabs, named snapshots, where-used, size/storage), plus a
+  document toolbar with explicit save, export, panel, help and display state.
 - Part Studio-style feature history with add, update, delete, undo/redo,
   suppression states, rollback-era code paths, feature regeneration and
   persistent face/edge tags.
@@ -111,14 +115,16 @@ that silently does nothing is a defect, not partial parity.
 - Manufacturing exports: DXF drawing sheets, USPTO patent sheets, STL/STEP/SVG.
 - ECAD simulation, firmware/MCU emulation, RF, VR room/desk interactions.
 - Browser gates: full Chromium suite, Firefox/WebKit smoke matrix.
-- Automated evidence at this baseline: **590 app tests passing, 4 skipped**;
-  full Chromium **45 passed, 1 skipped**; Firefox/WebKit smoke **8 passed**
-  (the tab spec is Chromium-only until it is added to the smoke matrix).
+- Automated evidence at this baseline: **603 app tests passing, 4 skipped**;
+  Chromium non-VR **40 passed, 1 skipped**; the Phase 1 Documents and tab
+  specs pass. The pre-existing VR specs were not rerun in this pass, and the
+  Firefox/WebKit smoke matrix was not rerun.
 
 ### What does not exist
 
-- A local Documents page; persisted Assembly, Drawing, Variable Studio and
-  Feature Studio tabs (only Part Studio tabs exist); tab search and multi-select
+- Persisted Assembly, Drawing, Variable Studio and Feature Studio tabs (only
+  Part Studio tabs have a real workspace, so the others are not offered as
+  empty tabs)
 - A real Drawing workspace
 - Full assembly mate set, exploded views, interference and large-assembly
   performance
@@ -127,9 +133,9 @@ that silently does nothing is a defect, not partial parity.
 - Full sheet metal/frames/surface feature depth
 - Render, simulation, CAM and PCB studios
 - Broad CAD translation and imported-history editing
-- Onshape-style toolbar customization, tool search, document panel and local
-  named history
-- Full control inventory; many toolbar groups are still missing controls
+- Onshape-style five-family toolbar customization and tool search
+- Direct automated evidence for most of the 295 visible controls; the inventory
+  is complete, but evidence coverage is still low
 
 ## 3. 1:1 UI blueprint
 
@@ -269,20 +275,20 @@ Status keys:
 
 ### 4.1 Documents, tabs and local data
 
-| Capability           | Current                                                   | Required for parity                                                          | Status  |
-| -------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------- | ------- |
-| Documents page       | None                                                      | Local create/open/rename/duplicate/delete/recent/import                      | MISSING |
-| Document model       | One local `CadDocument` per project with Part Studio tabs | Multiple elements/tabs with document metadata                                | PARTIAL |
-| Document toolbar     | Project name, file menu, undo/redo subset                 | Full document menu, save/export, display settings, help                      | PARTIAL |
-| Document panel       | None                                                      | Properties, local history, where used, performance                           | MISSING |
-| Tab manager          | Create/rename/duplicate/move/delete/switch Part Studios   | Create/rename/move/delete/search Part Studios, Assemblies, Drawings, studios | PARTIAL |
-| Part Studio tabs     | Multiple persisted Part Studios, one design each          | Multiple Part Studios per document                                           | PARTIAL |
-| Assembly tabs        | Basic panel                                               | Persisted assembly tab with instances/mates                                  | PARTIAL |
-| Drawing tabs         | Exports only                                              | Persisted drawing workspace                                                  | MISSING |
-| BOM                  | None                                                      | Structured/indented/flat BOM, metadata, configurations                       | MISSING |
-| Search               | None                                                      | Document, tab, feature and part search                                       | MISSING |
-| Local named history  | Undo stack only                                           | Named local snapshots and restore                                            | MISSING |
-| Save/reload/recovery | localStorage + file import/export                         | Explicit save, autosave, corruption recovery, no lost work                   | PARTIAL |
+| Capability           | Current                                                                                         | Required for parity                                                          | Status  |
+| -------------------- | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------- |
+| Documents page       | Local grid/list: create/open/rename/duplicate/export/trash/restore/import/search/filter/sort    | Local create/open/rename/duplicate/delete/recent/import                      | SHIPPED |
+| Document model       | One `CadDocument` with multiple persisted Part Studio tabs                                      | Multiple elements/tabs with document metadata                                | PARTIAL |
+| Document toolbar     | Document menu, save, export, panel, help, display toggle                                        | Full document menu, save/export, display settings, help                      | PARTIAL |
+| Document panel       | Properties, tabs, named snapshots, where-used, size/storage                                     | Properties, local history, where used, performance                           | PARTIAL |
+| Tab manager          | Create/rename/duplicate/move/delete/search/multi-select Part Studios                            | Create/rename/move/delete/search Part Studios, Assemblies, Drawings, studios | PARTIAL |
+| Part Studio tabs     | Multiple persisted Part Studios, one design each                                                | Multiple Part Studios per document                                           | SHIPPED |
+| Assembly tabs        | Basic panel                                                                                     | Persisted assembly tab with instances/mates                                  | PARTIAL |
+| Drawing tabs         | Exports only                                                                                    | Persisted drawing workspace                                                  | MISSING |
+| BOM                  | None                                                                                            | Structured/indented/flat BOM, metadata, configurations                       | MISSING |
+| Search               | Documents and tabs; no feature/part search                                                      | Document, tab, feature and part search                                       | PARTIAL |
+| Local named history  | Named local snapshots (newest 20), restore and delete                                           | Named local snapshots and restore                                            | SHIPPED |
+| Save/reload/recovery | IndexedDB + localStorage mirror, autosave, explicit save, quota errors, corrupt-mirror recovery | Explicit save, autosave, corruption recovery, no lost work                   | PARTIAL |
 
 ### 4.2 Sketch
 
@@ -453,8 +459,9 @@ No backend. Parity is achieved with local storage and local files:
 - Kernel integration tests against real OCC.
 - Browser interaction tests per workspace and per control group.
 - Visual regression tests for the 1:1 layout.
-- A control-inventory audit that fails when a visible control has no handler,
-  no enabled-state rule, or no evidence entry.
+- A control-inventory audit that fails when a visible control has no handler or
+  no accessible label; evidence coverage is reported per control rather than
+  silently assumed.
 - Import corpus tests with real CAD files.
 - Performance budgets for load, regenerate, orbit and large assemblies.
 - Accessibility and keyboard-only tests.
@@ -493,7 +500,7 @@ Critical path: **0 → 1 → 2 → 3 → 4 → 5**. Phases 6 and 7 can run in pa
 with 4 and 5 once Phase 3 lands. Phase 8 starts only after the workspaces it
 consumes are real. Phase 9 runs continuously and gates the release.
 
-### Phase 0 — Contract and control inventory (2–3 weeks) — **not started**
+### Phase 0 — Contract and control inventory (2–3 weeks) — **complete 2026-11-06**
 
 **Goal:** make “all the buttons” countable and stop dead controls from entering
 the app.
@@ -502,31 +509,58 @@ the app.
 
 - A. Freeze this matrix; assign an owner and acceptance test to every row.
 - B. Build the control registry: one entry per visible control with id, label,
-  toolbar family, selection requirements, enabled rule, handler, undo label,
-  keyboard binding, evidence link and implementation status.
+  toolbar family, enabled/selection rule, handler, keyboard hint, evidence link
+  and implementation status. Undo labels remain on the runtime undo stack.
 - C. Build the inventory report grouped by toolbar and dialog, with counts of
   wired, disabled-with-reason and missing controls.
-- D. Add the dead-control audit to CI: a visible control with no handler, no
-  enabled rule, or no evidence entry fails the build.
+- D. Add the dead-control audit to CI: a visible control with no handler or no
+  accessible label fails the build; evidence coverage is reported and burned
+  down in Phase 1.
 - E. Define budgets: boot time, orbit FPS, regenerate time, document load,
   assembly open; and the supported browser/viewport matrix.
 - F. Define the phase demo script format (the manual half of exit evidence).
 
-**Deliverables**
+**Deliverables (landed)**
 
-- Control registry module and generated inventory report.
-- CI audit script wired into the existing test command.
-- Performance/browser budget document, enforced by checks.
+- `scripts/control-inventory.mjs` and the generated `CONTROL_INVENTORY.md`:
+  every visible JSX control with label, handler, enabled rule, keyboard hint
+  and test-evidence level, grouped by toolbar/dialog.
+- `scripts/parity-matrix.mjs`, `parity/owners.json` and `PARITY_STATUS.md`:
+  every capability row gets an owner and acceptance evidence, and the report
+  tracks row coverage live.
+- `scripts/check-budgets.mjs`, `parity/budgets.json` and
+  `e2e/perf-budget.spec.ts`: browser budgets for boot, document reload,
+  regeneration and orbit, plus the supported browser/viewport matrix.
+- `parity/phase-demos/phase-0.md`: the demo-script format and the Phase 0 run.
 
-**Exit evidence**
+**Exit evidence (measured 2026-11-06)**
 
-- Report lists every current toolbar/menu/dialog control and its handler.
-- Audit fails on a deliberately added dead button, then passes when removed.
-- Every matrix row has an owner and an acceptance-test reference.
+- 255 visible controls in 63 files; 0 dead, 0 unlabeled.
+- 97 matrix rows in 8 sections; every row has an owner and acceptance evidence;
+  row coverage is 31.4% (SHIPPED=1, PARTIAL=0.5).
+- The audit found 2 dead and 38 unlabeled controls on its first run and failed;
+  after wiring the printer fields and naming the icon/dynamic controls it
+  passes. Evidence coverage is only 4 direct test references (2%); that gap is
+  enumerated in `CONTROL_INVENTORY.md` and is Phase 1 work, not a hidden pass.
+- Headless Chromium baseline over two runs: boot 8.41–9.58 s (budget 12 s),
+  document reload 5.55–10.64 s (budget 15 s), box regeneration 242–726 ms
+  (budget 5 s), orbit 56–61 fps (budget ≥30). These are dev-server numbers,
+  not production or headset numbers.
 
 **Not in this phase:** implementing missing controls. Measurement first.
 
-### Phase 1 — Document shell and local Documents page (8–12 weeks) — **partial: tab model landed**
+**Not in this phase:** implementing missing controls. Measurement first.
+
+### 6.1 Phase demo script format
+
+Every phase exit demo is a numbered script stored in
+`parity/phase-demos/phase-N.md`. Each step names the action, the expected
+observation, and the evidence artifact (test name, trace, screenshot or
+console line). A demo runs from a clean browser profile against a fresh build;
+if a step cannot be run, the phase is not complete. The Phase 0 script is
+`parity/phase-demos/phase-0.md`.
+
+### Phase 1 — Document shell and local Documents page (8–12 weeks) — **complete 2026-11-06**
 
 **Goal:** a real local document environment: create, open, organise, save and
 recover documents, with every tab type backed by a real workspace.
@@ -558,15 +592,26 @@ recover documents, with every tab type backed by a real workspace.
 - Named local snapshots with restore.
 - Tab search/multi-select and drag reorder.
 
-**Exit evidence**
+**Exit evidence (measured 2026-11-06)**
 
-- Create a document with three Part Studios, reorder and duplicate tabs, save a
-  snapshot, restore it, reload, and recover from a simulated corrupt write.
-- Quota failure produces a clear error and leaves the last good save intact.
-- Browser test covers create → tabs → snapshot → reload → restore.
+- A document with three Part Studios is created, searched, keyboard-reordered,
+  drag-reordered, duplicated and multi-selected/duplicated in Chromium.
+- Rename, duplicate, export download, trash/restore and permanent-delete paths
+  run through the Documents page; the created document is confirmed in
+  IndexedDB.
+- A named snapshot is created, survives a reload, and restores the scene to the
+  snapshotted geometry.
+- A deliberately corrupt localStorage mirror is replaced on reload by the good
+  IndexedDB copy; a failed localStorage write reports a quota error and leaves
+  the last serialized good save intact.
+- `src/document/__tests__` passes 26 tests; the Documents and tab Chromium specs
+  pass. Full gate and perf results are recorded in
+  `parity/phase-demos/phase-1.md`.
 
 **Not in this phase:** cloud storage, accounts, sharing, real Assembly/Drawing
-workspaces (their tabs arrive with their phases).
+workspaces (their tabs arrive with their phases). The five-family toolbar
+rebuild is also deferred; the document toolbar landed, while feature/sketch
+context toolbars remain the existing surfaces.
 
 ### Phase 2 — Sketch parity (4–6 months) — **not started**
 
@@ -865,29 +910,53 @@ Parity may be claimed only when all of the following are true:
 
 ## 9. Current slice status and next steps
 
-Landed 2026-11-06 (Phase 1, first slice):
+Landed 2026-11-06 (Phase 0):
+
+1. `scripts/control-inventory.mjs` scans the JSX and generates
+   `CONTROL_INVENTORY.md` + `parity/controls.json`. `npm run check:controls`
+   fails on a visible control with no handler or no accessible label; the first
+   run found 2 dead and 38 unlabeled controls, all resolved.
+2. `scripts/parity-matrix.mjs` parses section 4, applies `parity/owners.json`,
+   validates every row's status and writes `PARITY_STATUS.md` +
+   `parity/matrix.json`. `npm run check:parity` fails on an untracked row.
+3. `parity/budgets.json`, `scripts/check-budgets.mjs` and
+   `e2e/perf-budget.spec.ts` define and measure boot, document reload,
+   regeneration and orbit, plus the Chromium/Firefox/WebKit matrix.
+4. `parity/phase-demos/phase-0.md` defines the demo-script format and records
+   the Phase 0 run; `npm run test:bible` now includes the new checks.
+
+Landed 2026-11-06 (Phase 1, second slice):
 
 1. `src/document/` — a persisted `CadDocument` with `tabs[]`, active tab,
    migration from the old single-design project blob, and repair on read.
-2. Part Studio tabs are real: create, rename, duplicate, move, delete and
-   switch. Each tab stores its own serialized design; switching flushes the
-   live scene and restores the target tab, the same path a reload uses.
-3. The tab bar is mounted in the editor (`src/components/DocumentTabBar.tsx`).
-   Non-Part-Studio kinds are listed as disabled/planned, not fake buttons.
-4. Boot now hydrates the active tab, so a reload reopens the Part Studio the
-   user was in instead of an empty scene.
-5. Unit tests for the model/store and a Chromium browser test for tab
-   isolation, rename, reload and delete.
+2. IndexedDB (`scadgen.documents`) is the durable store, with the localStorage
+   map as a synchronous mirror and fallback. Boot hydrates before the scene
+   resolves its tab; newest `updatedAt` wins per document on migration.
+3. Part Studio tabs are real: create, rename, duplicate, move, delete, switch,
+   search, multi-select, drag reorder and keyboard reorder. Each tab stores its
+   own serialized design; switching flushes the live scene and restores the
+   target tab, the same path a reload uses.
+4. The Documents page provides grid/list, create, import, open, rename,
+   duplicate, export, trash/restore, permanent delete, recent, search, kind
+   filter and sort. The document panel provides properties, tab multi-select,
+   named snapshots (newest 20), where-used assets and storage/size status.
+5. Save state, autosave, explicit save and storage failures are visible; a
+   corrupt mirror falls back to the good IndexedDB copy. Unit tests cover the
+   model, browse rules, snapshots, file round-trip, corrupt mirror and quota
+   failure; Chromium specs cover the Documents page, tab manager and the
+   existing tab isolation/reload path.
 
-Still missing from Phase 1: the local Documents page, document panel, tab
-search and multi-select, persisted Assembly/Drawing/Variable Studio/Feature
-Studio tabs, and local named snapshots. Those depend on the real workspaces they
-would open; adding empty tabs first would be a mock.
+Phase 1 is complete for the local document shell. The matrix remains 35.1%
+because Assembly, Drawing, BOM, feature/part search and deeper document
+behaviour are later phases; six matrix rows are `SHIPPED`, including the
+Documents page, Part Studio tabs and named local history. Only Part Studio tabs
+are offered because the other workspaces do not exist yet; adding empty tabs
+would be a mock.
 
-The next implementation slice is the control inventory plus the local
-Documents page and document panel, and adding the tab spec to the Firefox and
-WebKit smoke matrix. Keep every existing test green and add round-trip coverage
-for each new tab kind.
+The next implementation slice is Phase 2 sketch parity. Keep the tab spec in
+the Chromium suite until the Firefox/WebKit smoke matrix can afford its runtime,
+and continue the control-evidence burn-down (8 direct references across 295
+controls at the Phase 1 checkpoint).
 
 ## 10. Sources and baseline notes
 

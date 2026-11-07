@@ -4,12 +4,14 @@ A reference React + Three.js + Vite app built on the [`@vitekk02/cadjs`](https:/
 
 For the in-browser Onshape designer parity scope (everything inside the designer and its controls — no API, App Store or cloud services), current capability matrix and phased delivery plan, see [`ONSHAPE_PARITY.md`](./ONSHAPE_PARITY.md).
 
+Phase 0 instrumentation is generated, not hand-maintained: [`CONTROL_INVENTORY.md`](./CONTROL_INVENTORY.md) lists every visible control and its handler/evidence, [`PARITY_STATUS.md`](./PARITY_STATUS.md) shows matrix ownership and coverage, and [`parity/budgets.json`](./parity/budgets.json) records the browser budgets. Phase 1 adds the local document shell; its exit script and measured results are in [`parity/phase-demos/phase-1.md`](./parity/phase-demos/phase-1.md). Run `npm run inventory:controls` after UI changes and `npm run test:bible` for the full gate.
+
 ## What's inside
 
 - **`src/index.tsx`**: entry. Wires `configureCadjs` with Vite-resolved WASM URLs, mounts the provider tree (`ToastProvider` → `CadCoreProvider` → `CadVisualizerProvider`), shows a `LoadingScreen` while WASM boots.
 - **`src/scenes/simpleCadScene.tsx`**: primary editor: viewport, mode switching (sketch / extrude / fillet / sweep / loft / revolve / measure / combine), keyboard shortcuts, undo/redo, ViewCube, feature tree.
-- **`src/document/`**: persisted document/tab model: Part Studio tabs with create, rename, duplicate, move, delete and switch, each carrying its own design blob.
-- **`src/components/`**: reusable UI: `DimensionInput`, `SketchContextMenu`, `PlaneSelector`, `ViewCube`, `FeatureTree`, `FileMenu`, `ModeInfoCard`, `LoadingScreen`, …
+- **`src/document/`**: local document model and storage: IndexedDB with a localStorage mirror, Part Studio tabs, named snapshots, browse/sort rules, and document-file import/export.
+- **`src/components/`**: reusable UI: `DocumentsPage`, `DocumentPanel`, `DocumentToolbar`, `DocumentTabBar`, `DimensionInput`, `SketchContextMenu`, `PlaneSelector`, `ViewCube`, `FeatureTree`, `FileMenu`, `ModeInfoCard`, `LoadingScreen`, …
 - **`src/navbar/`**: `Navbar`, `SketchToolbar`, `ConstraintPanel`, `ValueInputModal`.
 
 All UI components consume the library through its public entry points (`@vitekk02/cadjs`, `@vitekk02/cadjs/react`), with no deep imports.

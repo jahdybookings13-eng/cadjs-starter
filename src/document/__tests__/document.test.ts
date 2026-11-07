@@ -44,6 +44,7 @@ import {
 } from "../model";
 import {
   DOCUMENTS_KEY,
+  __resetDocumentStoreForTests,
   ensureDocument,
   getDocument,
   listDocuments,
@@ -52,6 +53,7 @@ import {
 
 beforeEach(() => {
   localStorage.clear();
+  __resetDocumentStoreForTests();
 });
 
 describe("document model", () => {

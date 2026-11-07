@@ -68,6 +68,7 @@ const CombineModePanel: FC<CombineModePanelProps> = ({
             type="checkbox"
             checked={combineKeepTools}
             onChange={(e) => setCombineKeepTools(e.target.checked)}
+            aria-label="Keep combine tools"
             className="w-3 h-3"
           />
           Keep Tools

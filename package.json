@@ -28,7 +28,12 @@
     "test:unit": "vitest run",
     "test:perf": "ECAD_BENCH=1 vitest run src/ecad/__tests__/perf.test.ts --reporter=verbose",
     "check:bundle": "node scripts/check-bundle.mjs",
-    "test:bible": "npm run typecheck && npm run lint && npm run test:unit && npm run build && npm run check:bundle"
+    "inventory:controls": "node scripts/control-inventory.mjs",
+    "check:controls": "node scripts/control-inventory.mjs --check",
+    "report:parity": "node scripts/parity-matrix.mjs",
+    "check:parity": "node scripts/parity-matrix.mjs --check",
+    "check:budgets": "node scripts/check-budgets.mjs",
+    "test:bible": "npm run typecheck && npm run lint && npm run test:unit && npm run build && npm run check:bundle && npm run check:controls && npm run check:parity && npm run check:budgets"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.20.0",
