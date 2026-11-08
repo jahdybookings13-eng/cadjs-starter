@@ -1,6 +1,6 @@
 {
   "summary": {
-    "generatedAt": "2026-11-08T15:35:00.216Z",
+    "generatedAt": "2026-11-08T16:00:45.198Z",
     "files": 87,
     "controls": 878,
     "byStatus": {
@@ -80,9 +80,9 @@
     },
     "evidence": {
       "direct": 92,
-      "label": 73,
-      "any": 252,
-      "missing": 626
+      "label": 98,
+      "any": 338,
+      "missing": 540
     },
     "dead": 0,
     "unlabeled": 0,
@@ -823,7 +823,8 @@
       "evidence": {
         "level": "aria",
         "files": [
-          "e2e/assembly-controls.spec.ts"
+          "e2e/assembly-controls.spec.ts",
+          "e2e/drawing-controls.spec.ts"
         ]
       },
       "family": "Other: AssemblyWorkspace"
@@ -3029,6 +3030,7 @@
         "level": "direct",
         "files": [
           "e2e/body-properties.spec.ts",
+          "e2e/drawing-controls.spec.ts",
           "e2e/parts.spec.ts",
           "e2e/phase3-acceptance.spec.ts"
         ]
@@ -4495,6 +4497,7 @@
       "evidence": {
         "level": "label",
         "files": [
+          "e2e/drawing-controls.spec.ts",
           "e2e/phase5.spec.ts"
         ]
       },
@@ -5689,7 +5692,8 @@
       "evidence": {
         "level": "direct",
         "files": [
-          "e2e/display-menu.spec.ts"
+          "e2e/display-menu.spec.ts",
+          "e2e/drawing-controls.spec.ts"
         ]
       },
       "family": "Other: DisplayMenu"
@@ -6013,8 +6017,8 @@
         "files": [
           "e2e/assembly-controls.spec.ts",
           "e2e/document-tabs.spec.ts",
-          "e2e/features-f.spec.ts",
-          "e2e/pcb-studio.spec.ts"
+          "e2e/drawing-controls.spec.ts",
+          "e2e/features-f.spec.ts"
         ]
       },
       "family": "Document tabs"
@@ -6079,8 +6083,8 @@
         "files": [
           "e2e/assembly-controls.spec.ts",
           "e2e/document-tabs.spec.ts",
-          "e2e/features-f.spec.ts",
-          "e2e/pcb-studio.spec.ts"
+          "e2e/drawing-controls.spec.ts",
+          "e2e/features-f.spec.ts"
         ]
       },
       "family": "Document tabs"
@@ -6103,8 +6107,8 @@
         "files": [
           "e2e/assembly-controls.spec.ts",
           "e2e/document-tabs.spec.ts",
-          "e2e/features-f.spec.ts",
-          "e2e/pcb-studio.spec.ts"
+          "e2e/drawing-controls.spec.ts",
+          "e2e/features-f.spec.ts"
         ]
       },
       "family": "Document tabs"
@@ -6722,8 +6726,10 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "label",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
@@ -6741,8 +6747,10 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "label",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
@@ -6762,6 +6770,7 @@
       "evidence": {
         "level": "aria",
         "files": [
+          "e2e/drawing-controls.spec.ts",
           "e2e/phase5.spec.ts"
         ]
       },
@@ -6781,8 +6790,10 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
@@ -6800,8 +6811,10 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
@@ -6819,8 +6832,10 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
@@ -6838,8 +6853,10 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
@@ -6857,8 +6874,10 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
@@ -6876,8 +6895,10 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
@@ -6895,8 +6916,10 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
@@ -6914,8 +6937,10 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
@@ -6933,8 +6958,10 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
@@ -6952,8 +6979,10 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
@@ -6973,6 +7002,7 @@
       "evidence": {
         "level": "aria",
         "files": [
+          "e2e/drawing-controls.spec.ts",
           "e2e/phase5.spec.ts"
         ]
       },
@@ -6992,8 +7022,10 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
@@ -7011,8 +7043,10 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
@@ -7030,8 +7064,10 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "label",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
@@ -7049,8 +7085,10 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
@@ -7068,8 +7106,10 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
@@ -7087,8 +7127,10 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
@@ -7106,8 +7148,10 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
@@ -7125,8 +7169,10 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
@@ -7144,8 +7190,10 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
@@ -7163,8 +7211,10 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
@@ -7184,6 +7234,7 @@
       "evidence": {
         "level": "aria",
         "files": [
+          "e2e/drawing-controls.spec.ts",
           "e2e/phase5.spec.ts"
         ]
       },
@@ -7205,6 +7256,7 @@
       "evidence": {
         "level": "aria",
         "files": [
+          "e2e/drawing-controls.spec.ts",
           "e2e/phase5.spec.ts"
         ]
       },
@@ -7224,8 +7276,10 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
@@ -7243,8 +7297,10 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
@@ -7264,6 +7320,7 @@
       "evidence": {
         "level": "aria",
         "files": [
+          "e2e/drawing-controls.spec.ts",
           "e2e/phase5.spec.ts"
         ]
       },
@@ -7276,21 +7333,23 @@
       "role": "",
       "label": "View ${key}",
       "labelKind": "dynamic",
-      "testid": "",
+      "testid": "drawing-view-${key}",
       "handler": "onChange",
       "enabledRule": "{selectedConfig.locked === true}",
       "readOnly": false,
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "label",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 878,
+      "line": 879,
       "tag": "select",
       "role": "",
       "label": "View parent",
@@ -7302,14 +7361,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 896,
+      "line": 897,
       "tag": "select",
       "role": "",
       "label": "View alignment",
@@ -7321,14 +7382,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 921,
+      "line": 922,
       "tag": "input",
       "role": "",
       "label": "Suppress view",
@@ -7340,14 +7403,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 930,
+      "line": 931,
       "tag": "input",
       "role": "",
       "label": "Lock view",
@@ -7361,6 +7426,7 @@
       "evidence": {
         "level": "aria",
         "files": [
+          "e2e/drawing-controls.spec.ts",
           "e2e/phase5.spec.ts"
         ]
       },
@@ -7368,7 +7434,7 @@
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 940,
+      "line": 941,
       "tag": "input",
       "role": "",
       "label": "Custom view direction ${label}",
@@ -7380,14 +7446,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "label",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 957,
+      "line": 958,
       "tag": "input",
       "role": "",
       "label": "Custom view label",
@@ -7401,6 +7469,7 @@
       "evidence": {
         "level": "aria",
         "files": [
+          "e2e/drawing-controls.spec.ts",
           "e2e/phase5.spec.ts"
         ]
       },
@@ -7408,7 +7477,7 @@
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 963,
+      "line": 964,
       "tag": "button",
       "role": "",
       "label": "Add view",
@@ -7422,6 +7491,7 @@
       "evidence": {
         "level": "label",
         "files": [
+          "e2e/drawing-controls.spec.ts",
           "e2e/phase5.spec.ts"
         ]
       },
@@ -7429,26 +7499,28 @@
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 977,
+      "line": 978,
       "tag": "button",
       "role": "",
       "label": "Remove ${view.label}",
       "labelKind": "dynamic",
-      "testid": "",
+      "testid": "drawing-remove-custom-view-${view.id}",
       "handler": "onClick",
       "enabledRule": "",
       "readOnly": false,
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "label",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 991,
+      "line": 993,
       "tag": "input",
       "role": "",
       "label": "Section view",
@@ -7462,6 +7534,7 @@
       "evidence": {
         "level": "aria",
         "files": [
+          "e2e/drawing-controls.spec.ts",
           "e2e/phase5.spec.ts"
         ]
       },
@@ -7469,7 +7542,7 @@
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1010,
+      "line": 1012,
       "tag": "select",
       "role": "",
       "label": "Section axis",
@@ -7481,14 +7554,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1027,
+      "line": 1029,
       "tag": "input",
       "role": "",
       "label": "Section offset",
@@ -7500,14 +7575,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1044,
+      "line": 1046,
       "tag": "select",
       "role": "",
       "label": "Section direction",
@@ -7521,6 +7598,7 @@
       "evidence": {
         "level": "aria",
         "files": [
+          "e2e/drawing-controls.spec.ts",
           "e2e/phase5.spec.ts"
         ]
       },
@@ -7528,7 +7606,7 @@
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1060,
+      "line": 1062,
       "tag": "input",
       "role": "",
       "label": "Section depth",
@@ -7542,6 +7620,7 @@
       "evidence": {
         "level": "aria",
         "files": [
+          "e2e/drawing-controls.spec.ts",
           "e2e/phase5.spec.ts"
         ]
       },
@@ -7549,7 +7628,7 @@
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1074,
+      "line": 1076,
       "tag": "input",
       "role": "",
       "label": "Section hatch angle",
@@ -7563,6 +7642,7 @@
       "evidence": {
         "level": "aria",
         "files": [
+          "e2e/drawing-controls.spec.ts",
           "e2e/phase5.spec.ts"
         ]
       },
@@ -7570,7 +7650,7 @@
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1088,
+      "line": 1090,
       "tag": "input",
       "role": "",
       "label": "Section hatch spacing",
@@ -7584,6 +7664,7 @@
       "evidence": {
         "level": "aria",
         "files": [
+          "e2e/drawing-controls.spec.ts",
           "e2e/phase5.spec.ts"
         ]
       },
@@ -7591,7 +7672,7 @@
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1111,
+      "line": 1113,
       "tag": "input",
       "role": "",
       "label": "Detail view",
@@ -7603,14 +7684,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1134,
+      "line": 1136,
       "tag": "input",
       "role": "",
       "label": "Detail center X",
@@ -7622,14 +7705,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1149,
+      "line": 1151,
       "tag": "input",
       "role": "",
       "label": "Detail center Y",
@@ -7641,14 +7726,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1164,
+      "line": 1166,
       "tag": "input",
       "role": "",
       "label": "Detail radius",
@@ -7660,14 +7747,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1182,
+      "line": 1184,
       "tag": "input",
       "role": "",
       "label": "Auxiliary view",
@@ -7679,14 +7768,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1206,
+      "line": 1208,
       "tag": "input",
       "role": "",
       "label": "Auxiliary direction ${label}",
@@ -7698,14 +7789,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "label",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1259,
+      "line": 1261,
       "tag": "input",
       "role": "",
       "label": "BOM column ${column}",
@@ -7719,14 +7812,15 @@
       "evidence": {
         "level": "label",
         "files": [
-          "src/drawings/__tests__/phase5.test.ts"
+          "src/drawings/__tests__/phase5.test.ts",
+          "e2e/drawing-controls.spec.ts"
         ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1275,
+      "line": 1277,
       "tag": "input",
       "role": "",
       "label": "BOM item ${row.key}",
@@ -7738,14 +7832,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "label",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1285,
+      "line": 1287,
       "tag": "input",
       "role": "",
       "label": "BOM number ${row.key}",
@@ -7757,14 +7853,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "label",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1293,
+      "line": 1295,
       "tag": "button",
       "role": "",
       "label": "Move BOM row ${row.key} up",
@@ -7776,14 +7874,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "label",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1301,
+      "line": 1303,
       "tag": "button",
       "role": "",
       "label": "Move BOM row ${row.key} down",
@@ -7795,14 +7895,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "label",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1310,
+      "line": 1312,
       "tag": "input",
       "role": "",
       "label": "BOM description ${row.key}",
@@ -7814,14 +7916,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "label",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1333,
+      "line": 1335,
       "tag": "select",
       "role": "",
       "label": "Dimension view",
@@ -7833,14 +7937,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1359,
+      "line": 1361,
       "tag": "select",
       "role": "",
       "label": "Dimension axis",
@@ -7852,14 +7958,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1370,
+      "line": 1372,
       "tag": "button",
       "role": "",
       "label": "Add dimension",
@@ -7871,14 +7979,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "label",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1379,
+      "line": 1381,
       "tag": "select",
       "role": "",
       "label": "Dimension kind",
@@ -7890,14 +8000,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1393,
+      "line": 1395,
       "tag": "input",
       "role": "",
       "label": "Dimension text size",
@@ -7909,14 +8021,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1400,
+      "line": 1402,
       "tag": "select",
       "role": "",
       "label": "Dimension tolerance",
@@ -7928,14 +8042,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1414,
+      "line": 1416,
       "tag": "input",
       "role": "",
       "label": "Dimension fit",
@@ -7947,14 +8063,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1423,
+      "line": 1425,
       "tag": "input",
       "role": "",
       "label": "Dimension tolerance upper",
@@ -7966,14 +8084,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1430,
+      "line": 1432,
       "tag": "input",
       "role": "",
       "label": "Dimension tolerance lower",
@@ -7985,14 +8105,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1440,
+      "line": 1442,
       "tag": "select",
       "role": "",
       "label": "Anchor dimension to body",
@@ -8004,14 +8126,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1456,
+      "line": 1458,
       "tag": "select",
       "role": "",
       "label": "Dimension edge",
@@ -8023,52 +8147,58 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1482,
+      "line": 1484,
       "tag": "input",
       "role": "",
       "label": "Offset ${item.id}",
       "labelKind": "dynamic",
-      "testid": "",
+      "testid": "drawing-dimension-offset-${item.id}",
       "handler": "onChange",
       "enabledRule": "",
       "readOnly": false,
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "label",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1492,
+      "line": 1495,
       "tag": "button",
       "role": "",
       "label": "Delete ${item.id}",
       "labelKind": "dynamic",
-      "testid": "",
+      "testid": "drawing-dimension-delete-${item.id}",
       "handler": "onClick",
       "enabledRule": "",
       "readOnly": false,
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "label",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1513,
+      "line": 1517,
       "tag": "input",
       "role": "",
       "label": "Broken-out view",
@@ -8080,14 +8210,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1543,
+      "line": 1547,
       "tag": "input",
       "role": "",
       "label": "Broken-out ${key}",
@@ -8099,14 +8231,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "label",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1571,
+      "line": 1575,
       "tag": "select",
       "role": "",
       "label": "GD&T type",
@@ -8118,14 +8252,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1591,
+      "line": 1595,
       "tag": "select",
       "role": "",
       "label": "GD&T characteristic",
@@ -8137,14 +8273,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1609,
+      "line": 1613,
       "tag": "input",
       "role": "",
       "label": "GD&T tolerance",
@@ -8156,14 +8294,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1616,
+      "line": 1620,
       "tag": "input",
       "role": "",
       "label": "GD&T datums",
@@ -8175,14 +8315,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1624,
+      "line": 1628,
       "tag": "input",
       "role": "",
       "label": "Diameter zone",
@@ -8194,14 +8336,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1635,
+      "line": 1639,
       "tag": "input",
       "role": "",
       "label": "Datum label",
@@ -8213,14 +8357,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1644,
+      "line": 1648,
       "tag": "input",
       "role": "",
       "label": "Surface finish Ra",
@@ -8232,14 +8378,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1654,
+      "line": 1658,
       "tag": "select",
       "role": "",
       "label": "Weld type",
@@ -8251,14 +8399,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1675,
+      "line": 1679,
       "tag": "input",
       "role": "",
       "label": "Weld size",
@@ -8270,14 +8420,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1682,
+      "line": 1686,
       "tag": "input",
       "role": "",
       "label": "Weld length",
@@ -8289,14 +8441,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1689,
+      "line": 1693,
       "tag": "input",
       "role": "",
       "label": "Weld pitch",
@@ -8308,14 +8462,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1697,
+      "line": 1701,
       "tag": "input",
       "role": "",
       "label": "All-around weld",
@@ -8327,14 +8483,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1707,
+      "line": 1711,
       "tag": "select",
       "role": "",
       "label": "Anchor GD&T to body",
@@ -8346,14 +8504,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1720,
+      "line": 1724,
       "tag": "button",
       "role": "",
       "label": "Add GD&amp;T annotation",
@@ -8372,26 +8532,28 @@
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1741,
+      "line": 1745,
       "tag": "button",
       "role": "",
       "label": "Delete ${item.id}",
       "labelKind": "dynamic",
-      "testid": "",
+      "testid": "drawing-gdt-delete-${item.id}",
       "handler": "onClick",
       "enabledRule": "",
       "readOnly": false,
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "label",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1763,
+      "line": 1768,
       "tag": "input",
       "role": "",
       "label": "New note",
@@ -8405,6 +8567,7 @@
       "evidence": {
         "level": "aria",
         "files": [
+          "e2e/drawing-controls.spec.ts",
           "e2e/phase5.spec.ts"
         ]
       },
@@ -8412,7 +8575,7 @@
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1770,
+      "line": 1775,
       "tag": "button",
       "role": "",
       "label": "Add note",
@@ -8426,6 +8589,7 @@
       "evidence": {
         "level": "aria",
         "files": [
+          "e2e/drawing-controls.spec.ts",
           "e2e/phase5.spec.ts"
         ]
       },
@@ -8433,7 +8597,7 @@
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1779,
+      "line": 1784,
       "tag": "select",
       "role": "",
       "label": "Anchor balloon to body",
@@ -8445,14 +8609,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1793,
+      "line": 1798,
       "tag": "input",
       "role": "",
       "label": "New balloon",
@@ -8464,14 +8630,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1800,
+      "line": 1805,
       "tag": "button",
       "role": "",
       "label": "Add balloon",
@@ -8483,19 +8651,21 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1817,
+      "line": 1822,
       "tag": "input",
       "role": "",
       "label": "Note text ${note.id}",
       "labelKind": "dynamic",
-      "testid": "",
+      "testid": "drawing-note-text-${note.id}",
       "handler": "onChange",
       "enabledRule": "",
       "readOnly": false,
@@ -8504,6 +8674,7 @@
       "evidence": {
         "level": "label",
         "files": [
+          "e2e/drawing-controls.spec.ts",
           "e2e/phase5.spec.ts"
         ]
       },
@@ -8511,45 +8682,49 @@
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1830,
+      "line": 1836,
       "tag": "button",
       "role": "",
       "label": "Delete ${note.id}",
       "labelKind": "dynamic",
-      "testid": "",
+      "testid": "drawing-note-delete-${note.id}",
       "handler": "onClick",
       "enabledRule": "",
       "readOnly": false,
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "label",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1846,
+      "line": 1853,
       "tag": "input",
       "role": "",
       "label": "Note ${key} ${note.id}",
       "labelKind": "dynamic",
-      "testid": "",
+      "testid": "drawing-note-${key}-${note.id}",
       "handler": "onChange",
       "enabledRule": "",
       "readOnly": false,
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "label",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1866,
+      "line": 1874,
       "tag": "input",
       "role": "",
       "label": "Note leader",
@@ -8561,71 +8736,79 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1893,
+      "line": 1901,
       "tag": "input",
       "role": "",
       "label": "Balloon label ${balloon.id}",
       "labelKind": "dynamic",
-      "testid": "",
+      "testid": "drawing-balloon-label-${balloon.id}",
       "handler": "onChange",
       "enabledRule": "",
       "readOnly": false,
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "label",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1908,
+      "line": 1917,
       "tag": "button",
       "role": "",
       "label": "Delete ${balloon.id}",
       "labelKind": "dynamic",
-      "testid": "",
+      "testid": "drawing-balloon-delete-${balloon.id}",
       "handler": "onClick",
       "enabledRule": "",
       "readOnly": false,
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "label",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1926,
+      "line": 1936,
       "tag": "input",
       "role": "",
       "label": "Balloon ${key} ${balloon.id}",
       "labelKind": "dynamic",
-      "testid": "",
+      "testid": "drawing-balloon-${key}-${balloon.id}",
       "handler": "onChange",
       "enabledRule": "",
       "readOnly": false,
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "label",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1946,
+      "line": 1957,
       "tag": "input",
       "role": "",
       "label": "Balloon leader",
@@ -8637,14 +8820,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "aria",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1966,
+      "line": 1977,
       "tag": "button",
       "role": "",
       "label": "Renumber balloons",
@@ -8656,14 +8841,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "label",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1973,
+      "line": 1984,
       "tag": "button",
       "role": "",
       "label": "Link to BOM",
@@ -8675,14 +8862,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "label",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1990,
+      "line": 2001,
       "tag": "button",
       "role": "",
       "label": "Export SVG",
@@ -8703,7 +8892,7 @@
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 1998,
+      "line": 2009,
       "tag": "button",
       "role": "",
       "label": "Export PDF",
@@ -8724,7 +8913,7 @@
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 2006,
+      "line": 2017,
       "tag": "button",
       "role": "",
       "label": "Export DXF",
@@ -8745,7 +8934,7 @@
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 2016,
+      "line": 2027,
       "tag": "select",
       "role": "",
       "label": "DWG release",
@@ -8766,7 +8955,7 @@
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 2029,
+      "line": 2040,
       "tag": "button",
       "role": "",
       "label": "Export DWG",
@@ -8787,7 +8976,7 @@
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 2037,
+      "line": 2048,
       "tag": "button",
       "role": "",
       "label": "Print / plot",
@@ -8799,14 +8988,16 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "label",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
     {
       "file": "src/components/DrawingWorkspace.tsx",
-      "line": 2044,
+      "line": 2055,
       "tag": "button",
       "role": "",
       "label": "Verify export",
@@ -8818,8 +9009,10 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "none",
-        "files": []
+        "level": "label",
+        "files": [
+          "e2e/drawing-controls.spec.ts"
+        ]
       },
       "family": "Other: DrawingWorkspace"
     },
@@ -13339,12 +13532,9 @@
       "keyboard": "",
       "status": "wired",
       "evidence": {
-        "level": "label",
+        "level": "aria",
         "files": [
-          "src/__tests__/oneToOne.test.ts",
-          "src/assemblies/__tests__/bom.test.ts",
-          "src/components/vr/__tests__/subPrimSelector.test.ts",
-          "src/model/__tests__/documentStore.test.ts"
+          "e2e/drawing-controls.spec.ts"
         ]
       },
       "family": "Other: SimulationStudioWorkspace"
@@ -17223,7 +17413,7 @@
     },
     {
       "file": "src/scenes/simpleCadScene.tsx",
-      "line": 7466,
+      "line": 7469,
       "tag": "button",
       "role": "",
       "label": "← Return to assembly",
@@ -17242,7 +17432,7 @@
     },
     {
       "file": "src/scenes/simpleCadScene.tsx",
-      "line": 7472,
+      "line": 7475,
       "tag": "input",
       "role": "",
       "label": "Assembly source rollback",
@@ -17263,7 +17453,7 @@
     },
     {
       "file": "src/scenes/simpleCadScene.tsx",
-      "line": 7487,
+      "line": 7490,
       "tag": "button",
       "role": "",
       "label": "Resume",
@@ -17282,7 +17472,7 @@
     },
     {
       "file": "src/scenes/simpleCadScene.tsx",
-      "line": 7756,
+      "line": 7759,
       "tag": "button",
       "role": "",
       "label": "context-sketch-open",
@@ -17301,7 +17491,7 @@
     },
     {
       "file": "src/scenes/simpleCadScene.tsx",
-      "line": 7797,
+      "line": 7800,
       "tag": "button",
       "role": "",
       "label": "Toggle the Flux copilot (⚡)",
@@ -17320,7 +17510,7 @@
     },
     {
       "file": "src/scenes/simpleCadScene.tsx",
-      "line": 7807,
+      "line": 7810,
       "tag": "button",
       "role": "",
       "label": "Display: ${projectionType}",
@@ -17339,7 +17529,7 @@
     },
     {
       "file": "src/scenes/simpleCadScene.tsx",
-      "line": 7922,
+      "line": 7925,
       "tag": "button",
       "role": "",
       "label": "configurations-toggle",
