@@ -1,0 +1,108 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.5 [39m[90m/Users/user01/cadjs-starter[39m
+
+ [32m✓[39m src/model/__tests__/sweepGuideBlend.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 34[2mms[22m[39m
+ [31m❯[39m src/model/__tests__/sweepPath.test.ts [2m([22m[2m7 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[32m 98[2mms[22m[39m
+   [31m❯[39m sweep path sampling [2m(5)[22m
+[31m     [31m×[31m chains straight lines into one polyline[39m[32m 48[2mms[22m[39m
+[31m     [31m×[31m samples an arc between its endpoints and chains it to a line[39m[32m 12[2mms[22m[39m
+     [32m✓[39m returns a closed loop for a circle[32m 16[2mms[22m[39m
+     [32m✓[39m samples a spline through its ordered points[32m 2[2mms[22m[39m
+     [32m✓[39m returns nothing for a sketch with no path geometry[32m 0[2mms[22m[39m
+   [32m✓[39m sweep path offsets [2m(2)[22m
+     [32m✓[39m extends both ends along their tangents[32m 14[2mms[22m[39m
+     [32m✓[39m leaves the path alone with zero offsets[32m 1[2mms[22m[39m
+ [32m✓[39m src/model/__tests__/revolveEndCondition.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m src/model/__tests__/featureDialog.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 46[2mms[22m[39m
+ [32m✓[39m src/model/__tests__/paramPanel.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 73[2mms[22m[39m
+ [32m✓[39m src/model/__tests__/paramSupport.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m src/model/__tests__/extrudeEndCondition.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 27[2mms[22m[39m
+ [31m❯[39m src/model/__tests__/geometry.test.ts [2m([22m[2m5 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 50[2mms[22m[39m
+   [31m❯[39m snapshot geometry [2m(4)[22m
+     [32m✓[39m maps sketch coords through XZ plane basis[32m 9[2mms[22m[39m
+     [32m✓[39m resolves line axis with normalized direction[32m 3[2mms[22m[39m
+     [32m✓[39m NORMAL axis uses plane normal[32m 1[2mms[22m[39m
+[31m     [31m×[31m chains 3 lines into 4 ordered points from degree-1 start[39m[32m 30[2mms[22m[39m
+   [32m✓[39m boolean operation mapping [2m(1)[22m
+     [32m✓[39m maps ADD/CUT/COMMON to worker operations[32m 2[2mms[22m[39m
+ [32m✓[39m src/model/__tests__/executor.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 57[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 3 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/model/__tests__/geometry.test.ts[2m > [22msnapshot geometry[2m > [22mchains 3 lines into 4 ordered points from degree-1 start
+[31m[1mAssertionError[22m: expected { x: +0, y: 0.75, z: +0 } to deeply equal { x: +0, y: 0.75, z: -1 }[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[2m    "x": 0,[22m
+[2m    "y": 0.75,[22m
+[32m-   "z": -1,[39m
+[31m+   "z": 0,[39m
+[2m  }[22m
+
+[36m [2m❯[22m src/model/__tests__/geometry.test.ts:[2m46:20[22m[39m
+    [90m 44|[39m     const pts = pathPointsFromSnapshot(snap as never);
+    [90m 45|[39m     expect(pts).toHaveLength(4);
+    [90m 46|[39m     expect(pts[3]).toEqual({ x: 0, y: 0.75, z: -1 });
+    [90m   |[39m                    [31m^[39m
+    [90m 47|[39m   });
+    [90m 48|[39m });
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/model/__tests__/sweepPath.test.ts[2m > [22msweep path sampling[2m > [22mchains straight lines into one polyline
+[31m[1mAssertionError[22m: expected { x: 1, y: 1, z: +0 } to deeply equal { x: +0, y: +0, z: +0 }[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[32m-   "x": 0,[39m
+[32m-   "y": 0,[39m
+[31m+   "x": 1,[39m
+[31m+   "y": 1,[39m
+[2m    "z": 0,[22m
+[2m  }[22m
+
+[36m [2m❯[22m src/model/__tests__/sweepPath.test.ts:[2m32:23[22m[39m
+    [90m 30|[39m     });
+    [90m 31|[39m     expect(points).toHaveLength(3);
+    [90m 32|[39m     expect(points[0]).toEqual({ x: 0, y: 0, z: 0 });
+    [90m   |[39m                       [31m^[39m
+    [90m 33|[39m     expect(points[2]).toEqual({ x: 1, y: 1, z: 0 });
+    [90m 34|[39m   });
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/model/__tests__/sweepPath.test.ts[2m > [22msweep path sampling[2m > [22msamples an arc between its endpoints and chains it to a line
+[31m[1mAssertionError[22m: expected { Object (x, y, ...) } to deeply equal { x: +0, y: +0, z: +0 }[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[32m-   "x": 0,[39m
+[32m-   "y": 0,[39m
+[31m+   "x": 6.123233995736766e-17,[39m
+[31m+   "y": 1,[39m
+[2m    "z": 0,[22m
+[2m  }[22m
+
+[36m [2m❯[22m src/model/__tests__/sweepPath.test.ts:[2m49:23[22m[39m
+    [90m 47|[39m     });
+    [90m 48|[39m     expect(points.length).toBeGreaterThan(4);
+    [90m 49|[39m     expect(points[0]).toEqual({ x: 0, y: 0, z: 0 });
+    [90m   |[39m                       [31m^[39m
+    [90m 50|[39m     const last = points[points.length - 1]!;
+    [90m 51|[39m     expect(last.x).toBeCloseTo(0);
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m7 passed[39m[22m[90m (9)[39m
+[2m      Tests [22m [1m[31m3 failed[39m[22m[2m | [22m[1m[32m64 passed[39m[22m[90m (67)[39m
+[2m   Start at [22m 16:42:21
+[2m   Duration [22m 2.47s[2m (transform 66%, import 25%, tests 7%, worker 3%)[22m
+

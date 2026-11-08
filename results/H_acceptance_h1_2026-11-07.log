@@ -1,0 +1,146 @@
+
+Running 1 test using 1 worker
+
+[1A[2K[1/1] [chromium] › e2e/phase3-acceptance.spec.ts:205:1 › H1/H2: 35-feature acceptance part builds, audits and is rebuild-stable
+[1A[2K[2/1] (retries) [chromium] › e2e/phase3-acceptance.spec.ts:205:1 › H1/H2: 35-feature acceptance part builds, audits and is rebuild-stable (retry #1)
+[1A[2K  1) [chromium] › e2e/phase3-acceptance.spec.ts:205:1 › H1/H2: 35-feature acceptance part builds, audits and is rebuild-stable 
+
+    Error: [
+      [
+        "Fgen_mw6x2iom_4",
+        {
+          "status": "ERROR",
+          "detail": "revolve produced no solid faces (axis may be coplanar with profile or otherwise degenerate)"
+        }
+      ],
+      [
+        "Fgen_mw6x2oh3_17",
+        {
+          "status": "ERROR",
+          "detail": "depends on failed “Torus”",
+          "origin": "Fgen_mw6x2iom_4"
+        }
+      ]
+    ]
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoEqual[2m([22m[32mexpected[39m[2m) // deep equality[22m
+
+    [32m- Expected  -  1[39m
+    [31m+ Received  + 17[39m
+
+    [32m- Array [][39m
+    [31m+ Array [[39m
+    [31m+   Array [[39m
+    [31m+     "Fgen_mw6x2iom_4",[39m
+    [31m+     Object {[39m
+    [31m+       "detail": "revolve produced no solid faces (axis may be coplanar with profile or otherwise degenerate)",[39m
+    [31m+       "status": "ERROR",[39m
+    [31m+     },[39m
+    [31m+   ],[39m
+    [31m+   Array [[39m
+    [31m+     "Fgen_mw6x2oh3_17",[39m
+    [31m+     Object {[39m
+    [31m+       "detail": "depends on failed “Torus”",[39m
+    [31m+       "origin": "Fgen_mw6x2iom_4",[39m
+    [31m+       "status": "ERROR",[39m
+    [31m+     },[39m
+    [31m+   ],[39m
+    [31m+ ][39m
+
+      212 |     ([, r]) => r.status !== "OK",
+      213 |   );
+    > 214 |   expect(failures, JSON.stringify(failures, null, 2)).toEqual([]);
+          |                                                       ^
+      215 |   expect(built.audit.ok, JSON.stringify(built.audit, null, 2)).toBe(true);
+      216 |   expect(built.audit.featureCount).toBeGreaterThanOrEqual(20);
+      217 |   expect(built.audit.missing).toEqual([]);
+        at /Users/user01/cadjs-starter/e2e/phase3-acceptance.spec.ts:214:55
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H1-H2-35-b7d25-udits-and-is-rebuild-stable-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H1-H2-35-b7d25-udits-and-is-rebuild-stable-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-acceptance-H1-H2-35-b7d25-udits-and-is-rebuild-stable-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H1-H2-35-b7d25-udits-and-is-rebuild-stable-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-acceptance-H1-H2-35-b7d25-udits-and-is-rebuild-stable-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: [
+      [
+        "Fgen_mw6x44iq_4",
+        {
+          "status": "ERROR",
+          "detail": "revolve produced no solid faces (axis may be coplanar with profile or otherwise degenerate)"
+        }
+      ],
+      [
+        "Fgen_mw6x4cpm_17",
+        {
+          "status": "ERROR",
+          "detail": "depends on failed “Torus”",
+          "origin": "Fgen_mw6x44iq_4"
+        }
+      ]
+    ]
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoEqual[2m([22m[32mexpected[39m[2m) // deep equality[22m
+
+    [32m- Expected  -  1[39m
+    [31m+ Received  + 17[39m
+
+    [32m- Array [][39m
+    [31m+ Array [[39m
+    [31m+   Array [[39m
+    [31m+     "Fgen_mw6x44iq_4",[39m
+    [31m+     Object {[39m
+    [31m+       "detail": "revolve produced no solid faces (axis may be coplanar with profile or otherwise degenerate)",[39m
+    [31m+       "status": "ERROR",[39m
+    [31m+     },[39m
+    [31m+   ],[39m
+    [31m+   Array [[39m
+    [31m+     "Fgen_mw6x4cpm_17",[39m
+    [31m+     Object {[39m
+    [31m+       "detail": "depends on failed “Torus”",[39m
+    [31m+       "origin": "Fgen_mw6x44iq_4",[39m
+    [31m+       "status": "ERROR",[39m
+    [31m+     },[39m
+    [31m+   ],[39m
+    [31m+ ][39m
+
+      212 |     ([, r]) => r.status !== "OK",
+      213 |   );
+    > 214 |   expect(failures, JSON.stringify(failures, null, 2)).toEqual([]);
+          |                                                       ^
+      215 |   expect(built.audit.ok, JSON.stringify(built.audit, null, 2)).toBe(true);
+      216 |   expect(built.audit.featureCount).toBeGreaterThanOrEqual(20);
+      217 |   expect(built.audit.missing).toEqual([]);
+        at /Users/user01/cadjs-starter/e2e/phase3-acceptance.spec.ts:214:55
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H1-H2-35-b7d25-udits-and-is-rebuild-stable-chromium-retry1/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-acceptance-H1-H2-35-b7d25-udits-and-is-rebuild-stable-chromium-retry1/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H1-H2-35-b7d25-udits-and-is-rebuild-stable-chromium-retry1/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-acceptance-H1-H2-35-b7d25-udits-and-is-rebuild-stable-chromium-retry1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  1 failed
+    [chromium] › e2e/phase3-acceptance.spec.ts:205:1 › H1/H2: 35-feature acceptance part builds, audits and is rebuild-stable 

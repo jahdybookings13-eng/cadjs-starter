@@ -1,0 +1,28 @@
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 predev
+[2m[WebServer] [22m> node scripts/avr-assets.mjs && node scripts/stm32f4-assets.mjs
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22mstm32f4-assets: 5 files -> public/stm32f4
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 dev
+[2m[WebServer] [22m> vite --port 3100 --strictPort
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m  [32m[1mVITE[22m v6.4.2[39m  [2mready in [0m[1m427[22m[2m[0m ms[22m
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m  [32m➜[39m  [1mLocal[22m:   [36mhttps://localhost:[1m3100[22m/[39m
+
+[1A[2K[2m[WebServer] [22m  [32m➜[39m  [1mNetwork[22m: [36mhttps://192.168.1.158:[1m3100[22m/[39m
+
+
+Running 4 tests using 1 worker
+
+[1A[2K[1/4] [chromium] › e2e/feature-dialog.spec.ts:37:1 › feature dialog previews, cancels, applies and undoes an extrude edit
+[1A[2K[2/4] [chromium] › e2e/feature-dialog.spec.ts:137:1 › pattern and split dialogs edit the C parameters
+[1A[2K[3/4] [chromium] › e2e/feature-dialog.spec.ts:204:1 › counterbore adds a shoulder and a second wall
+[1A[2K[4/4] [chromium] › e2e/feature-dialog.spec.ts:233:1 › per-edge fillet radii and chamfer distances are applied and validated
+[1A[2K  4 passed (48.9s)

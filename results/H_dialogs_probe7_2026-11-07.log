@@ -1,0 +1,99 @@
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 predev
+[2m[WebServer] [22m> node scripts/avr-assets.mjs && node scripts/stm32f4-assets.mjs
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22mstm32f4-assets: 5 files -> public/stm32f4
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 dev
+[2m[WebServer] [22m> vite --port 3100 --strictPort
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m  [32m[1mVITE[22m v6.4.2[39m  [2mready in [0m[1m420[22m[2m[0m ms[22m
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m  [32m➜[39m  [1mLocal[22m:   [36mhttps://localhost:[1m3100[22m/[39m
+[2m[WebServer] [22m  [32m➜[39m  [1mNetwork[22m: [36mhttps://192.168.1.158:[1m3100[22m/[39m
+
+
+Running 2 tests using 1 worker
+
+[1A[2K[1/2] [chromium] › e2e/phase3-dialogs.spec.ts:248:3 › gusset dialog previews, cancels, applies and undoes
+[1A[2K[2m[WebServer] [22m[2m3:38:35 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mvendor/cadjs/src/services/occ-extrude.ts[22m
+
+[1A[2K[chromium] › e2e/phase3-dialogs.spec.ts:248:3 › gusset dialog previews, cancels, applies and undoes
+DBG before gusset {
+  phase: [32m'editing'[39m,
+  fid: [32m'Fgen_mw6v8x8n_2'[39m,
+  baseline: [33mtrue[39m,
+  undoPushed: [33mtrue[39m,
+  params: [33m1[39m,
+  dirty: [33m1[39m,
+  error: [1mnull[22m,
+  undoLabel: [32m'Edit Feature'[39m,
+  undoDepth: [33m1[39m
+}
+
+[1A[2KDBG after gusset {
+  phase: [32m'closed'[39m,
+  fid: [1mnull[22m,
+  baseline: [33mfalse[39m,
+  undoPushed: [33mfalse[39m,
+  params: [33m0[39m,
+  dirty: [33m0[39m,
+  error: [1mnull[22m,
+  undoLabel: [32m'Edit Feature'[39m,
+  undoDepth: [33m1[39m
+}
+
+[1A[2KDBG apply gusset {
+  before: {
+    params: [33m1[39m,
+    featureId: [32m'Fgen_mw6v8x8n_2'[39m,
+    undoPushed: [33mtrue[39m,
+    depth: [33m1[39m,
+    top: [32m'Edit Feature'[39m
+  },
+  after: { depth: [33m1[39m, top: [32m'Edit Feature'[39m, dropped: [33mfalse[39m }
+}
+
+[1A[2K[2/2] [chromium] › e2e/phase3-dialogs.spec.ts:248:3 › web dialog previews, cancels, applies and undoes
+[1A[2K[chromium] › e2e/phase3-dialogs.spec.ts:248:3 › web dialog previews, cancels, applies and undoes
+DBG before web {
+  phase: [32m'editing'[39m,
+  fid: [32m'Fgen_mw6v977a_2'[39m,
+  baseline: [33mtrue[39m,
+  undoPushed: [33mtrue[39m,
+  params: [33m1[39m,
+  dirty: [33m1[39m,
+  error: [1mnull[22m,
+  undoLabel: [32m'Edit Feature'[39m,
+  undoDepth: [33m1[39m
+}
+
+[1A[2KDBG after web {
+  phase: [32m'closed'[39m,
+  fid: [1mnull[22m,
+  baseline: [33mfalse[39m,
+  undoPushed: [33mfalse[39m,
+  params: [33m0[39m,
+  dirty: [33m0[39m,
+  error: [1mnull[22m,
+  undoLabel: [32m'Edit Feature'[39m,
+  undoDepth: [33m1[39m
+}
+
+[1A[2KDBG apply web {
+  before: {
+    params: [33m1[39m,
+    featureId: [32m'Fgen_mw6v977a_2'[39m,
+    undoPushed: [33mtrue[39m,
+    depth: [33m1[39m,
+    top: [32m'Edit Feature'[39m
+  },
+  after: { depth: [33m1[39m, top: [32m'Edit Feature'[39m, dropped: [33mfalse[39m }
+}
+
+[1A[2K  2 passed (37.8s)

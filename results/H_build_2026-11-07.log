@@ -1,0 +1,49 @@
+
+> cadjs-starter@0.1.0 prebuild
+> node scripts/avr-assets.mjs && node scripts/stm32f4-assets.mjs
+
+stm32f4-assets: 5 files -> public/stm32f4
+
+> cadjs-starter@0.1.0 build
+> vite build
+
+vite v6.4.2 building for production...
+transforming...
+
+new URL("./",import.meta.url) doesn't exist at build time, it will remain unchanged to be resolved at runtime. If this is intended, you can use the /* @vite-ignore */ comment to suppress this warning.
+[plugin vite:resolve] Module "module" has been externalized for browser compatibility, imported by "/Users/user01/cadjs-starter/node_modules/@salusoft89/planegcs/dist/planegcs_dist/planegcs.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+
+new URL('as-new.wasm', import.meta.url) doesn't exist at build time, it will remain unchanged to be resolved at runtime. If this is intended, you can use the /* @vite-ignore */ comment to suppress this warning.
+
+new URL('ld-new.wasm', import.meta.url) doesn't exist at build time, it will remain unchanged to be resolved at runtime. If this is intended, you can use the /* @vite-ignore */ comment to suppress this warning.
+
+new URL('objcopy.wasm', import.meta.url) doesn't exist at build time, it will remain unchanged to be resolved at runtime. If this is intended, you can use the /* @vite-ignore */ comment to suppress this warning.
+✓ 446 modules transformed.
+rendering chunks...
+[plugin vite:reporter] 
+(!) /Users/user01/cadjs-starter/vendor/cadjs/src/services/OccWorkerClient.ts is dynamically imported by /Users/user01/cadjs-starter/vendor/cadjs/src/geometry.ts but also statically imported by /Users/user01/cadjs-starter/vendor/cadjs/src/contexts/CoreContext.tsx, /Users/user01/cadjs-starter/vendor/cadjs/src/hooks/extrude/hooks/useExtrudeApply.ts, /Users/user01/cadjs-starter/vendor/cadjs/src/hooks/extrude/hooks/usePreviewRendering.ts, /Users/user01/cadjs-starter/vendor/cadjs/src/hooks/fillet/hooks/useFilletEdgeOverlay.ts, /Users/user01/cadjs-starter/vendor/cadjs/src/hooks/measure/hooks/useEdgeOverlay.ts, /Users/user01/cadjs-starter/vendor/cadjs/src/hooks/measure/hooks/useMeasureInputHandlers.ts, /Users/user01/cadjs-starter/vendor/cadjs/src/hooks/revolve/hooks/useRevolveAxisSelection.ts, /Users/user01/cadjs-starter/vendor/cadjs/src/index.ts, /Users/user01/cadjs-starter/vendor/cadjs/src/scene-operations/boolean-operations.ts, /Users/user01/cadjs-starter/vendor/cadjs/src/scene-operations/fillet-operations.ts, /Users/user01/cadjs-starter/vendor/cadjs/src/scene-operations/loft-operations.ts, /Users/user01/cadjs-starter/vendor/cadjs/src/scene-operations/parity-operations.ts, /Users/user01/cadjs-starter/vendor/cadjs/src/scene-operations/resize-operations.ts, /Users/user01/cadjs-starter/vendor/cadjs/src/scene-operations/revolve-operations.ts, /Users/user01/cadjs-starter/vendor/cadjs/src/scene-operations/sweep-operations.ts, /Users/user01/cadjs-starter/vendor/cadjs/src/services/ImportExportService.ts, /Users/user01/cadjs-starter/vendor/cadjs/src/services/SketchToBrepService.ts, dynamic import will not move module into another chunk.
+
+computing gzip size...
+dist/index.html                                      0.55 kB │ gzip:      0.31 kB
+dist/assets/firmwareWorker-DefeKoB7.js               5.55 kB
+dist/assets/esp32Worker-DRPVEW0c.js                  6.92 kB
+dist/assets/stm32f4Worker-BaPBQ05F.js               51.93 kB
+dist/assets/rp2040Worker-C540jPUv.js               120.90 kB
+dist/assets/avrBuildWorker-CGREjOFQ.js             205.41 kB
+dist/assets/occ-worker-Bqb4ff3n.js                 357.58 kB
+dist/assets/planegcs-D26TcjLy.wasm                 508.14 kB │ gzip:    174.95 kB
+dist/assets/stm32_periph_wasm_bg-CYzR_ZHk.wasm   1,789.64 kB │ gzip:    608.11 kB
+dist/assets/cc1plus-CG1IYDPd.wasm               13,844.49 kB │ gzip:  4,540.80 kB
+dist/assets/opencascade.full-BROZOezB.wasm      50,305.13 kB │ gzip: 13,955.45 kB
+dist/assets/index-Bdn_A-aj.css                      48.07 kB │ gzip:      9.15 kB
+dist/assets/GLTFLoader-CU-qKgBT.js                  58.90 kB │ gzip:     15.06 kB
+dist/assets/react-Clbal_GG.js                      286.19 kB │ gzip:     68.69 kB
+dist/assets/three-8lV4IgW1.js                      680.80 kB │ gzip:    154.33 kB
+dist/assets/index-Dat6TnbD.js                    2,001.30 kB │ gzip:    417.81 kB
+dist/assets/rapier-D-C8NsC4.js                   2,893.84 kB │ gzip:  1,080.65 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 1m 6s

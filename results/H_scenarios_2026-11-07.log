@@ -1,0 +1,35 @@
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 predev
+[2m[WebServer] [22m> node scripts/avr-assets.mjs && node scripts/stm32f4-assets.mjs
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22mstm32f4-assets: 5 files -> public/stm32f4
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 dev
+[2m[WebServer] [22m> vite --port 3100 --strictPort
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m  [32m[1mVITE[22m v6.4.2[39m  [2mready in [0m[1m491[22m[2m[0m ms[22m
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m  [32m➜[39m  [1mLocal[22m:   [36mhttps://localhost:[1m3100[22m/[39m
+[2m[WebServer] [22m  [32m➜[39m  [1mNetwork[22m: [36mhttps://192.168.1.158:[1m3100[22m/[39m
+
+
+Running 12 tests using 1 worker
+
+[1A[2K[1/12] [chromium] › e2e/body-properties.spec.ts:4:1 › selected body shows real geometry properties
+[1A[2K[2/12] [chromium] › e2e/feature-dialog.spec.ts:37:1 › feature dialog previews, cancels, applies and undoes an extrude edit
+[1A[2K[3/12] [chromium] › e2e/feature-dialog.spec.ts:127:1 › pattern and split dialogs edit the C parameters
+[1A[2K[4/12] [chromium] › e2e/feature-dialog.spec.ts:194:1 › counterbore adds a shoulder and a second wall
+[1A[2K[5/12] [chromium] › e2e/feature-dialog.spec.ts:223:1 › per-edge fillet radii and chamfer distances are applied and validated
+[1A[2K[6/12] [chromium] › e2e/feature-tree.spec.ts:18:1 › tree cascade suppression, rename collision and reorder guard
+[1A[2K[7/12] [chromium] › e2e/feature-tree.spec.ts:105:1 › rollback edit/forward, bar drag, retry and persistence
+[1A[2K[8/12] [chromium] › e2e/feature-tree.spec.ts:223:1 › feature tree folders, references, reorder and undo
+[1A[2K[9/12] [chromium] › e2e/multi-body.spec.ts:4:1 › split-both exposes a second selectable body
+[1A[2K[10/12] [chromium] › e2e/parts.spec.ts:4:1 › parts: create, name, assign, material, hide, export and copy
+[1A[2K[11/12] [chromium] › e2e/parts.spec.ts:104:1 › parts: multi-select applies part, material and state to every body
+[1A[2K[12/12] [chromium] › e2e/parts.spec.ts:207:1 › parts: a failed feature owns its row's error, not the source body
+[1A[2K  12 passed (2.5m)

@@ -1,0 +1,45 @@
+
+Running 2 tests using 1 worker
+
+[1A[2K[1/2] [chromium] › e2e/primitives.spec.ts:4:1 › primitive catalog builds sphere, ellipsoid, capsule and dome
+[1A[2K[2/2] [chromium] › e2e/primitives.spec.ts:58:1 › every catalog primitive builds with published defaults
+[1A[2K  1) [chromium] › e2e/primitives.spec.ts:58:1 › every catalog primitive builds with published defaults 
+
+    Error: torus: revolve produced no solid faces (axis may be coplanar with profile or otherwise degenerate)
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m"OK"[39m
+    Received: [31m"ERROR"[39m
+
+      91 |       created.report[item.featureId]?.status,
+      92 |       `${item.kind}: ${created.report[item.featureId]?.detail}`,
+    > 93 |     ).toBe("OK");
+         |       ^
+      94 |   await expect
+      95 |     .poll(() => page.evaluate(() => window.__cadDebug?.getElements().length))
+      96 |     .toBe(kinds.length);
+        at /Users/user01/cadjs-starter/e2e/primitives.spec.ts:93:7
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/primitives-every-catalog-p-920d6-lds-with-published-defaults-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/primitives-every-catalog-p-920d6-lds-with-published-defaults-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/primitives-every-catalog-p-920d6-lds-with-published-defaults-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/primitives-every-catalog-p-920d6-lds-with-published-defaults-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/primitives-every-catalog-p-920d6-lds-with-published-defaults-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  1 failed
+    [chromium] › e2e/primitives.spec.ts:58:1 › every catalog primitive builds with published defaults 
+  1 passed (26.3s)

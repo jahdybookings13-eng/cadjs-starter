@@ -1,0 +1,5 @@
+
+Running 1 test using 1 worker
+
+[1A[2K[1/1] [chromium] › e2e/phase3-a-pickers.spec.ts:101:1 › extrude end reference picks a face on another body and rejects its own result
+[1A[2K  1 passed (18.7s)

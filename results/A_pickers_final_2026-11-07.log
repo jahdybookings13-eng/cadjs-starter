@@ -1,0 +1,54 @@
+
+Running 4 tests using 1 worker
+
+[1A[2K[1/4] [chromium] › e2e/phase3-a-pickers.spec.ts:101:1 › extrude end reference picks a face on another body and rejects its own result
+[1A[2K  1) [chromium] › e2e/phase3-a-pickers.spec.ts:101:1 › extrude end reference picks a face on another body and rejects its own result 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoContainText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: getByTestId('feature-dialog').locator('[data-parameter-id="endBoundEntity"]')
+    Expected pattern: [32m/_F\d+/[39m
+    Received string:  [31m"End ReferenceNoneCancel pickClick a face on a body in the viewport. With Up To Vertex, the nearest vertex on that face is used. Esc cancels the pick."[39m
+    Timeout: 15000ms
+
+    Call log:
+    [2m  - Expect "toContainText" with timeout 15000ms[22m
+    [2m  - waiting for getByTestId('feature-dialog').locator('[data-parameter-id="endBoundEntity"]')[22m
+    [2m    34 × locator resolved to <div data-dirty="false" data-parameter-id="endBoundEntity" class="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] items-center gap-2">…</div>[22m
+    [2m       - unexpected value "End ReferenceNoneCancel pickClick a face on a body in the viewport. With Up To Vertex, the nearest vertex on that face is used. Esc cancels the pick."[22m
+
+
+      144 |   // the row shows the resolved face tag.
+      145 |   await clickWorld(page, [0, 0, 0.03]);
+    > 146 |   await expect(row).toContainText(/_F\d+/);
+          |                     ^
+      147 |   await expect(row).not.toContainText("None");
+      148 |
+      149 |   await dialog.getByRole("button", { name: "Apply" }).click();
+        at /Users/user01/cadjs-starter/e2e/phase3-a-pickers.spec.ts:146:21
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-a-pickers-extrude-e-91e3b--and-rejects-its-own-result-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-a-pickers-extrude-e-91e3b--and-rejects-its-own-result-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-a-pickers-extrude-e-91e3b--and-rejects-its-own-result-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-a-pickers-extrude-e-91e3b--and-rejects-its-own-result-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-a-pickers-extrude-e-91e3b--and-rejects-its-own-result-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[2/4] [chromium] › e2e/phase3-a-pickers.spec.ts:155:1 › extrude draft picks a neutral face and a parting edge
+[1A[2K[3/4] [chromium] › e2e/phase3-a-pickers.spec.ts:220:1 › draft feature parting edge picker stores a sketch line
+[1A[2K[4/4] [chromium] › e2e/phase3-a-pickers.spec.ts:270:1 › sweep guide picker adds one guide, dedupes it, and clears
+[1A[2K  1 failed
+    [chromium] › e2e/phase3-a-pickers.spec.ts:101:1 › extrude end reference picks a face on another body and rejects its own result 
+  3 passed (58.9s)

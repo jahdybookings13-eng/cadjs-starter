@@ -1,0 +1,144 @@
+
+Running 3 tests using 1 worker
+
+[1A[2K[1/3] [chromium] › e2e/phase3-a-pickers.spec.ts:101:1 › extrude end reference picks a face on another body and rejects its own result
+[1A[2K  1) [chromium] › e2e/phase3-a-pickers.spec.ts:101:1 › extrude end reference picks a face on another body and rejects its own result 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoContainText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: getByTestId('feature-dialog').locator('[data-parameter-id="endBoundEntity"]')
+    Expected substring: [32m"1 selected"[39m
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toContainText" with timeout 15000ms[22m
+    [2m  - waiting for getByTestId('feature-dialog').locator('[data-parameter-id="endBoundEntity"]')[22m
+    [2m    17 × locator resolved to <div data-dirty="true" data-parameter-id="endBoundEntity" class="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] items-center gap-2">…</div>[22m
+    [2m       - unexpected value "End ReferenceFgen_mw6z26pz_1_F10Pick face"[22m
+    [2m    - waiting for" https://localhost:3100/" navigation to finish...[22m
+    [2m    - navigated to "https://localhost:3100/"[22m
+
+
+      159 |   // A click on the box's top face is stored as a FACE query.
+      160 |   await clickWorld(page, [top!.center.x, top!.center.y, top!.center.z]);
+    > 161 |   await expect(row).toContainText("1 selected");
+          |                     ^
+      162 |
+      163 |   await dialog.getByRole("button", { name: "Apply" }).click();
+      164 |   await expect(dialog).toBeHidden();
+        at /Users/user01/cadjs-starter/e2e/phase3-a-pickers.spec.ts:161:21
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-a-pickers-extrude-e-91e3b--and-rejects-its-own-result-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-a-pickers-extrude-e-91e3b--and-rejects-its-own-result-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-a-pickers-extrude-e-91e3b--and-rejects-its-own-result-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-a-pickers-extrude-e-91e3b--and-rejects-its-own-result-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-a-pickers-extrude-e-91e3b--and-rejects-its-own-result-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[2/3] [chromium] › e2e/phase3-a-pickers.spec.ts:169:1 › extrude draft picks a neutral face and a parting edge
+[1A[2K  2) [chromium] › e2e/phase3-a-pickers.spec.ts:169:1 › extrude draft picks a neutral face and a parting edge 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoContainText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: getByTestId('feature-dialog').locator('[data-parameter-id="draftNeutralFace"]')
+    Expected substring: [32m"1 selected"[39m
+    Received string:    [31m"Neutral FaceFgen_mw6z2ui4_1_F10Pick face"[39m
+    Timeout: 15000ms
+
+    Call log:
+    [2m  - Expect "toContainText" with timeout 15000ms[22m
+    [2m  - waiting for getByTestId('feature-dialog').locator('[data-parameter-id="draftNeutralFace"]')[22m
+    [2m    33 × locator resolved to <div data-dirty="true" data-parameter-id="draftNeutralFace" class="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] items-center gap-2">…</div>[22m
+    [2m       - unexpected value "Neutral FaceFgen_mw6z2ui4_1_F10Pick face"[22m
+
+
+      222 |   await neutralRow.getByTestId("pick-end-reference").click();
+      223 |   await clickWorld(page, [top!.center.x, top!.center.y, top!.center.z]);
+    > 224 |   await expect(neutralRow).toContainText("1 selected");
+          |                            ^
+      225 |
+      226 |   // Parting edge: the bottom line of the 0.04 x 0.04 centered sketch, at
+      227 |   // (0, -0.02, 0). Pickers match only sketch curves, so body occlusion is moot.
+        at /Users/user01/cadjs-starter/e2e/phase3-a-pickers.spec.ts:224:28
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-a-pickers-extrude-d-65056-ral-face-and-a-parting-edge-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-a-pickers-extrude-d-65056-ral-face-and-a-parting-edge-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-a-pickers-extrude-d-65056-ral-face-and-a-parting-edge-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-a-pickers-extrude-d-65056-ral-face-and-a-parting-edge-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-a-pickers-extrude-d-65056-ral-face-and-a-parting-edge-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[3/3] [chromium] › e2e/phase3-a-pickers.spec.ts:240:1 › sweep guide picker adds one guide, dedupes it, and clears
+[1A[2K  3) [chromium] › e2e/phase3-a-pickers.spec.ts:240:1 › sweep guide picker adds one guide, dedupes it, and clears 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoContainText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: getByTestId('feature-dialog').locator('[data-parameter-id="guideSubqueries"]')
+    Expected substring: [32m"1 selected"[39m
+    Received string:    [31m"Guide Curvel1ClearCancel pickClick a sketch curve. Each click adds a guide; Esc cancels the pick."[39m
+    Timeout: 15000ms
+
+    Call log:
+    [2m  - Expect "toContainText" with timeout 15000ms[22m
+    [2m  - waiting for getByTestId('feature-dialog').locator('[data-parameter-id="guideSubqueries"]')[22m
+    [2m    33 × locator resolved to <div data-dirty="true" data-parameter-id="guideSubqueries" class="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] items-center gap-2">…</div>[22m
+    [2m       - unexpected value "Guide Curvel1ClearCancel pickClick a sketch curve. Each click adds a guide; Esc cancels the pick."[22m
+
+
+      267 |   await row.getByTestId("pick-end-reference").click();
+      268 |   await clickWorld(page, [0.025, 0, 0]);
+    > 269 |   await expect(row).toContainText("1 selected");
+          |                     ^
+      270 |
+      271 |   // Clicking the same curve again must not duplicate the guide.
+      272 |   await clickWorld(page, [0.025, 0, 0]);
+        at /Users/user01/cadjs-starter/e2e/phase3-a-pickers.spec.ts:269:21
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-a-pickers-sweep-gui-cee7c-guide-dedupes-it-and-clears-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-a-pickers-sweep-gui-cee7c-guide-dedupes-it-and-clears-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-a-pickers-sweep-gui-cee7c-guide-dedupes-it-and-clears-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-a-pickers-sweep-gui-cee7c-guide-dedupes-it-and-clears-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-a-pickers-sweep-gui-cee7c-guide-dedupes-it-and-clears-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  3 failed
+    [chromium] › e2e/phase3-a-pickers.spec.ts:101:1 › extrude end reference picks a face on another body and rejects its own result 
+    [chromium] › e2e/phase3-a-pickers.spec.ts:169:1 › extrude draft picks a neutral face and a parting edge 
+    [chromium] › e2e/phase3-a-pickers.spec.ts:240:1 › sweep guide picker adds one guide, dedupes it, and clears 

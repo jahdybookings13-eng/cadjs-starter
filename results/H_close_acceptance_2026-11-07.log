@@ -1,0 +1,104 @@
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 predev
+[2m[WebServer] [22m> node scripts/avr-assets.mjs && node scripts/stm32f4-assets.mjs
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22mstm32f4-assets: 5 files -> public/stm32f4
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 dev
+[2m[WebServer] [22m> vite --port 3100 --strictPort
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m  [32m[1mVITE[22m v6.4.2[39m  [2mready in [0m[1m471[22m[2m[0m ms[22m
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m  [32m➜[39m  [1mLocal[22m:   [36mhttps://localhost:[1m3100[22m/[39m
+
+[1A[2K[2m[WebServer] [22m  [32m➜[39m  [1mNetwork[22m: [36mhttps://192.168.1.158:[1m3100[22m/[39m
+
+
+Running 2 tests using 1 worker
+
+[1A[2K[1/2] [chromium] › e2e/phase3-acceptance.spec.ts:323:1 › H5/H6: STL and STEP round-trips preserve bbox and body ownership
+[1A[2K[2m[WebServer] [22m[2m2:33:10 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mvendor/cadjs/src/services/occ-extrude.ts[22m
+
+[1A[2K[2m[WebServer] [22m[2m2:33:10 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mPHASE3_REMAINING.md[22m
+
+[1A[2K[2m[WebServer] [22m[2m2:33:10 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mPHASE3_A_TEST_PLAN.md[22m
+
+[1A[2K  1) [chromium] › e2e/phase3-acceptance.spec.ts:323:1 › H5/H6: STL and STEP round-trips preserve bbox and body ownership 
+
+    Error: page.evaluate: Execution context was destroyed, most likely because of a navigation.
+
+      110 |
+      111 | const buildPart = async (page: Page) =>
+    > 112 |   page.evaluate(async () => {
+          |        ^
+      113 |     const w = window as unknown as {
+      114 |       __cadDebug: { scadgen: P3Debug };
+      115 |       __scadgen: {
+        at buildPart (/Users/user01/cadjs-starter/e2e/phase3-acceptance.spec.ts:112:8)
+        at /Users/user01/cadjs-starter/e2e/phase3-acceptance.spec.ts:327:23
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H5-H6-ST-469a0-rve-bbox-and-body-ownership-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H5-H6-ST-469a0-rve-bbox-and-body-ownership-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-acceptance-H5-H6-ST-469a0-rve-bbox-and-body-ownership-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H5-H6-ST-469a0-rve-bbox-and-body-ownership-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-acceptance-H5-H6-ST-469a0-rve-bbox-and-body-ownership-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[2/2] [chromium] › e2e/phase3-acceptance.spec.ts:429:1 › H7: invalid features report named errors and no bodies
+[1A[2K  2) [chromium] › e2e/phase3-acceptance.spec.ts:429:1 › H7: invalid features report named errors and no bodies 
+
+    Error: missingReference: no detail
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m"ERROR"[39m
+    Received: [31m"OK"[39m
+
+      487 |   });
+      488 |   for (const [name, failure] of Object.entries(named)) {
+    > 489 |     expect(failure.status, `${name}: ${failure.detail ?? "no detail"}`).toBe(
+          |                                                                         ^
+      490 |       "ERROR",
+      491 |     );
+      492 |     expect(failure.detail ?? "", name).not.toBe("");
+        at /Users/user01/cadjs-starter/e2e/phase3-acceptance.spec.ts:489:73
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H7-inval-9d7f0--named-errors-and-no-bodies-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H7-inval-9d7f0--named-errors-and-no-bodies-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-acceptance-H7-inval-9d7f0--named-errors-and-no-bodies-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H7-inval-9d7f0--named-errors-and-no-bodies-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-acceptance-H7-inval-9d7f0--named-errors-and-no-bodies-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  2 failed
+    [chromium] › e2e/phase3-acceptance.spec.ts:323:1 › H5/H6: STL and STEP round-trips preserve bbox and body ownership 
+    [chromium] › e2e/phase3-acceptance.spec.ts:429:1 › H7: invalid features report named errors and no bodies 

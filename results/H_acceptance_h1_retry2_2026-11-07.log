@@ -1,0 +1,35 @@
+
+Running 1 test using 1 worker
+
+[1A[2K[1/1] [chromium] › e2e/phase3-acceptance.spec.ts:205:1 › H1/H2: 35-feature acceptance part builds, audits and is rebuild-stable
+[1A[2K  1) [chromium] › e2e/phase3-acceptance.spec.ts:205:1 › H1/H2: 35-feature acceptance part builds, audits and is rebuild-stable 
+
+    Error: page.evaluate: Execution context was destroyed, most likely because of a navigation.
+
+      110 |
+      111 | const buildPart = async (page: Page) =>
+    > 112 |   page.evaluate(async () => {
+          |        ^
+      113 |     const w = window as unknown as {
+      114 |       __cadDebug: { scadgen: P3Debug };
+      115 |       __scadgen: {
+        at buildPart (/Users/user01/cadjs-starter/e2e/phase3-acceptance.spec.ts:112:8)
+        at /Users/user01/cadjs-starter/e2e/phase3-acceptance.spec.ts:209:23
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H1-H2-35-b7d25-udits-and-is-rebuild-stable-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-acceptance-H1-H2-35-b7d25-udits-and-is-rebuild-stable-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H1-H2-35-b7d25-udits-and-is-rebuild-stable-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-acceptance-H1-H2-35-b7d25-udits-and-is-rebuild-stable-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  1 failed
+    [chromium] › e2e/phase3-acceptance.spec.ts:205:1 › H1/H2: 35-feature acceptance part builds, audits and is rebuild-stable 

@@ -1,0 +1,96 @@
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 predev
+[2m[WebServer] [22m> node scripts/avr-assets.mjs && node scripts/stm32f4-assets.mjs
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22mstm32f4-assets: 5 files -> public/stm32f4
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 dev
+[2m[WebServer] [22m> vite --port 3100 --strictPort
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m  [32m[1mVITE[22m v6.4.2[39m  [2mready in [0m[1m425[22m[2m[0m ms[22m
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m  [32m➜[39m  [1mLocal[22m:   [36mhttps://localhost:[1m3100[22m/[39m
+
+[1A[2K[2m[WebServer] [22m  [32m➜[39m  [1mNetwork[22m: [36mhttps://192.168.1.158:[1m3100[22m/[39m
+
+
+Running 1 test using 1 worker
+
+[1A[2K[1/1] [chromium] › e2e/phase3-acceptance.spec.ts:418:1 › H4/H8: body part, material, visibility and export names survive reload
+[1A[2K[2/1] (retries) [chromium] › e2e/phase3-acceptance.spec.ts:418:1 › H4/H8: body part, material, visibility and export names survive reload (retry #1)
+[1A[2K  1) [chromium] › e2e/phase3-acceptance.spec.ts:418:1 › H4/H8: body part, material, visibility and export names survive reload 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m"scadgen_mw6qzc[7mna[27m.stl"[39m
+    Received: [31m"scadgen_mw6qzc[7mqf[27m.stl"[39m
+
+      459 |   }
+      460 |   expect(names[0]).toMatch(/\.stl$/);
+    > 461 |   expect(names[1]).toBe(names[0]);
+          |                    ^
+      462 |
+      463 |   await panel.getByTestId("body-hide").click();
+      464 |   await expect(panel.getByTestId("body-visible")).toHaveText("No");
+        at /Users/user01/cadjs-starter/e2e/phase3-acceptance.spec.ts:461:20
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H4-H8-bo-5e916-export-names-survive-reload-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H4-H8-bo-5e916-export-names-survive-reload-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-acceptance-H4-H8-bo-5e916-export-names-survive-reload-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H4-H8-bo-5e916-export-names-survive-reload-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-acceptance-H4-H8-bo-5e916-export-names-survive-reload-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m"scadgen_mw6qzl[7m5k[27m.stl"[39m
+    Received: [31m"scadgen_mw6qzl[7mcv[27m.stl"[39m
+
+      459 |   }
+      460 |   expect(names[0]).toMatch(/\.stl$/);
+    > 461 |   expect(names[1]).toBe(names[0]);
+          |                    ^
+      462 |
+      463 |   await panel.getByTestId("body-hide").click();
+      464 |   await expect(panel.getByTestId("body-visible")).toHaveText("No");
+        at /Users/user01/cadjs-starter/e2e/phase3-acceptance.spec.ts:461:20
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H4-H8-bo-5e916-export-names-survive-reload-chromium-retry1/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H4-H8-bo-5e916-export-names-survive-reload-chromium-retry1/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-acceptance-H4-H8-bo-5e916-export-names-survive-reload-chromium-retry1/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H4-H8-bo-5e916-export-names-survive-reload-chromium-retry1/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-acceptance-H4-H8-bo-5e916-export-names-survive-reload-chromium-retry1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  1 failed
+    [chromium] › e2e/phase3-acceptance.spec.ts:418:1 › H4/H8: body part, material, visibility and export names survive reload 

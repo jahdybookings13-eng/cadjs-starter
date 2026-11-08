@@ -1,0 +1,41 @@
+
+Running 4 tests using 1 worker
+
+[1A[2K[1/4] [chromium] › e2e/feature-dialog.spec.ts:37:1 › feature dialog previews, cancels, applies and undoes an extrude edit
+[1A[2K[2/4] [chromium] › e2e/feature-dialog.spec.ts:137:1 › pattern and split dialogs edit the C parameters
+[1A[2K[3/4] [chromium] › e2e/feature-dialog.spec.ts:200:1 › counterbore adds a shoulder and a second wall
+[1A[2K[4/4] [chromium] › e2e/feature-dialog.spec.ts:229:1 › per-edge fillet radii and chamfer distances are applied and validated
+[1A[2K  1) [chromium] › e2e/feature-dialog.spec.ts:229:1 › per-edge fillet radii and chamfer distances are applied and validated 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThan[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: > [32m6[39m
+    Received:   [31m0[39m
+
+      261 |   // A blend or chamfer replaces one box edge with a new face.
+      262 |   expect(await facesOf(page, ids.filletOk)).toBeGreaterThan(6);
+    > 263 |   expect(await facesOf(page, ids.chamferOk)).toBeGreaterThan(6);
+          |                                              ^
+      264 |
+      265 |   const statuses = await page.evaluate(
+      266 |     () => window.__cadDebug?.scadgen?.states() ?? {},
+        at /Users/user01/cadjs-starter/e2e/feature-dialog.spec.ts:263:46
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/feature-dialog-per-edge-fi-140a1-s-are-applied-and-validated-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/feature-dialog-per-edge-fi-140a1-s-are-applied-and-validated-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/feature-dialog-per-edge-fi-140a1-s-are-applied-and-validated-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/feature-dialog-per-edge-fi-140a1-s-are-applied-and-validated-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  1 failed
+    [chromium] › e2e/feature-dialog.spec.ts:229:1 › per-edge fillet radii and chamfer distances are applied and validated 
+  3 passed (3.4m)

@@ -1,0 +1,41 @@
+
+Running 1 test using 1 worker
+
+[1A[2K[1/1] [chromium] › e2e/phase3-acceptance.spec.ts:205:1 › H1/H2: 35-feature acceptance part builds, audits and is rebuild-stable
+[1A[2K  1) [chromium] › e2e/phase3-acceptance.spec.ts:205:1 › H1/H2: 35-feature acceptance part builds, audits and is rebuild-stable 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m"87df9f80a63adc9a"[39m
+    Received: [31m"741638a5ca69885f"[39m
+
+      273 |   });
+      274 |   expect(toggled.off).not.toBe(toggled.before);
+    > 275 |   expect(toggled.restored).toBe(toggled.before);
+          |                            ^
+      276 |   expect(toggled.rolled).not.toBe(toggled.before);
+      277 |   expect(toggled.forward).toBe(toggled.before);
+      278 | });
+        at /Users/user01/cadjs-starter/e2e/phase3-acceptance.spec.ts:275:28
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H1-H2-35-b7d25-udits-and-is-rebuild-stable-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H1-H2-35-b7d25-udits-and-is-rebuild-stable-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-acceptance-H1-H2-35-b7d25-udits-and-is-rebuild-stable-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H1-H2-35-b7d25-udits-and-is-rebuild-stable-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-acceptance-H1-H2-35-b7d25-udits-and-is-rebuild-stable-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  1 failed
+    [chromium] › e2e/phase3-acceptance.spec.ts:205:1 › H1/H2: 35-feature acceptance part builds, audits and is rebuild-stable 

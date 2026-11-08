@@ -1,0 +1,125 @@
+
+Running 3 tests using 1 worker
+
+[1A[2K[1/3] [chromium] › e2e/phase3-a-pickers.spec.ts:84:1 › extrude end reference picks a face on another body and rejects its own result
+[1A[2K  1) [chromium] › e2e/phase3-a-pickers.spec.ts:84:1 › extrude end reference picks a face on another body and rejects its own result 
+
+    Error: box should expose a +Z face
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+    Received: [31mundefined[39m
+
+      131 |   // The box's +Z face is the one the camera sees above the smaller extrude.
+      132 |   const top = faces?.find((f) => f.normal.z > 0.9);
+    > 133 |   expect(top, "box should expose a +Z face").toBeTruthy();
+          |                                              ^
+      134 |
+      135 |   let dialog = await openDialog(page, ids.extrude);
+      136 |   await dialog.getByLabel("End Condition").selectOption("UP_TO_FACE");
+        at /Users/user01/cadjs-starter/e2e/phase3-a-pickers.spec.ts:133:46
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-a-pickers-extrude-e-91e3b--and-rejects-its-own-result-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-a-pickers-extrude-e-91e3b--and-rejects-its-own-result-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-a-pickers-extrude-e-91e3b--and-rejects-its-own-result-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-a-pickers-extrude-e-91e3b--and-rejects-its-own-result-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-a-pickers-extrude-e-91e3b--and-rejects-its-own-result-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[2/3] [chromium] › e2e/phase3-a-pickers.spec.ts:174:1 › extrude draft picks a neutral face and a parting edge
+[1A[2K  2) [chromium] › e2e/phase3-a-pickers.spec.ts:174:1 › extrude draft picks a neutral face and a parting edge 
+
+    Error: box should expose a +Z face
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+    Received: [31mundefined[39m
+
+      218 |   }, ids.box);
+      219 |   const top = faces?.find((f) => f.normal.z > 0.9);
+    > 220 |   expect(top, "box should expose a +Z face").toBeTruthy();
+          |                                              ^
+      221 |
+      222 |   const dialog = await openDialog(page, ids.extrude);
+      223 |   await dialog.getByLabel("Draft", { exact: true }).check();
+        at /Users/user01/cadjs-starter/e2e/phase3-a-pickers.spec.ts:220:46
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-a-pickers-extrude-d-65056-ral-face-and-a-parting-edge-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-a-pickers-extrude-d-65056-ral-face-and-a-parting-edge-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-a-pickers-extrude-d-65056-ral-face-and-a-parting-edge-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-a-pickers-extrude-d-65056-ral-face-and-a-parting-edge-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-a-pickers-extrude-d-65056-ral-face-and-a-parting-edge-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[3/3] [chromium] › e2e/phase3-a-pickers.spec.ts:245:1 › sweep guide picker adds one guide, dedupes it, and clears
+[1A[2K  3) [chromium] › e2e/phase3-a-pickers.spec.ts:245:1 › sweep guide picker adds one guide, dedupes it, and clears 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('[data-feature-id="Fgen_mw6yv90p_1"]').first()
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 15000ms[22m
+    [2m  - waiting for locator('[data-feature-id="Fgen_mw6yv90p_1"]').first()[22m
+
+
+      61 | const openDialog = async (page: Page, featureId: string) => {
+      62 |   const row = page.locator(`[data-feature-id="${featureId}"]`).first();
+    > 63 |   await expect(row).toBeVisible({ timeout: 15_000 });
+         |                     ^
+      64 |   await row.click({ button: "right" });
+      65 |   await page.getByRole("button", { name: "Edit Feature", exact: true }).click();
+      66 |   const dialog = page.getByTestId("feature-dialog");
+        at openDialog (/Users/user01/cadjs-starter/e2e/phase3-a-pickers.spec.ts:63:21)
+        at /Users/user01/cadjs-starter/e2e/phase3-a-pickers.spec.ts:267:24
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-a-pickers-sweep-gui-cee7c-guide-dedupes-it-and-clears-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-a-pickers-sweep-gui-cee7c-guide-dedupes-it-and-clears-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-a-pickers-sweep-gui-cee7c-guide-dedupes-it-and-clears-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-a-pickers-sweep-gui-cee7c-guide-dedupes-it-and-clears-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-a-pickers-sweep-gui-cee7c-guide-dedupes-it-and-clears-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  3 failed
+    [chromium] › e2e/phase3-a-pickers.spec.ts:84:1 › extrude end reference picks a face on another body and rejects its own result 
+    [chromium] › e2e/phase3-a-pickers.spec.ts:174:1 › extrude draft picks a neutral face and a parting edge 
+    [chromium] › e2e/phase3-a-pickers.spec.ts:245:1 › sweep guide picker adds one guide, dedupes it, and clears 

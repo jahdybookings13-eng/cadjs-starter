@@ -1,0 +1,8 @@
+
+Running 1 test using 1 worker
+
+[1A[2K[1/1] [chromium] › e2e/perf-budget.spec.ts:26:1 › browser budgets: boot, regenerate, orbit and document reload
+[1A[2K[chromium] › e2e/perf-budget.spec.ts:26:1 › browser budgets: boot, regenerate, orbit and document reload
+PERF MEASUREMENTS {"bootInteractiveMs":5796,"documentReloadMs":5335,"regenerateBoxMs":211,"orbitFpsMin":38}
+
+[1A[2K  1 passed (13.5s)

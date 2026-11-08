@@ -1,0 +1,42 @@
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 predev
+[2m[WebServer] [22m> node scripts/avr-assets.mjs && node scripts/stm32f4-assets.mjs
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22mstm32f4-assets: 5 files -> public/stm32f4
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 dev
+[2m[WebServer] [22m> vite --port 3100 --strictPort
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m  [32m[1mVITE[22m v6.4.2[39m  [2mready in [0m[1m319[22m[2m[0m ms[22m
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m  [32m➜[39m  [1mLocal[22m:   [36mhttps://localhost:[1m3100[22m/[39m
+[2m[WebServer] [22m  [32m➜[39m  [1mNetwork[22m: [36mhttps://192.168.1.158:[1m3100[22m/[39m
+
+
+Running 12 tests using 1 worker
+
+[1A[2K[1/12] [chromium] › e2e/app-boot.spec.ts:11:1 › app boots cleanly with no unexpected console errors
+[1A[2K[2/12] [chromium] › e2e/body-properties.spec.ts:4:1 › selected body shows real geometry properties
+[1A[2K[3/12] [chromium] › e2e/camera-drag.spec.ts:4:1 › middle-mouse drag rotates the camera
+[1A[2K[4/12] [chromium] › e2e/constraint-dimension.spec.ts:21:1 › dimension constraint drives sketch through the planegcs solver
+[1A[2K[5/12] [chromium] › e2e/document-tabs.spec.ts:7:1 › document tabs keep separate designs and survive reload
+[1A[2K[6/12] [chromium] › e2e/documents-page.spec.ts:29:1 › local documents survive IndexedDB and round-trip tabs, trash and snapshots
+[1A[2K[7/12] [chromium] › e2e/ecad-cpp-build.spec.ts:37:1 › ecad: C++ compiles in the browser and runs on the emulated AVR
+[1A[2K[8/12] [chromium] › e2e/ecad-cpp-peripherals.spec.ts:55:1 › ecad: compiled C++ drives Serial, a servo and an I2C OLED
+[1A[2K[9/12] [chromium] › e2e/ecad-hex-chips.spec.ts:34:1 › ecad: Mega 2560, Leonardo and ATtiny85 run compiled .hex on their own pins
+[1A[2K[10/12] [chromium] › e2e/ecad-mcu.spec.ts:38:1 › ecad: uno + oled + led run real firmware in 3D space
+[1A[2K[chromium] › e2e/ecad-mcu.spec.ts:38:1 › ecad: uno + oled + led run real firmware in 3D space
+PAGE: [vite] connecting...
+
+[1A[2KPAGE: [vite] connected.
+
+[1A[2KPAGE: Scene, camera, or renderer not available
+
+[1A[2K[11/12] [chromium] › e2e/ecad-worker.spec.ts:28:1 › ecad: an infinite-loop sketch cannot freeze the app
+[1A[2K[12/12] [chromium] › e2e/ecad-worker.spec.ts:65:1 › ecad: a non-AVR board (ESP32) runs its firmware and reports serial
+[1A[2K  12 passed (2.2m)

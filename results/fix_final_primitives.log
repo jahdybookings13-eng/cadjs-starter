@@ -1,0 +1,6 @@
+
+Running 2 tests using 1 worker
+
+[1A[2K[1/2] [chromium] › e2e/primitives.spec.ts:4:1 › primitive catalog builds sphere, ellipsoid, capsule and dome
+[1A[2K[2/2] [chromium] › e2e/primitives.spec.ts:58:1 › every catalog primitive builds with published defaults
+[1A[2K  2 passed (34.6s)

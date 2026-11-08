@@ -1,0 +1,104 @@
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 predev
+[2m[WebServer] [22m> node scripts/avr-assets.mjs && node scripts/stm32f4-assets.mjs
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22mstm32f4-assets: 5 files -> public/stm32f4
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 dev
+[2m[WebServer] [22m> vite --port 3100 --strictPort
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m  [32m[1mVITE[22m v6.4.2[39m  [2mready in [0m[1m622[22m[2m[0m ms[22m
+[2m[WebServer] [22m
+[2m[WebServer] [22m  [32m➜[39m  [1mLocal[22m:   [36mhttps://localhost:[1m3100[22m/[39m
+[2m[WebServer] [22m  [32m➜[39m  [1mNetwork[22m: [36mhttps://192.168.1.158:[1m3100[22m/[39m
+
+
+Running 2 tests using 1 worker
+
+[1A[2K[1/2] [chromium] › e2e/phase3-dialogs.spec.ts:221:3 › shell dialog previews, cancels, applies and undoes
+[1A[2K  1) [chromium] › e2e/phase3-dialogs.spec.ts:221:3 › shell dialog previews, cancels, applies and undoes 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('[data-feature-id="Fgen_mw6sxl0o_2"]').first()
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 15000ms[22m
+    [2m  - waiting for locator('[data-feature-id="Fgen_mw6sxl0o_2"]').first()[22m
+
+
+      180 | const openDialog = async (page: Page, fid: string) => {
+      181 |   const row = page.locator(`[data-feature-id="${fid}"]`).first();
+    > 182 |   await expect(row).toBeVisible({ timeout: 15_000 });
+          |                     ^
+      183 |   await row.click({ button: "right" });
+      184 |   await page.getByRole("button", { name: "Edit Feature", exact: true }).click();
+      185 |   const dialog = page.getByTestId("feature-dialog");
+        at openDialog (/Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:182:21)
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:230:26
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-shell-dialo-16b52--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-shell-dialo-16b52--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-shell-dialo-16b52--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-shell-dialo-16b52--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-shell-dialo-16b52--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[2/2] [chromium] › e2e/phase3-dialogs.spec.ts:221:3 › thread dialog previews, cancels, applies and undoes
+[1A[2K[2m[WebServer] [22m[2m2:34:22 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mPHASE3_A_TEST_PLAN.md[22m
+
+[1A[2K  2) [chromium] › e2e/phase3-dialogs.spec.ts:221:3 › thread dialog previews, cancels, applies and undoes 
+
+    Error: page.evaluate: Execution context was destroyed, most likely because of a navigation.
+
+      66 |
+      67 | const buildFeature = (page: Page, kind: string) =>
+    > 68 |   page.evaluate(async (kind) => {
+         |        ^
+      69 |     const w = window as unknown as {
+      70 |       __cadDebug: { scadgen: DialogsDebug };
+      71 |     };
+        at buildFeature (/Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:68:8)
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:226:25
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-thread-dial-3f912--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-thread-dial-3f912--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-thread-dial-3f912--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-thread-dial-3f912--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-thread-dial-3f912--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  2 failed
+    [chromium] › e2e/phase3-dialogs.spec.ts:221:3 › shell dialog previews, cancels, applies and undoes 
+    [chromium] › e2e/phase3-dialogs.spec.ts:221:3 › thread dialog previews, cancels, applies and undoes 

@@ -1,0 +1,106 @@
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 predev
+[2m[WebServer] [22m> node scripts/avr-assets.mjs && node scripts/stm32f4-assets.mjs
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22mstm32f4-assets: 5 files -> public/stm32f4
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 dev
+[2m[WebServer] [22m> vite --port 3100 --strictPort
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m  [32m[1mVITE[22m v6.4.2[39m  [2mready in [0m[1m526[22m[2m[0m ms[22m
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m  [32m➜[39m  [1mLocal[22m:   [36mhttps://localhost:[1m3100[22m/[39m
+[2m[WebServer] [22m  [32m➜[39m  [1mNetwork[22m: [36mhttps://192.168.1.158:[1m3100[22m/[39m
+
+
+Running 8 tests using 1 worker
+
+[1A[2K[1/8] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › shell dialog previews, cancels, applies and undoes
+[1A[2K[2/8] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › draft dialog previews, cancels, applies and undoes
+[1A[2K[3/8] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › loft dialog previews, cancels, applies and undoes
+[1A[2K[4/8] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › sweep dialog previews, cancels, applies and undoes
+[1A[2K[5/8] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › boolean dialog previews, cancels, applies and undoes
+[1A[2K[2m[WebServer] [22m[2m3:41:18 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mscripts/occ-nested-check.mts[22m
+
+[1A[2K  1) [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › boolean dialog previews, cancels, applies and undoes 
+
+    Error: page.evaluate: Execution context was destroyed, most likely because of a navigation
+
+      172 |
+      173 | const projectJson = (page: Page) =>
+    > 174 |   page.evaluate(() => {
+          |        ^
+      175 |     const w = window as unknown as {
+      176 |       __scadgen: { phase3: { projectJson: () => string } };
+      177 |     };
+        at projectJson (/Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:174:8)
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:286:18
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-boolean-dia-4c84b--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-boolean-dia-4c84b--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-boolean-dia-4c84b--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-boolean-dia-4c84b--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-boolean-dia-4c84b--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[6/8] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › transform dialog previews, cancels, applies and undoes
+[1A[2K[2m[WebServer] [22m[2m3:41:45 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mPHASE3_REMAINING.md[22m
+
+[1A[2K[2m[WebServer] [22m[2m3:41:45 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mPHASE3_A_TEST_PLAN.md[22m
+
+[1A[2K  2) [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › transform dialog previews, cancels, applies and undoes 
+
+    Error: page.evaluate: Execution context was destroyed, most likely because of a navigation.
+
+      67 |
+      68 | const buildFeature = (page: Page, kind: string) =>
+    > 69 |   page.evaluate(async (kind) => {
+         |        ^
+      70 |     const w = window as unknown as {
+      71 |       __cadDebug: { scadgen: DialogsDebug };
+      72 |     };
+        at buildFeature (/Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:69:8)
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:243:25
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-transform-d-d3573--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-transform-d-d3573--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-transform-d-d3573--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-transform-d-d3573--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-transform-d-d3573--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[7/8] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › rib dialog previews, cancels, applies and undoes
+[1A[2K[8/8] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › gusset dialog previews, cancels, applies and undoes
+[1A[2K  2 failed
+    [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › boolean dialog previews, cancels, applies and undoes 
+    [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › transform dialog previews, cancels, applies and undoes 
+  6 passed (2.5m)

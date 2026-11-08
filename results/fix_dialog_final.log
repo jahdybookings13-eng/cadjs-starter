@@ -1,0 +1,59 @@
+
+Running 4 tests using 1 worker
+
+[1A[2K[1/4] [chromium] › e2e/feature-dialog.spec.ts:37:1 › feature dialog previews, cancels, applies and undoes an extrude edit
+[1A[2K  1) [chromium] › e2e/feature-dialog.spec.ts:37:1 › feature dialog previews, cancels, applies and undoes an extrude edit 
+
+    [31mTest timeout of 60000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 60000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('[data-feature-id="Fgen_mw703d11_1"]').first()[22m
+    [2m    - locator resolved to <div draggable="true" data-feature-index="1" data-testid="feature-tree-row" data-feature-id="Fgen_mw703d11_1" class="group flex items-center py-1 pr-1 cursor-pointer rounded-sm border-l-2 border-transparent hover:bg-gray-700/50">…</div>[22m
+    [2m  - attempting click action[22m
+    [2m    - waiting for element to be visible, enabled and stable[22m
+    [2m    - element is not stable[22m
+    [2m  - retrying click action[22m
+    [2m    - waiting for element to be visible, enabled and stable[22m
+    [2m  - element was detached from the DOM, retrying[22m
+    [2m    - locator resolved to <div draggable="true" data-feature-index="1" data-testid="feature-tree-row" data-feature-id="Fgen_mw703d11_1" class="group flex items-center py-1 pr-1 cursor-pointer rounded-sm border-l-2 border-transparent hover:bg-gray-700/50">…</div>[22m
+    [2m  - attempting click action[22m
+    [2m    - waiting for element to be visible, enabled and stable[22m
+    [2m  - element was detached from the DOM, retrying[22m
+
+
+      59 |
+      60 |   const openDialog = async () => {
+    > 61 |     await row.click({ button: "right" });
+         |               ^
+      62 |     await page.getByRole("button", { name: "Edit Feature" }).click();
+      63 |     const dialog = page.getByTestId("feature-dialog");
+      64 |     await expect(dialog).toBeVisible();
+        at openDialog (/Users/user01/cadjs-starter/e2e/feature-dialog.spec.ts:61:15)
+        at /Users/user01/cadjs-starter/e2e/feature-dialog.spec.ts:71:24
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/feature-dialog-feature-dia-30fbf--and-undoes-an-extrude-edit-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/feature-dialog-feature-dia-30fbf--and-undoes-an-extrude-edit-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/feature-dialog-feature-dia-30fbf--and-undoes-an-extrude-edit-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/feature-dialog-feature-dia-30fbf--and-undoes-an-extrude-edit-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/feature-dialog-feature-dia-30fbf--and-undoes-an-extrude-edit-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[2/4] [chromium] › e2e/feature-dialog.spec.ts:137:1 › pattern and split dialogs edit the C parameters
+[1A[2K[3/4] [chromium] › e2e/feature-dialog.spec.ts:200:1 › counterbore adds a shoulder and a second wall
+[1A[2K[4/4] [chromium] › e2e/feature-dialog.spec.ts:229:1 › per-edge fillet radii and chamfer distances are applied and validated
+[1A[2K  1 failed
+    [chromium] › e2e/feature-dialog.spec.ts:37:1 › feature dialog previews, cancels, applies and undoes an extrude edit 
+  3 passed (1.7m)

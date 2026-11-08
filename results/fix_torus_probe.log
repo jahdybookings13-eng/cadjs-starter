@@ -1,0 +1,116 @@
+
+Running 1 test using 1 worker
+
+[1A[2K[1/1] [chromium] › e2e/tmp-torus-probe.spec.ts:4:1 › probe torus variants
+[1A[2K[chromium] › e2e/tmp-torus-probe.spec.ts:4:1 › probe torus variants
+[page:debug] [vite] connecting...
+
+[1A[2K[page:debug] [vite] connected.
+
+[1A[2K[page:info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+
+[1A[2K[page:error] Scene, camera, or renderer not available
+
+[1A[2K[page:warning] [.WebGL-0x10400595a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+
+[1A[2K[page:warning] [.WebGL-0x10400595a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+
+[1A[2K[page:warning] [.WebGL-0x10400595a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+
+[1A[2K[page:warning] [.WebGL-0x10400595a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)
+
+[1A[2K[page:warning] Element node_1 not found for brep update
+
+[1A[2K[page:warning] Element node_2 not found for brep update
+
+[1A[2K  1) [chromium] › e2e/tmp-torus-probe.spec.ts:4:1 › probe torus variants ───────────────────────────
+
+    Error: [
+      {
+        "kind": "torus",
+        "opts": {
+          "ringR": 0.04,
+          "tubeR": 0.012
+        },
+        "id": "Fgen_mw6zwxsi_1",
+        "status": {
+          "status": "ERROR",
+          "detail": "revolve produced no solid faces (axis may be coplanar with profile or otherwise degenerate)"
+        }
+      },
+      {
+        "kind": "torus",
+        "opts": {
+          "ringR": 0.06,
+          "tubeR": 0.02
+        },
+        "id": "Fgen_mw6zwxsj_2",
+        "status": {
+          "status": "ERROR",
+          "detail": "revolve produced no solid faces (axis may be coplanar with profile or otherwise degenerate)"
+        }
+      },
+      {
+        "kind": "torus",
+        "opts": {
+          "ringR": 0.04,
+          "tubeR": 0.005
+        },
+        "id": "Fgen_mw6zwxsj_3",
+        "status": {
+          "status": "ERROR",
+          "detail": "revolve produced no solid faces (axis may be coplanar with profile or otherwise degenerate)"
+        }
+      },
+      {
+        "kind": "cylinder",
+        "opts": {
+          "r": 0.02,
+          "h": 0.05
+        },
+        "id": "Fgen_mw6zwxsj_4",
+        "status": {
+          "status": "OK"
+        }
+      },
+      {
+        "kind": "sphere",
+        "opts": {
+          "r": 0.03
+        },
+        "id": "Fgen_mw6zwxsj_5",
+        "status": {
+          "status": "OK"
+        }
+      }
+    ]
+
+      37 |     };
+      38 |   });
+    > 39 |   throw new Error(JSON.stringify(out.report, null, 2));
+         |         ^
+      40 | });
+      41 |
+        at /Users/user01/cadjs-starter/e2e/tmp-torus-probe.spec.ts:39:9
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/tmp-torus-probe-probe-torus-variants-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/tmp-torus-probe-probe-torus-variants-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/tmp-torus-probe-probe-torus-variants-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/tmp-torus-probe-probe-torus-variants-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/tmp-torus-probe-probe-torus-variants-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  1 failed
+    [chromium] › e2e/tmp-torus-probe.spec.ts:4:1 › probe torus variants ────────────────────────────

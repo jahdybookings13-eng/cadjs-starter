@@ -1,0 +1,142 @@
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 predev
+[2m[WebServer] [22m> node scripts/avr-assets.mjs && node scripts/stm32f4-assets.mjs
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22mstm32f4-assets: 5 files -> public/stm32f4
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 dev
+[2m[WebServer] [22m> vite --port 3100 --strictPort
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m  [32m[1mVITE[22m v6.4.2[39m  [2mready in [0m[1m632[22m[2m[0m ms[22m
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m  [32m➜[39m  [1mLocal[22m:   [36mhttps://localhost:[1m3100[22m/[39m
+
+[1A[2K[2m[WebServer] [22m  [32m➜[39m  [1mNetwork[22m: [36mhttps://192.168.1.158:[1m3100[22m/[39m
+
+
+Running 8 tests using 1 worker
+
+[1A[2K[1/8] [chromium] › e2e/vr-board-grab.spec.ts:24:1 › grab a PCB board in VR, hold it up, drop it back onto the desk
+[1A[2K[2/8] [chromium] › e2e/vr-bridge.spec.ts:33:1 › enter VR headless and render the room
+[1A[2K[2m[WebServer] [22m[2m2:03:30 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css?direct, /src/scenes/simpleCadScene.tsx, /src/components/FeatureDialog.tsx[22m
+
+[1A[2K[2m[WebServer] [22m[2m2:03:30 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css?direct, /src/scenes/simpleCadScene.tsx, /src/components/FeatureDialog.tsx[22m
+
+[1A[2K[2m[WebServer] [22m[2m2:03:30 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css?direct, /src/scenes/simpleCadScene.tsx, /src/components/PrimaryToolbar.tsx[22m
+
+[1A[2K[2m[WebServer] [22m[2m2:03:30 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css?direct, /src/scenes/simpleCadScene.tsx[22m
+
+[1A[2K[2m[WebServer] [22m[2m2:03:31 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mvendor/cadjs/src/workers/occ-worker-types.ts[22m
+
+[1A[2K[2m[WebServer] [22m[2m2:03:31 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css?direct, /src/index.tsx, /src/scenes/simpleCadScene.tsx, /src/components/ViewCube.tsx, /src/components/SketchPropertiesPanel.tsx, /src/scenes/modes/SketchModeContent.tsx, /src/navbar/ValueInputModal.tsx, /src/navbar/SketchToolbar.tsx, /vendor/cadjs/src/contexts/CoreContext.tsx, /src/components/FileMenu.tsx, /src/scenes/modes/FilletModeContent.tsx, /src/scenes/modes/ExtrudeModeContent.tsx, /src/scenes/modes/MoveModeContent.tsx, /src/scenes/modes/LoftModeContent.tsx, /src/scenes/modes/CombineModeContent.tsx, /src/scenes/modes/RevolveModeContent.tsx, /src/scenes/modes/SweepModeContent.tsx, /src/scenes/modes/MeasureModeContent.tsx, /vendor/cadjs/src/contexts/VisualizerContext.tsx[22m
+
+[1A[2K[2m[WebServer] [22m[2m2:03:31 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mvendor/cadjs/src/services/occ-revolve-loft.ts[22m
+
+[1A[2K[2m[WebServer] [22m[2m2:03:31 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mvendor/cadjs/src/workers/occ-worker-handlers.ts[22m
+
+[1A[2K[3/8] (retries) [chromium] › e2e/vr-bridge.spec.ts:33:1 › enter VR headless and render the room (retry #1)
+[1A[2K  1) [chromium] › e2e/vr-bridge.spec.ts:33:1 › enter VR headless and render the room ───────────────
+
+    Error: no VR runtime errors
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoEqual[2m([22m[32mexpected[39m[2m) // deep equality[22m
+
+    [32m- Expected  - 1[39m
+    [31m+ Received  + 6[39m
+
+    [32m- Array [][39m
+    [31m+ Array [[39m
+    [31m+   "pageerror: Error: useCadCore must be used within a CadCoreProvider[39m
+    [31m+     at useCadCore (https://localhost:3100/vendor/cadjs/src/contexts/CoreContext.tsx:1090:11)[39m
+    [31m+     at SimpleCadScene (https://localhost:3100/src/scenes/simpleCadScene.tsx?t=1794078210365:361:7)[39m
+    [31m+     at Object.react_stack_bottom_frame (https://loca",[39m
+    [31m+ ][39m
+
+       at vr-harness.ts:83
+
+      81 |     bad.map((e) => `${e.kind}: ${e.text.slice(0, 300)}`),
+      82 |     "no VR runtime errors",
+    > 83 |   ).toEqual([]);
+         |     ^
+      84 | }
+      85 |
+        at expectCleanVR (/Users/user01/cadjs-starter/e2e/vr-harness.ts:83:5)
+        at /Users/user01/cadjs-starter/e2e/vr-bridge.spec.ts:43:9
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/vr-bridge-enter-VR-headless-and-render-the-room-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/vr-bridge-enter-VR-headless-and-render-the-room-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/vr-bridge-enter-VR-headless-and-render-the-room-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/vr-bridge-enter-VR-headless-and-render-the-room-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/vr-bridge-enter-VR-headless-and-render-the-room-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[4/8] [chromium] › e2e/vr-bridge.spec.ts:46:1 › look down reveals the tool belt, trigger selects a tool
+[1A[2K[chromium] › e2e/vr-bridge.spec.ts:46:1 › look down reveals the tool belt, trigger selects a tool
+mode after belt L3: measure
+
+[1A[2K[5/8] [chromium] › e2e/vr-bridge.spec.ts:78:1 › trigger click without hover does not crash
+[1A[2K[2m[WebServer] [22m[2m2:04:48 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mPHASE3_REMAINING.md[22m
+
+[1A[2K[2m[WebServer] [22m[2m2:04:48 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mPHASE3_A_TEST_PLAN.md[22m
+
+[1A[2K[6/8] (retries) [chromium] › e2e/vr-bridge.spec.ts:78:1 › trigger click without hover does not crash (retry #1)
+[1A[2K  2) [chromium] › e2e/vr-bridge.spec.ts:78:1 › trigger click without hover does not crash ──────────
+
+    TimeoutError: page.waitForFunction: Timeout 20000ms exceeded.
+
+       at vr-harness.ts:44
+
+      42 |     { timeout: 15_000 },
+      43 |   );
+    > 44 |   await page.waitForFunction(
+         |              ^
+      45 |     () => {
+      46 |       const info = (window as any).__vr.info();
+      47 |       return info.active && info.fb !== null;
+        at bootIntoVR (/Users/user01/cadjs-starter/e2e/vr-harness.ts:44:14)
+        at /Users/user01/cadjs-starter/e2e/vr-bridge.spec.ts:81:3
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/vr-bridge-trigger-click-without-hover-does-not-crash-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/vr-bridge-trigger-click-without-hover-does-not-crash-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/vr-bridge-trigger-click-without-hover-does-not-crash-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/vr-bridge-trigger-click-without-hover-does-not-crash-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/vr-bridge-trigger-click-without-hover-does-not-crash-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[7/8] [chromium] › e2e/vr-bridge.spec.ts:95:1 › beam hit on a model face resolves to its persistent FID tag
+[1A[2K[8/8] [chromium] › e2e/vr-room-model.spec.ts:4:1 › generated room 3D file is applied in VR
+[1A[2K[9/8] [chromium] › e2e/vr-second-desk.spec.ts:4:1 › second desk with green blueprint mat and FNAF board loads
+[1A[2K[10/8] [chromium] › e2e/vr-suit-settings.spec.ts:22:1 › suit settings panel opens on look-up, edits persist, edits rebuild the room
+[1A[2K  2 flaky
+    [chromium] › e2e/vr-bridge.spec.ts:33:1 › enter VR headless and render the room ────────────────
+    [chromium] › e2e/vr-bridge.spec.ts:78:1 › trigger click without hover does not crash ───────────
+  6 passed (5.1m)

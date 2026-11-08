@@ -1,0 +1,3 @@
+e2e/tmp-debug-fixture.spec.ts(14,21): error TS2339: Property 'sweepSimple' does not exist on type '{ nextId: () => string; configureSync: () => void; history: () => { features: { featureId: string; name: string; }[]; rollbackIndex: number | null; }; box: (w: number, h: number, d: number) => string; hole: (fid: string, centers: [...][], r: number, d: number, opts?: { ...; } | undefined) => string; ... 22 more ...;...'.
+src/scenes/simpleCadScene.tsx(24,3): error TS2305: Module '"@vitekk02/cadjs"' has no exported member 'reconstructEdgeGeometry'.
+src/scenes/simpleCadScene.tsx(25,3): error TS2305: Module '"@vitekk02/cadjs"' has no exported member 'reconstructFaceGeometry'.

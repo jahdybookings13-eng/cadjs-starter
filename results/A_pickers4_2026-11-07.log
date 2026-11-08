@@ -1,0 +1,39 @@
+
+Running 3 tests using 1 worker
+
+[1A[2K[1/3] [chromium] › e2e/phase3-a-pickers.spec.ts:101:1 › extrude end reference picks a face on another body and rejects its own result
+[1A[2K[2/3] [chromium] › e2e/phase3-a-pickers.spec.ts:171:1 › extrude draft picks a neutral face and a parting edge
+[1A[2K  1) [chromium] › e2e/phase3-a-pickers.spec.ts:171:1 › extrude draft picks a neutral face and a parting edge 
+
+    Error: page.evaluate: TypeError: Cannot read properties of undefined (reading 'scadgen')
+        at eval (eval at evaluate (:302:30), <anonymous>:2:33)
+        at UtilityScript.evaluate (<anonymous>:304:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at eval (eval at evaluate (:302:30), <anonymous>:2:33)
+        at UtilityScript.evaluate (<anonymous>:304:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at /Users/user01/cadjs-starter/e2e/phase3-a-pickers.spec.ts:202:28
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-a-pickers-extrude-d-65056-ral-face-and-a-parting-edge-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-a-pickers-extrude-d-65056-ral-face-and-a-parting-edge-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-a-pickers-extrude-d-65056-ral-face-and-a-parting-edge-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-a-pickers-extrude-d-65056-ral-face-and-a-parting-edge-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-a-pickers-extrude-d-65056-ral-face-and-a-parting-edge-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[3/3] [chromium] › e2e/phase3-a-pickers.spec.ts:242:1 › sweep guide picker adds one guide, dedupes it, and clears
+[1A[2K  1 failed
+    [chromium] › e2e/phase3-a-pickers.spec.ts:171:1 › extrude draft picks a neutral face and a parting edge 
+  2 passed (39.9s)

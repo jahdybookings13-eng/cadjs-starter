@@ -1,0 +1,490 @@
+
+Running 17 tests using 1 worker
+
+[1A[2K[1/17] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › shell dialog previews, cancels, applies and undoes
+[1A[2K  1) [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › shell dialog previews, cancels, applies and undoes 
+
+    TimeoutError: page.waitForFunction: Timeout 10000ms exceeded.
+
+       at helpers.ts:173
+
+      171 |   await expect(page.getByTestId("cad-canvas")).toBeVisible();
+      172 |   // Wait for the debug hook to attach so subsequent page.evaluate() calls work
+    > 173 |   await page.waitForFunction(() => !!window.__cadDebug, undefined, {
+          |              ^
+      174 |     timeout: 10_000,
+      175 |   });
+      176 | }
+        at loadAppReady (/Users/user01/cadjs-starter/e2e/helpers.ts:173:14)
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:242:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-shell-dialo-16b52--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-shell-dialo-16b52--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-shell-dialo-16b52--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-shell-dialo-16b52--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-shell-dialo-16b52--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[2/17] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › draft dialog previews, cancels, applies and undoes
+[1A[2K  2) [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › draft dialog previews, cancels, applies and undoes 
+
+    [31mTest timeout of 60000ms exceeded.[39m
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeHidden[2m([22m[2m)[22m failed
+
+    Locator:  getByText('Loading...')
+    Expected: hidden
+    Received: visible
+    Timeout:  30000ms
+
+    Call log:
+    [2m  - Expect "toBeHidden" with timeout 30000ms[22m
+    [2m  - waiting for getByText('Loading...')[22m
+    [2m    36 × locator resolved to <div class="text-gray-300 text-sm">Loading...</div>[22m
+    [2m       - unexpected value "visible"[22m
+
+
+       at helpers.ts:170
+
+      168 | export async function loadAppReady(page: Page): Promise<void> {
+      169 |   await page.goto("/");
+    > 170 |   await expect(page.getByText("Loading...")).toBeHidden({ timeout: 30_000 });
+          |                                              ^
+      171 |   await expect(page.getByTestId("cad-canvas")).toBeVisible();
+      172 |   // Wait for the debug hook to attach so subsequent page.evaluate() calls work
+      173 |   await page.waitForFunction(() => !!window.__cadDebug, undefined, {
+        at loadAppReady (/Users/user01/cadjs-starter/e2e/helpers.ts:170:46)
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:242:5
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-draft-dialo-055d3--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-draft-dialo-055d3--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-draft-dialo-055d3--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-draft-dialo-055d3--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[3/17] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › loft dialog previews, cancels, applies and undoes
+[1A[2K  3) [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › loft dialog previews, cancels, applies and undoes 
+
+    TimeoutError: page.waitForFunction: Timeout 10000ms exceeded.
+
+       at helpers.ts:173
+
+      171 |   await expect(page.getByTestId("cad-canvas")).toBeVisible();
+      172 |   // Wait for the debug hook to attach so subsequent page.evaluate() calls work
+    > 173 |   await page.waitForFunction(() => !!window.__cadDebug, undefined, {
+          |              ^
+      174 |     timeout: 10_000,
+      175 |   });
+      176 | }
+        at loadAppReady (/Users/user01/cadjs-starter/e2e/helpers.ts:173:14)
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:242:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-loft-dialog-b0df2--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-loft-dialog-b0df2--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-loft-dialog-b0df2--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-loft-dialog-b0df2--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-loft-dialog-b0df2--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[4/17] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › sweep dialog previews, cancels, applies and undoes
+[1A[2K  4) [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › sweep dialog previews, cancels, applies and undoes 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeHidden[2m([22m[2m)[22m failed
+
+    Locator:  getByText('Loading...')
+    Expected: hidden
+    Received: visible
+    Timeout:  30000ms
+
+    Call log:
+    [2m  - Expect "toBeHidden" with timeout 30000ms[22m
+    [2m  - waiting for getByText('Loading...')[22m
+    [2m    52 × locator resolved to <div class="text-gray-300 text-sm">Loading...</div>[22m
+    [2m       - unexpected value "visible"[22m
+
+
+       at helpers.ts:170
+
+      168 | export async function loadAppReady(page: Page): Promise<void> {
+      169 |   await page.goto("/");
+    > 170 |   await expect(page.getByText("Loading...")).toBeHidden({ timeout: 30_000 });
+          |                                              ^
+      171 |   await expect(page.getByTestId("cad-canvas")).toBeVisible();
+      172 |   // Wait for the debug hook to attach so subsequent page.evaluate() calls work
+      173 |   await page.waitForFunction(() => !!window.__cadDebug, undefined, {
+        at loadAppReady (/Users/user01/cadjs-starter/e2e/helpers.ts:170:46)
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:242:5
+
+    attachment #1: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-sweep-dialo-5110b--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-sweep-dialo-5110b--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-sweep-dialo-5110b--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-sweep-dialo-5110b--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[5/17] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › boolean dialog previews, cancels, applies and undoes
+[1A[2K  5) [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › boolean dialog previews, cancels, applies and undoes 
+
+    TimeoutError: page.waitForFunction: Timeout 10000ms exceeded.
+
+       at helpers.ts:173
+
+      171 |   await expect(page.getByTestId("cad-canvas")).toBeVisible();
+      172 |   // Wait for the debug hook to attach so subsequent page.evaluate() calls work
+    > 173 |   await page.waitForFunction(() => !!window.__cadDebug, undefined, {
+          |              ^
+      174 |     timeout: 10_000,
+      175 |   });
+      176 | }
+        at loadAppReady (/Users/user01/cadjs-starter/e2e/helpers.ts:173:14)
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:242:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-boolean-dia-4c84b--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-boolean-dia-4c84b--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-boolean-dia-4c84b--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-boolean-dia-4c84b--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-boolean-dia-4c84b--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[6/17] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › transform dialog previews, cancels, applies and undoes
+[1A[2K  6) [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › transform dialog previews, cancels, applies and undoes 
+
+    TimeoutError: page.waitForFunction: Timeout 10000ms exceeded.
+
+       at helpers.ts:173
+
+      171 |   await expect(page.getByTestId("cad-canvas")).toBeVisible();
+      172 |   // Wait for the debug hook to attach so subsequent page.evaluate() calls work
+    > 173 |   await page.waitForFunction(() => !!window.__cadDebug, undefined, {
+          |              ^
+      174 |     timeout: 10_000,
+      175 |   });
+      176 | }
+        at loadAppReady (/Users/user01/cadjs-starter/e2e/helpers.ts:173:14)
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:242:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-transform-d-d3573--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-transform-d-d3573--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-transform-d-d3573--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-transform-d-d3573--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-transform-d-d3573--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[7/17] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › rib dialog previews, cancels, applies and undoes
+[1A[2K  7) [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › rib dialog previews, cancels, applies and undoes 
+
+    TimeoutError: page.waitForFunction: Timeout 10000ms exceeded.
+
+       at helpers.ts:173
+
+      171 |   await expect(page.getByTestId("cad-canvas")).toBeVisible();
+      172 |   // Wait for the debug hook to attach so subsequent page.evaluate() calls work
+    > 173 |   await page.waitForFunction(() => !!window.__cadDebug, undefined, {
+          |              ^
+      174 |     timeout: 10_000,
+      175 |   });
+      176 | }
+        at loadAppReady (/Users/user01/cadjs-starter/e2e/helpers.ts:173:14)
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:242:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-rib-dialog--2a436--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-rib-dialog--2a436--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-rib-dialog--2a436--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-rib-dialog--2a436--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-rib-dialog--2a436--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[8/17] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › gusset dialog previews, cancels, applies and undoes
+[1A[2K  8) [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › gusset dialog previews, cancels, applies and undoes 
+
+    TimeoutError: page.waitForFunction: Timeout 10000ms exceeded.
+
+       at helpers.ts:173
+
+      171 |   await expect(page.getByTestId("cad-canvas")).toBeVisible();
+      172 |   // Wait for the debug hook to attach so subsequent page.evaluate() calls work
+    > 173 |   await page.waitForFunction(() => !!window.__cadDebug, undefined, {
+          |              ^
+      174 |     timeout: 10_000,
+      175 |   });
+      176 | }
+        at loadAppReady (/Users/user01/cadjs-starter/e2e/helpers.ts:173:14)
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:242:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-gusset-dial-180d1--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-gusset-dial-180d1--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-gusset-dial-180d1--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-gusset-dial-180d1--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-gusset-dial-180d1--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[9/17] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › web dialog previews, cancels, applies and undoes
+[1A[2K  9) [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › web dialog previews, cancels, applies and undoes 
+
+    TimeoutError: page.waitForFunction: Timeout 10000ms exceeded.
+
+       at helpers.ts:173
+
+      171 |   await expect(page.getByTestId("cad-canvas")).toBeVisible();
+      172 |   // Wait for the debug hook to attach so subsequent page.evaluate() calls work
+    > 173 |   await page.waitForFunction(() => !!window.__cadDebug, undefined, {
+          |              ^
+      174 |     timeout: 10_000,
+      175 |   });
+      176 | }
+        at loadAppReady (/Users/user01/cadjs-starter/e2e/helpers.ts:173:14)
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:242:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-web-dialog--14812--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-web-dialog--14812--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-web-dialog--14812--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-web-dialog--14812--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-web-dialog--14812--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[10/17] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › boss dialog previews, cancels, applies and undoes
+[1A[2K  10) [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › boss dialog previews, cancels, applies and undoes 
+
+    TimeoutError: page.waitForFunction: Timeout 10000ms exceeded.
+
+       at helpers.ts:173
+
+      171 |   await expect(page.getByTestId("cad-canvas")).toBeVisible();
+      172 |   // Wait for the debug hook to attach so subsequent page.evaluate() calls work
+    > 173 |   await page.waitForFunction(() => !!window.__cadDebug, undefined, {
+          |              ^
+      174 |     timeout: 10_000,
+      175 |   });
+      176 | }
+        at loadAppReady (/Users/user01/cadjs-starter/e2e/helpers.ts:173:14)
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:242:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-boss-dialog-ec5e5--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-boss-dialog-ec5e5--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-boss-dialog-ec5e5--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-boss-dialog-ec5e5--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-boss-dialog-ec5e5--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[11/17] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › emboss dialog previews, cancels, applies and undoes
+[1A[2K  11) [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › emboss dialog previews, cancels, applies and undoes 
+
+    TimeoutError: page.waitForFunction: Timeout 10000ms exceeded.
+
+       at helpers.ts:173
+
+      171 |   await expect(page.getByTestId("cad-canvas")).toBeVisible();
+      172 |   // Wait for the debug hook to attach so subsequent page.evaluate() calls work
+    > 173 |   await page.waitForFunction(() => !!window.__cadDebug, undefined, {
+          |              ^
+      174 |     timeout: 10_000,
+      175 |   });
+      176 | }
+        at loadAppReady (/Users/user01/cadjs-starter/e2e/helpers.ts:173:14)
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:242:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-emboss-dial-74078--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-emboss-dial-74078--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-emboss-dial-74078--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-emboss-dial-74078--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-emboss-dial-74078--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[12/17] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › coil dialog previews, cancels, applies and undoes
+[1A[2K  12) [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › coil dialog previews, cancels, applies and undoes 
+
+    TimeoutError: page.waitForFunction: Timeout 10000ms exceeded.
+
+       at helpers.ts:173
+
+      171 |   await expect(page.getByTestId("cad-canvas")).toBeVisible();
+      172 |   // Wait for the debug hook to attach so subsequent page.evaluate() calls work
+    > 173 |   await page.waitForFunction(() => !!window.__cadDebug, undefined, {
+          |              ^
+      174 |     timeout: 10_000,
+      175 |   });
+      176 | }
+        at loadAppReady (/Users/user01/cadjs-starter/e2e/helpers.ts:173:14)
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:242:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-coil-dialog-8b5e0--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-coil-dialog-8b5e0--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-coil-dialog-8b5e0--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-coil-dialog-8b5e0--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-coil-dialog-8b5e0--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[13/17] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › dome dialog previews, cancels, applies and undoes
+[1A[2K  13) [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › dome dialog previews, cancels, applies and undoes 
+
+    TimeoutError: page.waitForFunction: Timeout 10000ms exceeded.
+
+       at helpers.ts:173
+
+      171 |   await expect(page.getByTestId("cad-canvas")).toBeVisible();
+      172 |   // Wait for the debug hook to attach so subsequent page.evaluate() calls work
+    > 173 |   await page.waitForFunction(() => !!window.__cadDebug, undefined, {
+          |              ^
+      174 |     timeout: 10_000,
+      175 |   });
+      176 | }
+        at loadAppReady (/Users/user01/cadjs-starter/e2e/helpers.ts:173:14)
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:242:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-dome-dialog-0c960--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-dome-dialog-0c960--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-dome-dialog-0c960--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-dome-dialog-0c960--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-dome-dialog-0c960--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[14/17] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › enclose dialog previews, cancels, applies and undoes

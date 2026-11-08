@@ -1,0 +1,199 @@
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 predev
+[2m[WebServer] [22m> node scripts/avr-assets.mjs && node scripts/stm32f4-assets.mjs
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22mstm32f4-assets: 5 files -> public/stm32f4
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 dev
+[2m[WebServer] [22m> vite --port 3100 --strictPort
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m  [32m[1mVITE[22m v6.4.2[39m  [2mready in [0m[1m493[22m[2m[0m ms[22m
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m  [32m➜[39m  [1mLocal[22m:   [36mhttps://localhost:[1m3100[22m/[39m
+
+[1A[2K[2m[WebServer] [22m  [32m➜[39m  [1mNetwork[22m: [36mhttps://192.168.1.158:[1m3100[22m/[39m
+
+
+Running 9 tests using 1 worker
+
+[1A[2K[1/9] [chromium] › e2e/phase3-dialogs.spec.ts:231:3 › shell dialog previews, cancels, applies and undoes
+[1A[2K[2/9] [chromium] › e2e/phase3-dialogs.spec.ts:231:3 › draft dialog previews, cancels, applies and undoes
+[1A[2K[3/9] [chromium] › e2e/phase3-dialogs.spec.ts:231:3 › loft dialog previews, cancels, applies and undoes
+[1A[2K[4/9] [chromium] › e2e/phase3-dialogs.spec.ts:231:3 › sweep dialog previews, cancels, applies and undoes
+[1A[2K[5/9] [chromium] › e2e/phase3-dialogs.spec.ts:231:3 › boolean dialog previews, cancels, applies and undoes
+[1A[2K[6/9] [chromium] › e2e/phase3-dialogs.spec.ts:231:3 › transform dialog previews, cancels, applies and undoes
+[1A[2K[7/9] [chromium] › e2e/phase3-dialogs.spec.ts:231:3 › rib dialog previews, cancels, applies and undoes
+[1A[2K[8/9] [chromium] › e2e/phase3-dialogs.spec.ts:231:3 › gusset dialog previews, cancels, applies and undoes
+[1A[2K[9/9] (retries) [chromium] › e2e/phase3-dialogs.spec.ts:231:3 › gusset dialog previews, cancels, applies and undoes (retry #1)
+[1A[2K  1) [chromium] › e2e/phase3-dialogs.spec.ts:231:3 › gusset dialog previews, cancels, applies and undoes 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('button', { name: /^Undo Edit Feature/ })
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 15000ms[22m
+    [2m  - waiting for getByRole('button', { name: /^Undo Edit Feature/ })[22m
+
+
+      270 |     await expect(applied).toBeHidden();
+      271 |     const undo = page.getByRole("button", { name: /^Undo Edit Feature/ });
+    > 272 |     await expect(undo).toBeVisible();
+          |                        ^
+      273 |     await undo.click();
+      274 |     expect(await projectJson(page)).toBe(before);
+      275 |   });
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:272:24
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-gusset-dial-180d1--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-gusset-dial-180d1--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-gusset-dial-180d1--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-gusset-dial-180d1--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-gusset-dial-180d1--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('button', { name: /^Undo Edit Feature/ })
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 15000ms[22m
+    [2m  - waiting for getByRole('button', { name: /^Undo Edit Feature/ })[22m
+
+
+      270 |     await expect(applied).toBeHidden();
+      271 |     const undo = page.getByRole("button", { name: /^Undo Edit Feature/ });
+    > 272 |     await expect(undo).toBeVisible();
+          |                        ^
+      273 |     await undo.click();
+      274 |     expect(await projectJson(page)).toBe(before);
+      275 |   });
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:272:24
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-gusset-dial-180d1--cancels-applies-and-undoes-chromium-retry1/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-gusset-dial-180d1--cancels-applies-and-undoes-chromium-retry1/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-gusset-dial-180d1--cancels-applies-and-undoes-chromium-retry1/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-gusset-dial-180d1--cancels-applies-and-undoes-chromium-retry1/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-gusset-dial-180d1--cancels-applies-and-undoes-chromium-retry1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[10/9] [chromium] › e2e/phase3-dialogs.spec.ts:231:3 › web dialog previews, cancels, applies and undoes
+[1A[2K[11/9] (retries) [chromium] › e2e/phase3-dialogs.spec.ts:231:3 › web dialog previews, cancels, applies and undoes (retry #1)
+[1A[2K  2) [chromium] › e2e/phase3-dialogs.spec.ts:231:3 › web dialog previews, cancels, applies and undoes 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('button', { name: /^Undo Edit Feature/ })
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 15000ms[22m
+    [2m  - waiting for getByRole('button', { name: /^Undo Edit Feature/ })[22m
+
+
+      270 |     await expect(applied).toBeHidden();
+      271 |     const undo = page.getByRole("button", { name: /^Undo Edit Feature/ });
+    > 272 |     await expect(undo).toBeVisible();
+          |                        ^
+      273 |     await undo.click();
+      274 |     expect(await projectJson(page)).toBe(before);
+      275 |   });
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:272:24
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-web-dialog--14812--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-web-dialog--14812--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-web-dialog--14812--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-web-dialog--14812--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-web-dialog--14812--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    [31mTest timeout of 60000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 60000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: /^Undo Edit Feature/ })[22m
+
+
+      271 |     const undo = page.getByRole("button", { name: /^Undo Edit Feature/ });
+      272 |     await expect(undo).toBeVisible();
+    > 273 |     await undo.click();
+          |                ^
+      274 |     expect(await projectJson(page)).toBe(before);
+      275 |   });
+      276 | }
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:273:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-web-dialog--14812--cancels-applies-and-undoes-chromium-retry1/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-web-dialog--14812--cancels-applies-and-undoes-chromium-retry1/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-web-dialog--14812--cancels-applies-and-undoes-chromium-retry1/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-web-dialog--14812--cancels-applies-and-undoes-chromium-retry1/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-web-dialog--14812--cancels-applies-and-undoes-chromium-retry1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  2 failed
+    [chromium] › e2e/phase3-dialogs.spec.ts:231:3 › gusset dialog previews, cancels, applies and undoes 
+    [chromium] › e2e/phase3-dialogs.spec.ts:231:3 › web dialog previews, cancels, applies and undoes 
+  7 passed (4.2m)

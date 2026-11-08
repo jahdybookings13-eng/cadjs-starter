@@ -1,0 +1,161 @@
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 predev
+[2m[WebServer] [22m> node scripts/avr-assets.mjs && node scripts/stm32f4-assets.mjs
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22mstm32f4-assets: 5 files -> public/stm32f4
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 dev
+[2m[WebServer] [22m> vite --port 3100 --strictPort
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m  [32m[1mVITE[22m v6.4.2[39m  [2mready in [0m[1m634[22m[2m[0m ms[22m
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m  [32m➜[39m  [1mLocal[22m:   [36mhttps://localhost:[1m3100[22m/[39m
+[2m[WebServer] [22m  [32m➜[39m  [1mNetwork[22m: [36mhttps://192.168.1.158:[1m3100[22m/[39m
+
+
+Running 2 tests using 1 worker
+
+[1A[2K[1/2] [chromium] › e2e/phase3-dialogs.spec.ts:248:3 › gusset dialog previews, cancels, applies and undoes
+[1A[2K[chromium] › e2e/phase3-dialogs.spec.ts:248:3 › gusset dialog previews, cancels, applies and undoes
+DBG before gusset {
+  phase: [32m'editing'[39m,
+  fid: [32m'Fgen_mw6uxyd9_2'[39m,
+  baseline: [33mtrue[39m,
+  undoPushed: [33mtrue[39m,
+  params: [33m1[39m,
+  dirty: [33m1[39m,
+  error: [1mnull[22m,
+  undoLabel: [32m'Add Shape'[39m,
+  undoDepth: [33m4[39m
+}
+
+[1A[2KDBG after gusset {
+  phase: [32m'closed'[39m,
+  fid: [1mnull[22m,
+  baseline: [33mfalse[39m,
+  undoPushed: [33mfalse[39m,
+  params: [33m0[39m,
+  dirty: [33m0[39m,
+  error: [1mnull[22m,
+  undoLabel: [32m'Add Shape'[39m,
+  undoDepth: [33m4[39m
+}
+
+[1A[2K  1) [chromium] › e2e/phase3-dialogs.spec.ts:248:3 › gusset dialog previews, cancels, applies and undoes 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('button', { name: /^Undo Edit Feature/ })
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 15000ms[22m
+    [2m  - waiting for getByRole('button', { name: /^Undo Edit Feature/ })[22m
+
+
+      284 |     console.log("DBG after", kind, await dialogDebug(page));
+      285 |     const undo = page.getByRole("button", { name: /^Undo Edit Feature/ });
+    > 286 |     await expect(undo).toBeVisible();
+          |                        ^
+      287 |     await undo.click();
+      288 |     expect(await projectJson(page)).toBe(before);
+      289 |
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:286:24
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-gusset-dial-180d1--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-gusset-dial-180d1--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-gusset-dial-180d1--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-gusset-dial-180d1--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-gusset-dial-180d1--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[2/2] [chromium] › e2e/phase3-dialogs.spec.ts:248:3 › web dialog previews, cancels, applies and undoes
+[1A[2K[chromium] › e2e/phase3-dialogs.spec.ts:248:3 › web dialog previews, cancels, applies and undoes
+DBG before web {
+  phase: [32m'editing'[39m,
+  fid: [32m'Fgen_mw6uytxj_2'[39m,
+  baseline: [33mtrue[39m,
+  undoPushed: [33mtrue[39m,
+  params: [33m1[39m,
+  dirty: [33m1[39m,
+  error: [1mnull[22m,
+  undoLabel: [32m'Add Shape'[39m,
+  undoDepth: [33m4[39m
+}
+
+[1A[2KDBG after web {
+  phase: [32m'closed'[39m,
+  fid: [1mnull[22m,
+  baseline: [33mfalse[39m,
+  undoPushed: [33mfalse[39m,
+  params: [33m0[39m,
+  dirty: [33m0[39m,
+  error: [1mnull[22m,
+  undoLabel: [32m'Add Shape'[39m,
+  undoDepth: [33m4[39m
+}
+
+[1A[2K  2) [chromium] › e2e/phase3-dialogs.spec.ts:248:3 › web dialog previews, cancels, applies and undoes 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('button', { name: /^Undo Edit Feature/ })
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 15000ms[22m
+    [2m  - waiting for getByRole('button', { name: /^Undo Edit Feature/ })[22m
+
+
+      284 |     console.log("DBG after", kind, await dialogDebug(page));
+      285 |     const undo = page.getByRole("button", { name: /^Undo Edit Feature/ });
+    > 286 |     await expect(undo).toBeVisible();
+          |                        ^
+      287 |     await undo.click();
+      288 |     expect(await projectJson(page)).toBe(before);
+      289 |
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:286:24
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-web-dialog--14812--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-web-dialog--14812--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-web-dialog--14812--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-web-dialog--14812--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-web-dialog--14812--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  2 failed
+    [chromium] › e2e/phase3-dialogs.spec.ts:248:3 › gusset dialog previews, cancels, applies and undoes 
+    [chromium] › e2e/phase3-dialogs.spec.ts:248:3 › web dialog previews, cancels, applies and undoes 

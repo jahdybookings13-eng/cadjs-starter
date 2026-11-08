@@ -1,0 +1,21 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.5 [39m[90m/Users/user01/cadjs-starter[39m
+
+ [32m✓[39m src/model/__tests__/revolveEndCondition.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 32[2mms[22m[39m
+ [32m✓[39m src/model/__tests__/extrudeEndCondition.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 82[2mms[22m[39m
+ [32m✓[39m src/model/__tests__/sweepGuideBlend.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 108[2mms[22m[39m
+ [32m✓[39m src/model/__tests__/paramPanel.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 99[2mms[22m[39m
+ [32m✓[39m src/model/__tests__/featureDialog.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 200[2mms[22m[39m
+ [32m✓[39m src/model/__tests__/sweepPath.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 124[2mms[22m[39m
+ [32m✓[39m src/model/__tests__/paramSupport.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m src/model/__tests__/geometry.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 45[2mms[22m[39m
+ [32m✓[39m src/model/__tests__/executor.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 68[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m9 passed[39m[22m[90m (9)[39m
+[2m      Tests [22m [1m[32m67 passed[39m[22m[90m (67)[39m
+[2m   Start at [22m 16:47:20
+[2m   Duration [22m 3.89s[2m (transform 49%, import 35%, tests 10%, worker 6%)[22m
+
+[2m    Isolate [22m [33m9 workers spawned[39m[2m · ~1.27s startup each (spawn + environment, per file)[22m
+[2m            [22m [2mat least ~364ms faster with [22m[33misolate: false[39m[2m — reuses workers across files instead of one per file[22m
+

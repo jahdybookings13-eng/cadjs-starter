@@ -1,0 +1,6 @@
+src/assemblies/document.ts(75,7): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/assemblies/document.ts(76,7): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/scenes/simpleCadScene.tsx(1240,66): error TS2339: Property 'value' does not exist on type '{ kind: "boolean"; parameterId: string; value: boolean; } | { kind: "enum"; parameterId: string; value: string; } | { kind: "quantity"; parameterId: string; value: number; units: string; expression: string; } | { ...; } | { ...; }'.
+  Property 'value' does not exist on type '{ kind: "matrix"; parameterId: string; elements: number[]; }'.

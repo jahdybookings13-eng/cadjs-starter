@@ -1,0 +1,165 @@
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 predev
+[2m[WebServer] [22m> node scripts/avr-assets.mjs && node scripts/stm32f4-assets.mjs
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22mstm32f4-assets: 5 files -> public/stm32f4
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 dev
+[2m[WebServer] [22m> vite --port 3100 --strictPort
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m  [32m[1mVITE[22m v6.4.2[39m  [2mready in [0m[1m611[22m[2m[0m ms[22m
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m  [32m➜[39m  [1mLocal[22m:   [36mhttps://localhost:[1m3100[22m/[39m
+
+[1A[2K[2m[WebServer] [22m  [32m➜[39m  [1mNetwork[22m: [36mhttps://192.168.1.158:[1m3100[22m/[39m
+
+
+Running 17 tests using 1 worker
+
+[1A[2K[1/17] [chromium] › e2e/picture-to-world.spec.ts:13:1 › seeded mesh from an image becomes a body in the world
+[1A[2K[2/17] [chromium] › e2e/primitives.spec.ts:4:1 › primitive catalog builds sphere, ellipsoid, capsule and dome
+[1A[2K[2m[WebServer] [22m[2m1:18:57 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/model/__tests__/executor.test.ts[22m
+
+[1A[2K[3/17] [chromium] › e2e/primitives.spec.ts:58:1 › every catalog primitive builds with published defaults
+[1A[2K[4/17] [chromium] › e2e/scene-describe.spec.ts:4:1 › describeScene gives an agent the whole world in one call
+[1A[2K[5/17] [chromium] › e2e/sketch-controls.spec.ts:80:1 › sketch text and DXF insert through the real toolbar
+[1A[2K[2m[WebServer] [22m[2m1:20:15 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css?direct, /src/scenes/simpleCadScene.tsx[22m
+
+[1A[2K[2m[WebServer] [22m[2m1:20:15 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/model/__tests__/executor.test.ts[22m
+
+[1A[2K[2m[WebServer] [22m[2m1:20:15 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css?direct, /src/scenes/simpleCadScene.tsx, /src/components/FeatureDialog.tsx[22m
+
+[1A[2K[2m[WebServer] [22m[2m1:20:15 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css?direct, /src/scenes/simpleCadScene.tsx, /src/components/FeatureDialog.tsx[22m
+
+[1A[2K[6/17] (retries) [chromium] › e2e/sketch-controls.spec.ts:80:1 › sketch text and DXF insert through the real toolbar (retry #1)
+[1A[2K  1) [chromium] › e2e/sketch-controls.spec.ts:80:1 › sketch text and DXF insert through the real toolbar 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText('Image underlay', { exact: true })
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 15000ms[22m
+    [2m  - waiting for getByText('Image underlay', { exact: true })[22m
+
+
+      113 |
+      114 |   await page.getByRole("button", { name: "Underlay", exact: true }).click();
+    > 115 |   await expect(page.getByText("Image underlay", { exact: true })).toBeVisible();
+          |                                                                   ^
+      116 |   await page.getByLabel("Width").fill("150");
+      117 |   await page.getByRole("button", { name: "Delete underlay" }).click();
+      118 |   await expect(
+        at /Users/user01/cadjs-starter/e2e/sketch-controls.spec.ts:115:67
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/sketch-controls-sketch-tex-1e7b2-rt-through-the-real-toolbar-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/sketch-controls-sketch-tex-1e7b2-rt-through-the-real-toolbar-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/sketch-controls-sketch-tex-1e7b2-rt-through-the-real-toolbar-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/sketch-controls-sketch-tex-1e7b2-rt-through-the-real-toolbar-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/sketch-controls-sketch-tex-1e7b2-rt-through-the-real-toolbar-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[7/17] [chromium] › e2e/sketch-controls.spec.ts:126:1 › DXF layers and polylines appear in the sketch layer dialog
+[1A[2K[2m[WebServer] [22m[2m1:20:54 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mPHASE3_REMAINING.md[22m
+
+[1A[2K[8/17] [chromium] › e2e/sketch-rectangle.spec.ts:4:1 › sketch mode → XY plane → draw rectangle → finish creates a profile
+[1A[2K[9/17] [chromium] › e2e/step-import.spec.ts:64:1 › STL round-trip: insert synthetic cube as history body
+[1A[2K[chromium] › e2e/step-import.spec.ts:64:1 › STL round-trip: insert synthetic cube as history body
+PAGE: [vite] connecting...
+
+[1A[2KPAGE: [vite] connected.
+
+[1A[2KPAGE: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+
+[1A[2KPAGE: Scene, camera, or renderer not available
+
+[1A[2KPAGE: Element node_1 not found for brep update
+
+[1A[2KPAGE: Element node_2 not found for brep update
+
+[1A[2KIMPORT RESULT: {"box":"Fgen_mw6qcbxl_1","inserted":"Fgen_mw6qccjv_2","insertedState":"OK","insertedReport":{"status":"OK"},"boxState":"OK","geom":{"edges":18,"faces":12,"vertices":9},"nElements":2,"ids":["node_1","node_2"],"authored":["Fgen_mw6qcbxl_1->node_1","Fgen_mw6qccjv_2->node_2"],"stepOk":null,"stepErr":null,"stlFromScene":true,"lastExportErr":null}
+
+[1A[2K[10/17] [chromium] › e2e/undo-chain.spec.ts:4:1 › Ctrl+Z repeatedly clears all features
+[1A[2K[11/17] [chromium] › e2e/vr-board-grab.spec.ts:24:1 › grab a PCB board in VR, hold it up, drop it back onto the desk
+[1A[2K[12/17] [chromium] › e2e/vr-bridge.spec.ts:33:1 › enter VR headless and render the room
+[1A[2K[13/17] [chromium] › e2e/vr-bridge.spec.ts:46:1 › look down reveals the tool belt, trigger selects a tool
+[1A[2K[chromium] › e2e/vr-bridge.spec.ts:46:1 › look down reveals the tool belt, trigger selects a tool
+mode after belt L3: measure
+
+[1A[2K[14/17] [chromium] › e2e/vr-bridge.spec.ts:78:1 › trigger click without hover does not crash
+[1A[2K[15/17] [chromium] › e2e/vr-bridge.spec.ts:95:1 › beam hit on a model face resolves to its persistent FID tag
+[1A[2K[16/17] [chromium] › e2e/vr-room-model.spec.ts:4:1 › generated room 3D file is applied in VR
+[1A[2K[17/17] [chromium] › e2e/vr-second-desk.spec.ts:4:1 › second desk with green blueprint mat and FNAF board loads
+[1A[2K[2m[WebServer] [22m[2m1:25:20 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mvendor/cadjs/src/workers/occ-worker-types.ts[22m
+
+[1A[2K[2m[WebServer] [22m[2m1:25:21 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mvendor/cadjs/src/services/occ-extrude.ts[22m
+[2m[WebServer] [22m[2m1:25:21 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mvendor/cadjs/src/services/occ-revolve-loft.ts[22m
+[2m[WebServer] [22m[2m1:25:21 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mvendor/cadjs/src/workers/occ-worker-handlers.ts[22m
+
+[1A[2K[2m[WebServer] [22m[2m1:25:21 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css?direct, /src/index.tsx, /src/scenes/simpleCadScene.tsx, /src/components/ViewCube.tsx, /src/components/SketchPropertiesPanel.tsx, /src/scenes/modes/SketchModeContent.tsx, /src/navbar/SketchToolbar.tsx, /src/navbar/ValueInputModal.tsx, /vendor/cadjs/src/contexts/CoreContext.tsx, /vendor/cadjs/src/contexts/VisualizerContext.tsx, /src/components/FileMenu.tsx, /src/scenes/modes/MoveModeContent.tsx, /src/scenes/modes/FilletModeContent.tsx, /src/scenes/modes/ExtrudeModeContent.tsx, /src/scenes/modes/LoftModeContent.tsx, /src/scenes/modes/CombineModeContent.tsx, /src/scenes/modes/MeasureModeContent.tsx, /src/scenes/modes/SweepModeContent.tsx, /src/scenes/modes/RevolveModeContent.tsx[22m
+
+[1A[2K[2m[WebServer] [22m[2m1:25:21 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css?direct, /src/index.tsx, /src/scenes/simpleCadScene.tsx, /src/components/ViewCube.tsx, /src/components/SketchPropertiesPanel.tsx, /src/scenes/modes/SketchModeContent.tsx, /src/navbar/SketchToolbar.tsx, /src/navbar/ValueInputModal.tsx, /vendor/cadjs/src/contexts/CoreContext.tsx, /vendor/cadjs/src/contexts/VisualizerContext.tsx, /src/components/FileMenu.tsx, /src/scenes/modes/MoveModeContent.tsx, /src/scenes/modes/FilletModeContent.tsx, /src/scenes/modes/ExtrudeModeContent.tsx, /src/scenes/modes/LoftModeContent.tsx, /src/scenes/modes/CombineModeContent.tsx, /src/scenes/modes/MeasureModeContent.tsx, /src/scenes/modes/SweepModeContent.tsx, /src/scenes/modes/RevolveModeContent.tsx[22m
+
+[1A[2K[18/17] (retries) [chromium] › e2e/vr-second-desk.spec.ts:4:1 › second desk with green blueprint mat and FNAF board loads (retry #1)
+[1A[2K  2) [chromium] › e2e/vr-second-desk.spec.ts:4:1 › second desk with green blueprint mat and FNAF board loads 
+
+    Error: page.evaluate: Execution context was destroyed, most likely because of a navigation.
+
+       at vr-harness.ts:60
+
+      58 |   args: unknown[] = [],
+      59 | ): Promise<any> {
+    > 60 |   return page.evaluate(
+         |               ^
+      61 |     ([m, a]) => (window as never as Record<string, any>).__vr?.[m]?.(...a),
+      62 |     [method, args] as const,
+      63 |   );
+        at vr (/Users/user01/cadjs-starter/e2e/vr-harness.ts:60:15)
+        at /Users/user01/cadjs-starter/e2e/vr-second-desk.spec.ts:16:9
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/vr-second-desk-second-desk-cc39d-nt-mat-and-FNAF-board-loads-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/vr-second-desk-second-desk-cc39d-nt-mat-and-FNAF-board-loads-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/vr-second-desk-second-desk-cc39d-nt-mat-and-FNAF-board-loads-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/vr-second-desk-second-desk-cc39d-nt-mat-and-FNAF-board-loads-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/vr-second-desk-second-desk-cc39d-nt-mat-and-FNAF-board-loads-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[19/17] [chromium] › e2e/vr-suit-settings.spec.ts:22:1 › suit settings panel opens on look-up, edits persist, edits rebuild the room
+[1A[2K[2m[WebServer] [22m[2m1:26:08 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css?direct, /src/scenes/simpleCadScene.tsx[22m
+
+[1A[2K  2 flaky
+    [chromium] › e2e/sketch-controls.spec.ts:80:1 › sketch text and DXF insert through the real toolbar 
+    [chromium] › e2e/vr-second-desk.spec.ts:4:1 › second desk with green blueprint mat and FNAF board loads 
+  15 passed (8.1m)

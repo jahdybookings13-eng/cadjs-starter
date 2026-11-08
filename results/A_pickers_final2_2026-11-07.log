@@ -1,0 +1,8 @@
+
+Running 4 tests using 1 worker
+
+[1A[2K[1/4] [chromium] › e2e/phase3-a-pickers.spec.ts:131:1 › extrude end reference picks a face on another body and rejects its own result
+[1A[2K[2/4] [chromium] › e2e/phase3-a-pickers.spec.ts:196:1 › extrude draft picks a neutral face and a parting edge
+[1A[2K[3/4] [chromium] › e2e/phase3-a-pickers.spec.ts:270:1 › draft feature parting edge picker stores a sketch line
+[1A[2K[4/4] [chromium] › e2e/phase3-a-pickers.spec.ts:320:1 › sweep guide picker adds one guide, dedupes it, and clears
+[1A[2K  4 passed (1.2m)

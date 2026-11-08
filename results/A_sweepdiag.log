@@ -1,0 +1,51 @@
+
+Running 1 test using 1 worker
+
+[1A[2K[1/1] [chromium] › e2e/tmp-debug-fixture.spec.ts:4:1 › debug sweep fixture wiring
+[1A[2K  1) [chromium] › e2e/tmp-debug-fixture.spec.ts:4:1 › debug sweep fixture wiring ───────────────────
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByTestId('cad-canvas')
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 15000ms[22m
+    [2m  - waiting for getByTestId('cad-canvas')[22m
+
+
+       at helpers.ts:171
+
+      169 |   await page.goto("/");
+      170 |   await expect(page.getByText("Loading...")).toBeHidden({ timeout: 30_000 });
+    > 171 |   await expect(page.getByTestId("cad-canvas")).toBeVisible();
+          |                                                ^
+      172 |   // Wait for the debug hook to attach so subsequent page.evaluate() calls work
+      173 |   await page.waitForFunction(() => !!window.__cadDebug, undefined, {
+      174 |     timeout: 10_000,
+        at loadAppReady (/Users/user01/cadjs-starter/e2e/helpers.ts:171:48)
+        at /Users/user01/cadjs-starter/e2e/tmp-debug-fixture.spec.ts:10:3
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/tmp-debug-fixture-debug-sweep-fixture-wiring-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/tmp-debug-fixture-debug-sweep-fixture-wiring-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/tmp-debug-fixture-debug-sweep-fixture-wiring-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/tmp-debug-fixture-debug-sweep-fixture-wiring-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/tmp-debug-fixture-debug-sweep-fixture-wiring-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  1 failed
+    [chromium] › e2e/tmp-debug-fixture.spec.ts:4:1 › debug sweep fixture wiring ────────────────────

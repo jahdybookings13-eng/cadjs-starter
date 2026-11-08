@@ -1,0 +1,12 @@
+
+Running 8 tests using 1 worker
+
+[1A[2K[1/8] [chromium] › e2e/parity-ops.spec.ts:195:1 › shell and draft run on the real kernel
+[1A[2K[2/8] [chromium] › e2e/parity-ops.spec.ts:241:1 › hole and circular/curve pattern run on the real kernel
+[1A[2K[3/8] [chromium] › e2e/parity-ops.spec.ts:318:1 › delete-face and split run on the real kernel
+[1A[2K[4/8] [chromium] › e2e/parity-ops.spec.ts:374:1 › project save/load round-trips the whole document
+[1A[2K[5/8] [chromium] › e2e/parity-ops.spec.ts:401:1 › action bus is the single dispatcher for desk/VR/voice
+[1A[2K[6/8] [chromium] › e2e/parity-ops.spec.ts:433:1 › appearance is tree data: applies live and survives rebuild
+[1A[2K[7/8] [chromium] › e2e/parity-ops.spec.ts:462:1 › rounded flange + flat pattern unfold produce the net
+[1A[2K[8/8] [chromium] › e2e/parity-ops.spec.ts:489:1 › hem double-folds a sheet edge; wrap maps curves onto a cylinder
+[1A[2K  8 passed (1.5m)

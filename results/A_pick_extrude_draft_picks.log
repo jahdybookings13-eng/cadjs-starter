@@ -1,0 +1,46 @@
+
+Running 1 test using 1 worker
+
+[1A[2K[1/1] [chromium] › e2e/phase3-a-pickers.spec.ts:186:1 › extrude draft picks a neutral face and a parting edge
+[1A[2K  1) [chromium] › e2e/phase3-a-pickers.spec.ts:186:1 › extrude draft picks a neutral face and a parting edge 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoContainText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: getByTestId('feature-dialog').locator('[data-parameter-id="draftNeutralFace"]')
+    Expected pattern: [32m/_F\d+/[39m
+    Received string:  [31m"Neutral FaceNoneCancel pickClick the face whose plane is the draft neutral plane. Esc cancels the pick."[39m
+    Timeout: 15000ms
+
+    Call log:
+    [2m  - Expect "toContainText" with timeout 15000ms[22m
+    [2m  - waiting for getByTestId('feature-dialog').locator('[data-parameter-id="draftNeutralFace"]')[22m
+    [2m    33 × locator resolved to <div data-dirty="false" data-parameter-id="draftNeutralFace" class="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] items-center gap-2">…</div>[22m
+    [2m       - unexpected value "Neutral FaceNoneCancel pickClick the face whose plane is the draft neutral plane. Esc cancels the pick."[22m
+
+
+      267 |     .dispatchEvent("click");
+      268 |   await clickWorld(page, [top!.center.x, top!.center.y, top!.center.z]);
+    > 269 |   await expect(neutralRow).toContainText(/_F\d+/);
+          |                            ^
+      270 |
+      271 |   await dialog.getByRole("button", { name: "Apply" }).click();
+      272 |   await expect(dialog).toBeHidden();
+        at /Users/user01/cadjs-starter/e2e/phase3-a-pickers.spec.ts:269:28
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-a-pickers-extrude-d-65056-ral-face-and-a-parting-edge-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-a-pickers-extrude-d-65056-ral-face-and-a-parting-edge-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-a-pickers-extrude-d-65056-ral-face-and-a-parting-edge-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-a-pickers-extrude-d-65056-ral-face-and-a-parting-edge-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  1 failed
+    [chromium] › e2e/phase3-a-pickers.spec.ts:186:1 › extrude draft picks a neutral face and a parting edge 

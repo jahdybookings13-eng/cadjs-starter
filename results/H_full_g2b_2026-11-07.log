@@ -1,0 +1,62 @@
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 predev
+[2m[WebServer] [22m> node scripts/avr-assets.mjs && node scripts/stm32f4-assets.mjs
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22mstm32f4-assets: 5 files -> public/stm32f4
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 dev
+[2m[WebServer] [22m> vite --port 3100 --strictPort
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m  [32m[1mVITE[22m v6.4.2[39m  [2mready in [0m[1m419[22m[2m[0m ms[22m
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m  [32m➜[39m  [1mLocal[22m:   [36mhttps://localhost:[1m3100[22m/[39m
+
+[1A[2K[2m[WebServer] [22m  [32m➜[39m  [1mNetwork[22m: [36mhttps://192.168.1.158:[1m3100[22m/[39m
+
+
+Running 18 tests using 1 worker
+
+[1A[2K[1/18] [chromium] › e2e/multi-body.spec.ts:4:1 › split-both exposes a second selectable body
+[1A[2K[2/18] [chromium] › e2e/parts.spec.ts:4:1 › parts: create, name, assign, material, hide, export and copy
+[1A[2K[3/18] [chromium] › e2e/parts.spec.ts:104:1 › parts: multi-select applies part, material and state to every body
+[1A[2K[4/18] [chromium] › e2e/parts.spec.ts:207:1 › parts: a failed feature owns its row's error, not the source body
+[1A[2K[5/18] [chromium] › e2e/phase3-acceptance.spec.ts:195:1 › H1/H2: 35-feature acceptance part builds, audits and is rebuild-stable
+[1A[2K[6/18] [chromium] › e2e/phase3-acceptance.spec.ts:270:1 › H2/H3: save/reload keeps canonical bytes, geometry and feature states
+[1A[2K[7/18] [chromium] › e2e/phase3-acceptance.spec.ts:313:1 › H5/H6: STL and STEP round-trips preserve bbox and body ownership
+[1A[2K[8/18] [chromium] › e2e/phase3-acceptance.spec.ts:389:1 › H7: invalid acceptance feature reports a named error and no body
+[1A[2K[9/18] [chromium] › e2e/phase3-acceptance.spec.ts:418:1 › H4/H8: body part, material, visibility and export names survive reload
+[1A[2K[10/18] [chromium] › e2e/picture-to-world.spec.ts:13:1 › seeded mesh from an image becomes a body in the world
+[1A[2K[11/18] [chromium] › e2e/primitives.spec.ts:4:1 › primitive catalog builds sphere, ellipsoid, capsule and dome
+[1A[2K[12/18] [chromium] › e2e/primitives.spec.ts:58:1 › every catalog primitive builds with published defaults
+[1A[2K[13/18] [chromium] › e2e/scene-describe.spec.ts:4:1 › describeScene gives an agent the whole world in one call
+[1A[2K[14/18] [chromium] › e2e/sketch-controls.spec.ts:80:1 › sketch text and DXF insert through the real toolbar
+[1A[2K[15/18] [chromium] › e2e/sketch-controls.spec.ts:126:1 › DXF layers and polylines appear in the sketch layer dialog
+[1A[2K[16/18] [chromium] › e2e/sketch-rectangle.spec.ts:4:1 › sketch mode → XY plane → draw rectangle → finish creates a profile
+[1A[2K[2m[WebServer] [22m[2m1:56:12 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css?direct, /src/scenes/simpleCadScene.tsx, /src/components/FeatureDialog.tsx[22m
+
+[1A[2K[2m[WebServer] [22m[2m1:56:12 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css?direct, /src/scenes/simpleCadScene.tsx, /src/components/FeatureDialog.tsx[22m
+[2m[WebServer] [22m[2m1:56:12 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css?direct, /src/scenes/simpleCadScene.tsx, /src/components/PrimaryToolbar.tsx[22m
+
+[1A[2K[17/18] [chromium] › e2e/step-import.spec.ts:64:1 › STL round-trip: insert synthetic cube as history body
+[1A[2K[chromium] › e2e/step-import.spec.ts:64:1 › STL round-trip: insert synthetic cube as history body
+PAGE: [vite] connecting...
+
+[1A[2KPAGE: [vite] connected.
+
+[1A[2KPAGE: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+
+[1A[2KPAGE: Scene, camera, or renderer not available
+
+[1A[2KPAGE: Element node_1 not found for brep update
+
+[1A[2KPAGE: Element node_2 not found for brep update
+
+[1A[2KIMPORT RESULT: {"box":"Fgen_mw6rlb6r_1","inserted":"Fgen_mw6rlbsz_2","insertedState":"OK","insertedReport":{"status":"OK"},"boxState":"OK","geom":{"edges":18,"faces":12,"vertices":9},"nElements":2,"ids":["node_1","node_2"],"authored":["Fgen_mw6rlb6r_1->node_1","Fgen_mw6rlbsz_2->node_2"],"stepOk":null,"stepErr":null,"stlFromScene":true,"lastExportErr":null}
+
+[1A[2K[18/18] [chromium] › e2e/undo-chain.spec.ts:4:1 › Ctrl+Z repeatedly clears all features
+[1A[2K  18 passed (7.0m)

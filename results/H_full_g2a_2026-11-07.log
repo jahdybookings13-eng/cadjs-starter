@@ -1,0 +1,127 @@
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 predev
+[2m[WebServer] [22m> node scripts/avr-assets.mjs && node scripts/stm32f4-assets.mjs
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22mstm32f4-assets: 5 files -> public/stm32f4
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 dev
+[2m[WebServer] [22m> vite --port 3100 --strictPort
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m  [32m[1mVITE[22m v6.4.2[39m  [2mready in [0m[1m418[22m[2m[0m ms[22m
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m  [32m➜[39m  [1mLocal[22m:   [36mhttps://localhost:[1m3100[22m/[39m
+[2m[WebServer] [22m  [32m➜[39m  [1mNetwork[22m: [36mhttps://192.168.1.158:[1m3100[22m/[39m
+
+
+Running 19 tests using 1 worker
+
+[1A[2K[1/19] [chromium] › e2e/extrude-profile.spec.ts:24:1 › selecting a profile and clicking extrude activates extrude mode
+[1A[2K[2/19] [chromium] › e2e/extrude-profile.spec.ts:48:6 › drag-to-extrude with arrow handle produces a body
+[1A[2K[3/19] [chromium] › e2e/feature-dialog.spec.ts:37:1 › feature dialog previews, cancels, applies and undoes an extrude edit
+[1A[2K[4/19] [chromium] › e2e/feature-dialog.spec.ts:137:1 › pattern and split dialogs edit the C parameters
+[1A[2K[5/19] [chromium] › e2e/feature-dialog.spec.ts:204:1 › counterbore adds a shoulder and a second wall
+[1A[2K[6/19] [chromium] › e2e/feature-dialog.spec.ts:233:1 › per-edge fillet radii and chamfer distances are applied and validated
+[1A[2K[7/19] [chromium] › e2e/feature-tree.spec.ts:18:1 › tree cascade suppression, rename collision and reorder guard
+[1A[2K[8/19] [chromium] › e2e/feature-tree.spec.ts:105:1 › rollback edit/forward, bar drag, retry and persistence
+[1A[2K[9/19] [chromium] › e2e/feature-tree.spec.ts:223:1 › feature tree folders, references, reorder and undo
+[1A[2K[10/19] [chromium] › e2e/features-f.spec.ts:152:1 › F1-F5: rib, gusset, web, boss and dome author bodies and merge
+[1A[2K[11/19] [chromium] › e2e/features-f.spec.ts:244:1 › F4/F8: coil, helix curve, fit/bridge curves, enclose and emboss
+[1A[2K[12/19] [chromium] › e2e/features-f.spec.ts:341:1 › F: invalid parameters surface named errors instead of bodies
+[1A[2K[13/19] [chromium] › e2e/features-f.spec.ts:401:1 › F6: derive resolves a second Part Studio and follows its edits
+[1A[2K[14/19] [chromium] › e2e/features-f.spec.ts:475:1 › F7: import recognition is metadata and keeps the imported body
+[1A[2K[15/19] [chromium] › e2e/features-f.spec.ts:553:1 › F2: web dialog commits a thickness change
+[1A[2K[16/19] [chromium] › e2e/features-f.spec.ts:571:1 › F3: boss dialog commits a diameter change
+[1A[2K[2m[WebServer] [22m[2m1:46:35 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css?direct, /src/scenes/simpleCadScene.tsx, /src/components/FeatureDialog.tsx[22m
+
+[1A[2K[17/19] [chromium] › e2e/features-f.spec.ts:588:1 › F5: dome dialog commits a height change
+[1A[2K[18/19] [chromium] › e2e/features-f.spec.ts:605:1 › F4: coil dialog commits a revolutions change
+[1A[2K[2m[WebServer] [22m[2m1:47:20 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/FeatureDialog.tsx, /src/index.css?direct[22m
+
+[1A[2K[2m[WebServer] [22m[2m1:47:20 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/scenes/simpleCadScene.tsx, /src/index.css?direct[22m
+
+[1A[2K[2m[WebServer] [22m[2m1:48:01 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/model/__tests__/featureDialog.test.ts[22m
+
+[1A[2K[19/19] (retries) [chromium] › e2e/features-f.spec.ts:605:1 › F4: coil dialog commits a revolutions change (retry #1)
+[1A[2K  1) [chromium] › e2e/features-f.spec.ts:605:1 › F4: coil dialog commits a revolutions change ──────
+
+    Error: page.evaluate: Execution context was destroyed, most likely because of a navigation.
+
+      131 |
+      132 | const reportsOf = (page: Page) =>
+    > 133 |   page.evaluate(() =>
+          |        ^
+      134 |     (
+      135 |       window as unknown as {
+      136 |         __cadDebug: { scadgen: FDebug };
+        at reportsOf (/Users/user01/cadjs-starter/e2e/features-f.spec.ts:133:8)
+        at expect.poll.timeout (/Users/user01/cadjs-starter/e2e/features-f.spec.ts:540:30)
+        at editMacro (/Users/user01/cadjs-starter/e2e/features-f.spec.ts:539:3)
+        at /Users/user01/cadjs-starter/e2e/features-f.spec.ts:618:3
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/features-f-F4-coil-dialog-commits-a-revolutions-change-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/features-f-F4-coil-dialog-commits-a-revolutions-change-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/features-f-F4-coil-dialog-commits-a-revolutions-change-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/features-f-F4-coil-dialog-commits-a-revolutions-change-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/features-f-F4-coil-dialog-commits-a-revolutions-change-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[20/19] [chromium] › e2e/features-f.spec.ts:624:1 › F8: menu ids answer on the action bus without placeholders
+[1A[2K[2m[WebServer] [22m[2m1:49:05 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/scenes/simpleCadScene.tsx, /src/index.css?direct[22m
+
+[1A[2K[2m[WebServer] [22m[2m1:49:05 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mPHASE3_REMAINING.md[22m
+
+[1A[2K[21/19] (retries) [chromium] › e2e/features-f.spec.ts:624:1 › F8: menu ids answer on the action bus without placeholders (retry #1)
+[1A[2K  2) [chromium] › e2e/features-f.spec.ts:624:1 › F8: menu ids answer on the action bus without placeholders 
+
+    Error: page.evaluate: Execution context was destroyed, most likely because of a navigation.
+
+      626 | }) => {
+      627 |   await loadAppReady(page);
+    > 628 |   const r = await page.evaluate(async () => {
+          |                        ^
+      629 |     const g = (window as unknown as { __cadDebug: { scadgen: FDebug } })
+      630 |       .__cadDebug.scadgen;
+      631 |     g.configureSync();
+        at /Users/user01/cadjs-starter/e2e/features-f.spec.ts:628:24
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/features-f-F8-menu-ids-ans-98e5d-on-bus-without-placeholders-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/features-f-F8-menu-ids-ans-98e5d-on-bus-without-placeholders-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/features-f-F8-menu-ids-ans-98e5d-on-bus-without-placeholders-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/features-f-F8-menu-ids-ans-98e5d-on-bus-without-placeholders-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/features-f-F8-menu-ids-ans-98e5d-on-bus-without-placeholders-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  2 flaky
+    [chromium] › e2e/features-f.spec.ts:605:1 › F4: coil dialog commits a revolutions change ───────
+    [chromium] › e2e/features-f.spec.ts:624:1 › F8: menu ids answer on the action bus without placeholders 
+  1 skipped
+  16 passed (5.9m)

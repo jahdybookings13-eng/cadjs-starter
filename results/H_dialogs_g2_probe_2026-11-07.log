@@ -1,0 +1,320 @@
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 predev
+[2m[WebServer] [22m> node scripts/avr-assets.mjs && node scripts/stm32f4-assets.mjs
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22mstm32f4-assets: 5 files -> public/stm32f4
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 dev
+[2m[WebServer] [22m> vite --port 3100 --strictPort
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m  [32m[1mVITE[22m v6.4.2[39m  [2mready in [0m[1m488[22m[2m[0m ms[22m
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m  [32m➜[39m  [1mLocal[22m:   [36mhttps://localhost:[1m3100[22m/[39m
+
+[1A[2K[2m[WebServer] [22m  [32m➜[39m  [1mNetwork[22m: [36mhttps://192.168.1.158:[1m3100[22m/[39m
+
+
+Running 9 tests using 1 worker
+
+[1A[2K[1/9] [chromium] › e2e/phase3-dialogs.spec.ts:236:3 › gusset dialog previews, cancels, applies and undoes
+[1A[2K[chromium] › e2e/phase3-dialogs.spec.ts:236:3 › gusset dialog previews, cancels, applies and undoes
+gusset dialog state: {"featureId":"Fgen_mw6thwqj_2","params":1,"rows":[{"id":"targets","kind":"queryList","value":[],"draft":[]},{"id":"x1","kind":"quantity","value":0,"draft":1},{"id":"y1","kind":"quantity","value":0,"draft":0},{"id":"x2","kind":"quantity","value":0.03,"draft":0.03},{"id":"y2","kind":"quantity","value":0,"draft":0},{"id":"z","kind":"quantity","value":0,"draft":0},{"id":"thickness","kind":"quantity","value":0.004,"draft":0.004},{"id":"depth","kind":"quantity","value":0.02,"draft":0.02},{"id":"hasDraft","kind":"boolean","value":false,"draft":false},{"id":"draftAngle","kind":"quantity","value":0,"draft":0},{"id":"flip","kind":"boolean","value":false,"draft":false},{"id":"merge","kind":"boolean","value":false,"draft":false}]}
+
+[1A[2K[2/9] [chromium] › e2e/phase3-dialogs.spec.ts:236:3 › web dialog previews, cancels, applies and undoes
+[1A[2K[chromium] › e2e/phase3-dialogs.spec.ts:236:3 › web dialog previews, cancels, applies and undoes
+web dialog state: {"featureId":null,"params":0,"rows":[]}
+
+[1A[2K  1) [chromium] › e2e/phase3-dialogs.spec.ts:236:3 › web dialog previews, cancels, applies and undoes 
+
+    Error: web draft commits no parameters
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThan[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: > [32m0[39m
+    Received:   [31m0[39m
+
+      280 |     );
+      281 |     console.log(`${kind} dialog state:`, JSON.stringify(info));
+    > 282 |     expect(info.params, `${kind} draft commits no parameters`).toBeGreaterThan(
+          |                                                                ^
+      283 |       0,
+      284 |     );
+      285 |     await applied.getByRole("button", { name: "Apply" }).click();
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:282:64
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-web-dialog--14812--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-web-dialog--14812--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-web-dialog--14812--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-web-dialog--14812--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-web-dialog--14812--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[3/9] [chromium] › e2e/phase3-dialogs.spec.ts:236:3 › boss dialog previews, cancels, applies and undoes
+[1A[2K[chromium] › e2e/phase3-dialogs.spec.ts:236:3 › boss dialog previews, cancels, applies and undoes
+boss dialog state: {"featureId":null,"params":0,"rows":[]}
+
+[1A[2K  2) [chromium] › e2e/phase3-dialogs.spec.ts:236:3 › boss dialog previews, cancels, applies and undoes 
+
+    Error: boss draft commits no parameters
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThan[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: > [32m0[39m
+    Received:   [31m0[39m
+
+      280 |     );
+      281 |     console.log(`${kind} dialog state:`, JSON.stringify(info));
+    > 282 |     expect(info.params, `${kind} draft commits no parameters`).toBeGreaterThan(
+          |                                                                ^
+      283 |       0,
+      284 |     );
+      285 |     await applied.getByRole("button", { name: "Apply" }).click();
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:282:64
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-boss-dialog-ec5e5--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-boss-dialog-ec5e5--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-boss-dialog-ec5e5--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-boss-dialog-ec5e5--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-boss-dialog-ec5e5--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[4/9] [chromium] › e2e/phase3-dialogs.spec.ts:236:3 › emboss dialog previews, cancels, applies and undoes
+[1A[2K[chromium] › e2e/phase3-dialogs.spec.ts:236:3 › emboss dialog previews, cancels, applies and undoes
+emboss dialog state: {"featureId":"Fgen_mw6tjl2s_2","params":1,"rows":[{"id":"targets","kind":"queryList","value":[{"entityType":"FACE","historyType":"CREATION","creationFeatureId":"Fgen_mw6tjkdi_1","entityTag":"*"}],"draft":[{"entityType":"FACE","historyType":"CREATION","creationFeatureId":"Fgen_mw6tjkdi_1","entityTag":"*"}]},{"id":"polylines","kind":"string","value":"[[[0,0.01],[0.02,0.02],[0.04,0.03]]]","draft":"[[[0,0.01],[0.02,0.02],[0.04,0.03]]]"},{"id":"operation","kind":"enum","value":"EMBOSS","draft":"EMBOSS"},{"id":"depth","kind":"quantity","value":0.001,"draft":0.0011},{"id":"width","kind":"quantity","value":0.0015,"draft":0.0015}]}
+
+[1A[2K[5/9] [chromium] › e2e/phase3-dialogs.spec.ts:236:3 › coil dialog previews, cancels, applies and undoes
+[1A[2K[chromium] › e2e/phase3-dialogs.spec.ts:236:3 › coil dialog previews, cancels, applies and undoes
+coil dialog state: {"featureId":null,"params":0,"rows":[]}
+
+[1A[2K  3) [chromium] › e2e/phase3-dialogs.spec.ts:236:3 › coil dialog previews, cancels, applies and undoes 
+
+    Error: coil draft commits no parameters
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThan[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: > [32m0[39m
+    Received:   [31m0[39m
+
+      280 |     );
+      281 |     console.log(`${kind} dialog state:`, JSON.stringify(info));
+    > 282 |     expect(info.params, `${kind} draft commits no parameters`).toBeGreaterThan(
+          |                                                                ^
+      283 |       0,
+      284 |     );
+      285 |     await applied.getByRole("button", { name: "Apply" }).click();
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:282:64
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-coil-dialog-8b5e0--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-coil-dialog-8b5e0--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-coil-dialog-8b5e0--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-coil-dialog-8b5e0--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-coil-dialog-8b5e0--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[6/9] [chromium] › e2e/phase3-dialogs.spec.ts:236:3 › dome dialog previews, cancels, applies and undoes
+[1A[2K[chromium] › e2e/phase3-dialogs.spec.ts:236:3 › dome dialog previews, cancels, applies and undoes
+dome dialog state: {"featureId":null,"params":0,"rows":[]}
+
+[1A[2K  4) [chromium] › e2e/phase3-dialogs.spec.ts:236:3 › dome dialog previews, cancels, applies and undoes 
+
+    Error: dome draft commits no parameters
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThan[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: > [32m0[39m
+    Received:   [31m0[39m
+
+      280 |     );
+      281 |     console.log(`${kind} dialog state:`, JSON.stringify(info));
+    > 282 |     expect(info.params, `${kind} draft commits no parameters`).toBeGreaterThan(
+          |                                                                ^
+      283 |       0,
+      284 |     );
+      285 |     await applied.getByRole("button", { name: "Apply" }).click();
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:282:64
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-dome-dialog-0c960--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-dome-dialog-0c960--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-dome-dialog-0c960--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-dome-dialog-0c960--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-dome-dialog-0c960--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[7/9] [chromium] › e2e/phase3-dialogs.spec.ts:236:3 › enclose dialog previews, cancels, applies and undoes
+[1A[2K[chromium] › e2e/phase3-dialogs.spec.ts:236:3 › enclose dialog previews, cancels, applies and undoes
+enclose dialog state: {"featureId":"Fgen_mw6tlbpq_2","params":0,"rows":[{"id":"kind","kind":"enum","value":"ruled","draft":"ruled"},{"id":"edgeTags","kind":"string","value":"[\"Fgen_mw6tlaz4_1_E0\",\"Fgen_mw6tlaz4_1_E1\"]","draft":"[\"Fgen_mw6tlaz4_1_E0\",\"Fgen_mw6tlaz4_1_E1\"]"},{"id":"faceTag","kind":"string","value":"","draft":""},{"id":"distance","kind":"quantity","value":0.001,"draft":0.001}]}
+
+[1A[2K  5) [chromium] › e2e/phase3-dialogs.spec.ts:236:3 › enclose dialog previews, cancels, applies and undoes 
+
+    Error: enclose draft commits no parameters
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThan[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: > [32m0[39m
+    Received:   [31m0[39m
+
+      280 |     );
+      281 |     console.log(`${kind} dialog state:`, JSON.stringify(info));
+    > 282 |     expect(info.params, `${kind} draft commits no parameters`).toBeGreaterThan(
+          |                                                                ^
+      283 |       0,
+      284 |     );
+      285 |     await applied.getByRole("button", { name: "Apply" }).click();
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:282:64
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-enclose-dia-8444f--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-enclose-dia-8444f--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-enclose-dia-8444f--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-enclose-dia-8444f--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-enclose-dia-8444f--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[8/9] [chromium] › e2e/phase3-dialogs.spec.ts:236:3 › hem dialog previews, cancels, applies and undoes
+[1A[2K[chromium] › e2e/phase3-dialogs.spec.ts:236:3 › hem dialog previews, cancels, applies and undoes
+hem dialog state: {"featureId":null,"params":0,"rows":[]}
+
+[1A[2K  6) [chromium] › e2e/phase3-dialogs.spec.ts:236:3 › hem dialog previews, cancels, applies and undoes 
+
+    Error: hem draft commits no parameters
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThan[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: > [32m0[39m
+    Received:   [31m0[39m
+
+      280 |     );
+      281 |     console.log(`${kind} dialog state:`, JSON.stringify(info));
+    > 282 |     expect(info.params, `${kind} draft commits no parameters`).toBeGreaterThan(
+          |                                                                ^
+      283 |       0,
+      284 |     );
+      285 |     await applied.getByRole("button", { name: "Apply" }).click();
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:282:64
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-hem-dialog--31e08--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-hem-dialog--31e08--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-hem-dialog--31e08--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-hem-dialog--31e08--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-hem-dialog--31e08--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[9/9] [chromium] › e2e/phase3-dialogs.spec.ts:236:3 › unfold dialog previews, cancels, applies and undoes
+[1A[2K  7) [chromium] › e2e/phase3-dialogs.spec.ts:236:3 › unfold dialog previews, cancels, applies and undoes 
+
+    Error: dialog has no enabled editable control
+
+      230 |     return;
+      231 |   }
+    > 232 |   throw new Error("dialog has no enabled editable control");
+          |         ^
+      233 | };
+      234 |
+      235 | for (const kind of KINDS) {
+        at editFirstControl (/Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:232:9)
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:263:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-unfold-dial-7523a--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-unfold-dial-7523a--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-unfold-dial-7523a--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-unfold-dial-7523a--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-unfold-dial-7523a--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  7 failed
+    [chromium] › e2e/phase3-dialogs.spec.ts:236:3 › web dialog previews, cancels, applies and undoes 
+    [chromium] › e2e/phase3-dialogs.spec.ts:236:3 › boss dialog previews, cancels, applies and undoes 
+    [chromium] › e2e/phase3-dialogs.spec.ts:236:3 › coil dialog previews, cancels, applies and undoes 
+    [chromium] › e2e/phase3-dialogs.spec.ts:236:3 › dome dialog previews, cancels, applies and undoes 
+    [chromium] › e2e/phase3-dialogs.spec.ts:236:3 › enclose dialog previews, cancels, applies and undoes 
+    [chromium] › e2e/phase3-dialogs.spec.ts:236:3 › hem dialog previews, cancels, applies and undoes 
+    [chromium] › e2e/phase3-dialogs.spec.ts:236:3 › unfold dialog previews, cancels, applies and undoes 
+  2 passed (4.2m)

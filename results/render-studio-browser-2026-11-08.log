@@ -1,0 +1,16 @@
+
+Running 1 test using 1 worker
+
+[1A[2K[1/1] [chromium] › e2e/render-studio.spec.ts:113:1 › Render Studio renders, decodes and exports real GPU pixels
+[1A[2K[chromium] › e2e/render-studio.spec.ts:113:1 › Render Studio renders, decodes and exports real GPU pixels
+[render-studio] WebGL WebGL 2.0 (OpenGL ES 3.0 Chromium) · ANGLE (Apple, ANGLE Metal Renderer: Apple M1, Unspecified Version)
+
+[1A[2K[render-studio] preview 1280×720 · 96.60% non-background · background 17,22,29,255
+
+[1A[2K[render-studio] jpeg 1280×720 · 96.60% non-background · 53771 bytes
+
+[1A[2K[render-studio] webp 1280×720 · 96.64% non-background · 26010 bytes
+
+[1A[2K[render-studio] final 1920×1080 · 96.60% non-background · 128710 bytes · Render-Studio.png 1920 × 1080 PNG 3 body(s) · 2 light(s) prepare 4 ms render 39 ms encode 41 ms total 86 ms 125.7 KB 0 B readback
+
+[1A[2K  1 passed (15.7s)

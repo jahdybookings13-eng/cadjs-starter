@@ -1,0 +1,1 @@
+src/drawings/model.ts(870,5): error TS4104: The type 'readonly BomRow[]' is 'readonly' and cannot be assigned to the mutable type 'BomRow[]'.

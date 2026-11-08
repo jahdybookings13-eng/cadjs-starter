@@ -1,0 +1,26 @@
+
+Running 3 tests using 1 worker
+
+[1A[2K[1/3] [chromium] › e2e/perf-budget.spec.ts:26:1 › browser budgets: boot, regenerate, orbit and document reload
+[1A[2K[chromium] › e2e/perf-budget.spec.ts:26:1 › browser budgets: boot, regenerate, orbit and document reload
+PERF MEASUREMENTS {"bootInteractiveMs":6135,"documentReloadMs":6470,"regenerateBoxMs":223,"orbitFpsMin":55}
+
+[1A[2K[2/3] [chromium] › e2e/studio-budgets.spec.ts:23:1 › studio compute budgets keep the browser responsive
+[1A[2K[chromium] › e2e/studio-budgets.spec.ts:23:1 › studio compute budgets keep the browser responsive
+STUDIO BUDGETS {"meshMs":760,"staticMs":88.19499999284744,"modalMs":232.99500000476837,"toolpathMs":2.175000011920929,"camSimulationMs":1.215000033378601,"maxStallMs":86,"nodes":165,"elements":394,"moves":244,"checkedMoves":244}
+
+[1A[2K[3/3] [chromium] › e2e/render-studio.spec.ts:120:1 › Render Studio renders, decodes and exports real GPU pixels
+[1A[2K[chromium] › e2e/render-studio.spec.ts:120:1 › Render Studio renders, decodes and exports real GPU pixels
+[render-studio] WebGL WebGL 2.0 (OpenGL ES 3.0 Chromium) · ANGLE (Apple, ANGLE Metal Renderer: Apple M1, Unspecified Version)
+
+[1A[2K[render-studio] preview 1280×720 · 96.60% non-background · background 17,22,29,255
+
+[1A[2K[render-studio] jpeg 1280×720 · 96.60% non-background · 53771 bytes
+
+[1A[2K[render-studio] webp 1280×720 · 96.64% non-background · 26010 bytes
+
+[1A[2K[render-studio] main-thread stall 78 ms / 500 ms budget
+
+[1A[2K[render-studio] final 1920×1080 · 96.60% non-background · 128710 bytes · Render-Studio.png 1920 × 1080 PNG 3 body(s) · 2 light(s) prepare 8 ms render 38 ms encode 37 ms total 85 ms 125.7 KB 0 B readback
+
+[1A[2K  3 passed (36.1s)

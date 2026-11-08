@@ -1,0 +1,247 @@
+
+Running 5 tests using 1 worker
+
+[1A[2K[1/5] [chromium] › e2e/phase3-acceptance.spec.ts:205:1 › H1/H2: 35-feature acceptance part builds, audits and is rebuild-stable
+[1A[2K[2/5] (retries) [chromium] › e2e/phase3-acceptance.spec.ts:205:1 › H1/H2: 35-feature acceptance part builds, audits and is rebuild-stable (retry #1)
+[1A[2K  1) [chromium] › e2e/phase3-acceptance.spec.ts:205:1 › H1/H2: 35-feature acceptance part builds, audits and is rebuild-stable 
+
+    Error: page.evaluate: Execution context was destroyed, most likely because of a navigation.
+
+      110 |
+      111 | const buildPart = async (page: Page) =>
+    > 112 |   page.evaluate(async () => {
+          |        ^
+      113 |     const w = window as unknown as {
+      114 |       __cadDebug: { scadgen: P3Debug };
+      115 |       __scadgen: {
+        at buildPart (/Users/user01/cadjs-starter/e2e/phase3-acceptance.spec.ts:112:8)
+        at /Users/user01/cadjs-starter/e2e/phase3-acceptance.spec.ts:209:23
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H1-H2-35-b7d25-udits-and-is-rebuild-stable-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H1-H2-35-b7d25-udits-and-is-rebuild-stable-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-acceptance-H1-H2-35-b7d25-udits-and-is-rebuild-stable-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H1-H2-35-b7d25-udits-and-is-rebuild-stable-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-acceptance-H1-H2-35-b7d25-udits-and-is-rebuild-stable-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: [
+      [
+        "Fgen_mw6wqk7a_4",
+        {
+          "status": "ERROR",
+          "detail": "revolve produced no solid faces (axis may be coplanar with profile or otherwise degenerate)"
+        }
+      ],
+      [
+        "Fgen_mw6wqs4i_17",
+        {
+          "status": "ERROR",
+          "detail": "depends on failed “Torus”",
+          "origin": "Fgen_mw6wqk7a_4"
+        }
+      ]
+    ]
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoEqual[2m([22m[32mexpected[39m[2m) // deep equality[22m
+
+    [32m- Expected  -  1[39m
+    [31m+ Received  + 17[39m
+
+    [32m- Array [][39m
+    [31m+ Array [[39m
+    [31m+   Array [[39m
+    [31m+     "Fgen_mw6wqk7a_4",[39m
+    [31m+     Object {[39m
+    [31m+       "detail": "revolve produced no solid faces (axis may be coplanar with profile or otherwise degenerate)",[39m
+    [31m+       "status": "ERROR",[39m
+    [31m+     },[39m
+    [31m+   ],[39m
+    [31m+   Array [[39m
+    [31m+     "Fgen_mw6wqs4i_17",[39m
+    [31m+     Object {[39m
+    [31m+       "detail": "depends on failed “Torus”",[39m
+    [31m+       "origin": "Fgen_mw6wqk7a_4",[39m
+    [31m+       "status": "ERROR",[39m
+    [31m+     },[39m
+    [31m+   ],[39m
+    [31m+ ][39m
+
+      212 |     ([, r]) => r.status !== "OK",
+      213 |   );
+    > 214 |   expect(failures, JSON.stringify(failures, null, 2)).toEqual([]);
+          |                                                       ^
+      215 |   expect(built.audit.ok, JSON.stringify(built.audit, null, 2)).toBe(true);
+      216 |   expect(built.audit.featureCount).toBeGreaterThanOrEqual(20);
+      217 |   expect(built.audit.missing).toEqual([]);
+        at /Users/user01/cadjs-starter/e2e/phase3-acceptance.spec.ts:214:55
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H1-H2-35-b7d25-udits-and-is-rebuild-stable-chromium-retry1/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H1-H2-35-b7d25-udits-and-is-rebuild-stable-chromium-retry1/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-acceptance-H1-H2-35-b7d25-udits-and-is-rebuild-stable-chromium-retry1/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H1-H2-35-b7d25-udits-and-is-rebuild-stable-chromium-retry1/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-acceptance-H1-H2-35-b7d25-udits-and-is-rebuild-stable-chromium-retry1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[3/5] [chromium] › e2e/phase3-acceptance.spec.ts:280:1 › H2/H3: save/reload keeps canonical bytes, geometry and feature states
+[1A[2K[4/5] (retries) [chromium] › e2e/phase3-acceptance.spec.ts:280:1 › H2/H3: save/reload keeps canonical bytes, geometry and feature states (retry #1)
+[1A[2K  2) [chromium] › e2e/phase3-acceptance.spec.ts:280:1 › H2/H3: save/reload keeps canonical bytes, geometry and feature states 
+
+    Error: page.evaluate: Execution context was destroyed, most likely because of a navigation.
+
+      110 |
+      111 | const buildPart = async (page: Page) =>
+    > 112 |   page.evaluate(async () => {
+          |        ^
+      113 |     const w = window as unknown as {
+      114 |       __cadDebug: { scadgen: P3Debug };
+      115 |       __scadgen: {
+        at buildPart (/Users/user01/cadjs-starter/e2e/phase3-acceptance.spec.ts:112:8)
+        at /Users/user01/cadjs-starter/e2e/phase3-acceptance.spec.ts:284:23
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H2-H3-sa-d8175-geometry-and-feature-states-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H2-H3-sa-d8175-geometry-and-feature-states-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-acceptance-H2-H3-sa-d8175-geometry-and-feature-states-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H2-H3-sa-d8175-geometry-and-feature-states-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-acceptance-H2-H3-sa-d8175-geometry-and-feature-states-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoEqual[2m([22m[32mexpected[39m[2m) // deep equality[22m
+
+    [32m- Expected  -  1[39m
+    [31m+ Received  + 17[39m
+
+    [32m- Array [][39m
+    [31m+ Array [[39m
+    [31m+   Array [[39m
+    [31m+     "Fgen_mw6wte6s_4",[39m
+    [31m+     Object {[39m
+    [31m+       "detail": "revolve produced no solid faces (axis may be coplanar with profile or otherwise degenerate)",[39m
+    [31m+       "status": "ERROR",[39m
+    [31m+     },[39m
+    [31m+   ],[39m
+    [31m+   Array [[39m
+    [31m+     "Fgen_mw6wtkm6_17",[39m
+    [31m+     Object {[39m
+    [31m+       "detail": "depends on failed “Torus”",[39m
+    [31m+       "origin": "Fgen_mw6wte6s_4",[39m
+    [31m+       "status": "ERROR",[39m
+    [31m+     },[39m
+    [31m+   ],[39m
+    [31m+ ][39m
+
+      317 |   expect(restored.after.digest).toBe(restored.before.digest);
+      318 |   expect(restored.after.audit).toEqual(restored.before.audit);
+    > 319 |   expect(restored.failures).toEqual([]);
+          |                             ^
+      320 |   expect(built.audit.ok).toBe(true);
+      321 | });
+      322 |
+        at /Users/user01/cadjs-starter/e2e/phase3-acceptance.spec.ts:319:29
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H2-H3-sa-d8175-geometry-and-feature-states-chromium-retry1/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-acceptance-H2-H3-sa-d8175-geometry-and-feature-states-chromium-retry1/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H2-H3-sa-d8175-geometry-and-feature-states-chromium-retry1/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-acceptance-H2-H3-sa-d8175-geometry-and-feature-states-chromium-retry1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[5/5] [chromium] › e2e/phase3-acceptance.spec.ts:323:1 › H5/H6: STL and STEP round-trips preserve bbox and body ownership
+[1A[2K[6/5] (retries) [chromium] › e2e/phase3-acceptance.spec.ts:323:1 › H5/H6: STL and STEP round-trips preserve bbox and body ownership (retry #1)
+[1A[2K  3) [chromium] › e2e/phase3-acceptance.spec.ts:323:1 › H5/H6: STL and STEP round-trips preserve bbox and body ownership 
+
+    Error: page.evaluate: Execution context was destroyed, most likely because of a navigation.
+
+      110 |
+      111 | const buildPart = async (page: Page) =>
+    > 112 |   page.evaluate(async () => {
+          |        ^
+      113 |     const w = window as unknown as {
+      114 |       __cadDebug: { scadgen: P3Debug };
+      115 |       __scadgen: {
+        at buildPart (/Users/user01/cadjs-starter/e2e/phase3-acceptance.spec.ts:112:8)
+        at /Users/user01/cadjs-starter/e2e/phase3-acceptance.spec.ts:327:23
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H5-H6-ST-469a0-rve-bbox-and-body-ownership-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H5-H6-ST-469a0-rve-bbox-and-body-ownership-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-acceptance-H5-H6-ST-469a0-rve-bbox-and-body-ownership-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H5-H6-ST-469a0-rve-bbox-and-body-ownership-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-acceptance-H5-H6-ST-469a0-rve-bbox-and-body-ownership-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    [31mTest timeout of 240000ms exceeded.[39m
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H5-H6-ST-469a0-rve-bbox-and-body-ownership-chromium-retry1/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-acceptance-H5-H6-ST-469a0-rve-bbox-and-body-ownership-chromium-retry1/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-acceptance-H5-H6-ST-469a0-rve-bbox-and-body-ownership-chromium-retry1/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-acceptance-H5-H6-ST-469a0-rve-bbox-and-body-ownership-chromium-retry1/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[7/5] [chromium] › e2e/phase3-acceptance.spec.ts:434:1 › H7: invalid features report named errors and no bodies

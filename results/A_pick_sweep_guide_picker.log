@@ -1,0 +1,5 @@
+
+Running 1 test using 1 worker
+
+[1A[2K[1/1] [chromium] › e2e/phase3-a-pickers.spec.ts:328:1 › sweep guide picker adds one guide, dedupes it, and clears
+[1A[2K  1 passed (16.0s)

@@ -1,0 +1,39 @@
+
+Running 1 test using 1 worker
+
+[1A[2K[1/1] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › coil dialog previews, cancels, applies and undoes
+[1A[2K  1) [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › coil dialog previews, cancels, applies and undoes 
+
+    Error: page.evaluate: Execution context was destroyed, most likely because of a navigation.
+
+      67 |
+      68 | const buildFeature = (page: Page, kind: string) =>
+    > 69 |   page.evaluate(async (kind) => {
+         |        ^
+      70 |     const w = window as unknown as {
+      71 |       __cadDebug: { scadgen: DialogsDebug };
+      72 |     };
+        at buildFeature (/Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:69:8)
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:243:25
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-coil-dialog-8b5e0--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-coil-dialog-8b5e0--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-coil-dialog-8b5e0--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-coil-dialog-8b5e0--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-coil-dialog-8b5e0--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  1 failed
+    [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › coil dialog previews, cancels, applies and undoes 

@@ -1,0 +1,130 @@
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 predev
+[2m[WebServer] [22m> node scripts/avr-assets.mjs && node scripts/stm32f4-assets.mjs
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22mstm32f4-assets: 5 files -> public/stm32f4
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 dev
+[2m[WebServer] [22m> vite --port 3100 --strictPort
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m  [32m[1mVITE[22m v6.4.2[39m  [2mready in [0m[1m577[22m[2m[0m ms[22m
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m  [32m➜[39m  [1mLocal[22m:   [36mhttps://localhost:[1m3100[22m/[39m
+[2m[WebServer] [22m  [32m➜[39m  [1mNetwork[22m: [36mhttps://192.168.1.158:[1m3100[22m/[39m
+
+
+Running 7 tests using 1 worker
+
+[1A[2K[1/7] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › boolean dialog previews, cancels, applies and undoes
+[1A[2K[2m[WebServer] [22m[2m3:42:56 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mscripts/occ-nested-check.mts[22m
+
+[1A[2K  1) [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › boolean dialog previews, cancels, applies and undoes 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByTestId('feature-dialog').locator('[data-parameter-id][data-dirty="true"]').first()
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 15000ms[22m
+    [2m  - waiting for getByTestId('feature-dialog').locator('[data-parameter-id][data-dirty="true"]').first()[22m
+    [2m    - waiting for navigation to finish...[22m
+    [2m    - navigated to "https://localhost:3100/"[22m
+
+
+      281 |     await expect(
+      282 |       cancelled.locator('[data-parameter-id][data-dirty="true"]').first(),
+    > 283 |     ).toBeVisible();
+          |       ^
+      284 |     await cancelled.getByRole("button", { name: "Cancel" }).click();
+      285 |     await expect(cancelled).toBeHidden();
+      286 |     expect(await projectJson(page)).toBe(before);
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:283:7
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-boolean-dia-4c84b--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-boolean-dia-4c84b--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-boolean-dia-4c84b--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-boolean-dia-4c84b--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-boolean-dia-4c84b--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[2/7] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › transform dialog previews, cancels, applies and undoes
+[1A[2K[3/7] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › web dialog previews, cancels, applies and undoes
+[1A[2K[4/7] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › boss dialog previews, cancels, applies and undoes
+[1A[2K[2m[WebServer] [22m[2m3:43:54 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css?direct, /src/scenes/simpleCadScene.tsx[22m
+
+[1A[2K[2m[WebServer] [22m[2m3:43:55 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css?direct, /src/scenes/simpleCadScene.tsx, /src/components/FeatureDialog.tsx[22m
+
+[1A[2K[2m[WebServer] [22m[2m3:43:55 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css?direct, /src/scenes/simpleCadScene.tsx, /src/components/FeatureDialog.tsx[22m
+
+[1A[2K[2m[WebServer] [22m[2m3:43:55 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mvendor/cadjs/src/workers/occ-worker-types.ts[22m
+
+[1A[2K[2m[WebServer] [22m[2m3:43:55 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css?direct, /src/index.tsx, /src/scenes/simpleCadScene.tsx, /src/components/ViewCube.tsx, /src/components/SketchPropertiesPanel.tsx, /src/scenes/modes/SketchModeContent.tsx, /src/navbar/ValueInputModal.tsx, /src/navbar/SketchToolbar.tsx, /vendor/cadjs/src/contexts/CoreContext.tsx, /src/components/FileMenu.tsx, /src/scenes/modes/ExtrudeModeContent.tsx, /src/scenes/modes/MoveModeContent.tsx, /src/scenes/modes/FilletModeContent.tsx, /src/scenes/modes/SweepModeContent.tsx, /src/scenes/modes/RevolveModeContent.tsx, /src/scenes/modes/MeasureModeContent.tsx, /src/scenes/modes/LoftModeContent.tsx, /src/scenes/modes/CombineModeContent.tsx, /vendor/cadjs/src/contexts/VisualizerContext.tsx[22m
+
+[1A[2K[2m[WebServer] [22m[2m3:43:56 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mvendor/cadjs/src/workers/occ-worker-handlers.ts[22m
+
+[1A[2K[5/7] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › emboss dialog previews, cancels, applies and undoes
+[1A[2K[6/7] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › coil dialog previews, cancels, applies and undoes
+[1A[2K[2m[WebServer] [22m[2m3:45:36 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mPHASE3_REMAINING.md[22m
+
+[1A[2K  2) [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › coil dialog previews, cancels, applies and undoes 
+
+    [31mTest timeout of 60000ms exceeded.[39m
+
+    Error: locator.isDisabled: Test timeout of 60000ms exceeded.
+    Call log:
+    [2m  - waiting for getByTestId('feature-dialog').locator('[data-parameter-id]').nth(1).locator('input,select').first()[22m
+
+
+      254 |       const control = row.locator("input,select").first();
+      255 |       if ((await control.count()) === 0) continue;
+    > 256 |       if (!(await control.isDisabled())) continue;
+          |                           ^
+      257 |       const reason = await row.locator("label").getAttribute("title");
+      258 |       expect(
+      259 |         reason?.trim(),
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:256:27
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-coil-dialog-8b5e0--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-coil-dialog-8b5e0--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-coil-dialog-8b5e0--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-coil-dialog-8b5e0--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-coil-dialog-8b5e0--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[7/7] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › dome dialog previews, cancels, applies and undoes
+[1A[2K  2 failed
+    [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › boolean dialog previews, cancels, applies and undoes 
+    [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › coil dialog previews, cancels, applies and undoes 
+  5 passed (3.9m)

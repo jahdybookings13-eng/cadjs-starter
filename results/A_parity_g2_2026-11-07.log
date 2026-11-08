@@ -1,0 +1,12 @@
+
+Running 8 tests using 1 worker
+
+[1A[2K[1/8] [chromium] › e2e/parity-ops.spec.ts:528:1 › flange bends a sheet edge up into an L-bracket
+[1A[2K[2/8] [chromium] › e2e/parity-ops.spec.ts:553:1 › feature-pattern clones a sketch+extrude chain into bodies
+[1A[2K[3/8] [chromium] › e2e/parity-ops.spec.ts:576:1 › body pattern and transform/copy run on the real kernel
+[1A[2K[4/8] [chromium] › e2e/parity-ops.spec.ts:611:1 › face pattern and split-by-surface run on the real kernel
+[1A[2K[5/8] [chromium] › e2e/parity-ops.spec.ts:645:1 › sketch-on-datum places a pad on a datum plane
+[1A[2K[6/8] [chromium] › e2e/parity-ops.spec.ts:661:1 › thread cuts real ISO grooves on a cylinder
+[1A[2K[7/8] [chromium] › e2e/parity-ops.spec.ts:686:1 › createPlane, curveOnFace, scale run on the real kernel
+[1A[2K[8/8] [chromium] › e2e/parity-ops.spec.ts:725:1 › move-face trims and bosses planar faces
+[1A[2K  8 passed (1.3m)

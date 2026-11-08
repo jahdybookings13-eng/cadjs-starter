@@ -1,0 +1,42 @@
+
+Running 2 tests using 1 worker
+
+[1A[2K[1/2] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › coil dialog previews, cancels, applies and undoes
+[1A[2K  1) [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › coil dialog previews, cancels, applies and undoes 
+
+    [31mTest timeout of 60000ms exceeded.[39m
+
+    Error: locator.count: Test timeout of 60000ms exceeded.
+
+      253 |       const row = rows.nth(i);
+      254 |       const control = row.locator("input,select").first();
+    > 255 |       if ((await control.count()) === 0) continue;
+          |                          ^
+      256 |       if (!(await control.isDisabled())) continue;
+      257 |       const reason = await row.locator("label").getAttribute("title");
+      258 |       expect(
+        at /Users/user01/cadjs-starter/e2e/phase3-dialogs.spec.ts:255:26
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-coil-dialog-8b5e0--cancels-applies-and-undoes-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-coil-dialog-8b5e0--cancels-applies-and-undoes-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/phase3-dialogs-coil-dialog-8b5e0--cancels-applies-and-undoes-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/phase3-dialogs-coil-dialog-8b5e0--cancels-applies-and-undoes-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/phase3-dialogs-coil-dialog-8b5e0--cancels-applies-and-undoes-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[2/2] [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › enclose dialog previews, cancels, applies and undoes
+[1A[2K  1 failed
+    [chromium] › e2e/phase3-dialogs.spec.ts:238:3 › coil dialog previews, cancels, applies and undoes 
+  1 passed (1.5m)

@@ -1,0 +1,23 @@
+
+Running 6 tests using 1 worker
+
+[1A[2K[1/6] [chromium] › e2e/parity-ops.spec.ts:757:1 › ruled, fill, offset surfaces and projectCurves run on the real kernel
+[1A[2K[2/6] [chromium] › e2e/parity-ops.spec.ts:861:1 › extrude honors midplane and oppositeDirection
+[1A[2K[3/6] [chromium] › e2e/parity-ops.spec.ts:918:1 › face tags stay stable across a parameter rebuild
+[1A[2K[4/6] [chromium] › e2e/parity-ops.spec.ts:957:1 › separate pattern emits one body + element per instance
+[1A[2K[5/6] [chromium] › e2e/parity-ops.spec.ts:1002:1 › modifyFillet re-specs radius on the real kernel
+[1A[2K[6/6] [chromium] › e2e/parity-ops.spec.ts:1062:1 › fastener + screwHole hooks emit revolved bodies through the kernel
+[1A[2K[chromium] › e2e/parity-ops.spec.ts:1062:1 › fastener + screwHole hooks emit revolved bodies through the kernel
+PAGE: fastener hook: headShapes: unknown size "M99" for iso
+
+[1A[2KFASTENER RESULT: {
+  "bolt": "OK",
+  "boltFaces": 1211,
+  "boltSk": "OK",
+  "hole": "OK",
+  "holeFaces": 80,
+  "holeSk": "OK",
+  "badStatus": "NOT_IN_REPORT"
+}
+
+[1A[2K  6 passed (1.8m)

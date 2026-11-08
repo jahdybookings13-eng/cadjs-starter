@@ -1,0 +1,137 @@
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 predev
+[2m[WebServer] [22m> node scripts/avr-assets.mjs && node scripts/stm32f4-assets.mjs
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22mstm32f4-assets: 5 files -> public/stm32f4
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m> cadjs-starter@0.1.0 dev
+[2m[WebServer] [22m> vite --port 3100 --strictPort
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m
+[2m[WebServer] [22m  [32m[1mVITE[22m v6.4.2[39m  [2mready in [0m[1m439[22m[2m[0m ms[22m
+[2m[WebServer] [22m
+
+[1A[2K[2m[WebServer] [22m  [32m➜[39m  [1mLocal[22m:   [36mhttps://localhost:[1m3100[22m/[39m
+
+[1A[2K[2m[WebServer] [22m  [32m➜[39m  [1mNetwork[22m: [36mhttps://192.168.1.158:[1m3100[22m/[39m
+
+
+Running 23 tests using 1 worker
+
+[1A[2K[1/23] [chromium] › e2e/parity-ops.spec.ts:195:1 › shell and draft run on the real kernel
+[1A[2K[2/23] [chromium] › e2e/parity-ops.spec.ts:241:1 › hole and circular/curve pattern run on the real kernel
+[1A[2K[2m[WebServer] [22m[2m1:57:31 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css?direct, /src/scenes/simpleCadScene.tsx[22m
+
+[1A[2K[2m[WebServer] [22m[2m1:57:31 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css?direct, /src/scenes/simpleCadScene.tsx[22m
+
+[1A[2K[2m[WebServer] [22m[2m1:57:31 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mvendor/cadjs/src/workers/occ-worker-types.ts[22m
+
+[1A[2K[2m[WebServer] [22m[2m1:57:31 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css?direct, /src/index.tsx, /src/scenes/simpleCadScene.tsx, /src/components/ViewCube.tsx, /src/components/SketchPropertiesPanel.tsx, /src/scenes/modes/SketchModeContent.tsx, /src/navbar/ValueInputModal.tsx, /src/navbar/SketchToolbar.tsx, /vendor/cadjs/src/contexts/CoreContext.tsx, /vendor/cadjs/src/contexts/VisualizerContext.tsx, /src/components/FileMenu.tsx, /src/scenes/modes/ExtrudeModeContent.tsx, /src/scenes/modes/CombineModeContent.tsx, /src/scenes/modes/FilletModeContent.tsx, /src/scenes/modes/SweepModeContent.tsx, /src/scenes/modes/MoveModeContent.tsx, /src/scenes/modes/LoftModeContent.tsx, /src/scenes/modes/RevolveModeContent.tsx, /src/scenes/modes/MeasureModeContent.tsx[22m
+
+[1A[2K[2m[WebServer] [22m[2m1:57:31 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css?direct, /src/index.tsx, /src/scenes/simpleCadScene.tsx, /src/components/ViewCube.tsx, /src/components/SketchPropertiesPanel.tsx, /src/scenes/modes/SketchModeContent.tsx, /src/navbar/ValueInputModal.tsx, /src/navbar/SketchToolbar.tsx, /vendor/cadjs/src/contexts/CoreContext.tsx, /vendor/cadjs/src/contexts/VisualizerContext.tsx, /src/components/FileMenu.tsx, /src/scenes/modes/ExtrudeModeContent.tsx, /src/scenes/modes/CombineModeContent.tsx, /src/scenes/modes/FilletModeContent.tsx, /src/scenes/modes/SweepModeContent.tsx, /src/scenes/modes/MoveModeContent.tsx, /src/scenes/modes/LoftModeContent.tsx, /src/scenes/modes/RevolveModeContent.tsx, /src/scenes/modes/MeasureModeContent.tsx[22m
+
+[1A[2K[2m[WebServer] [22m[2m1:57:31 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css?direct, /src/index.tsx, /src/scenes/simpleCadScene.tsx, /src/components/ViewCube.tsx, /src/components/SketchPropertiesPanel.tsx, /src/scenes/modes/SketchModeContent.tsx, /src/navbar/ValueInputModal.tsx, /src/navbar/SketchToolbar.tsx, /vendor/cadjs/src/contexts/CoreContext.tsx, /vendor/cadjs/src/contexts/VisualizerContext.tsx, /src/components/FileMenu.tsx, /src/scenes/modes/ExtrudeModeContent.tsx, /src/scenes/modes/CombineModeContent.tsx, /src/scenes/modes/FilletModeContent.tsx, /src/scenes/modes/SweepModeContent.tsx, /src/scenes/modes/MoveModeContent.tsx, /src/scenes/modes/LoftModeContent.tsx, /src/scenes/modes/RevolveModeContent.tsx, /src/scenes/modes/MeasureModeContent.tsx[22m
+
+[1A[2K[3/23] [chromium] › e2e/parity-ops.spec.ts:318:1 › delete-face and split run on the real kernel
+[1A[2K[4/23] [chromium] › e2e/parity-ops.spec.ts:374:1 › project save/load round-trips the whole document
+[1A[2K[5/23] [chromium] › e2e/parity-ops.spec.ts:401:1 › action bus is the single dispatcher for desk/VR/voice
+[1A[2K[6/23] [chromium] › e2e/parity-ops.spec.ts:433:1 › appearance is tree data: applies live and survives rebuild
+[1A[2K[7/23] [chromium] › e2e/parity-ops.spec.ts:462:1 › rounded flange + flat pattern unfold produce the net
+[1A[2K[8/23] [chromium] › e2e/parity-ops.spec.ts:489:1 › hem double-folds a sheet edge; wrap maps curves onto a cylinder
+[1A[2K[9/23] [chromium] › e2e/parity-ops.spec.ts:528:1 › flange bends a sheet edge up into an L-bracket
+[1A[2K[10/23] [chromium] › e2e/parity-ops.spec.ts:553:1 › feature-pattern clones a sketch+extrude chain into bodies
+[1A[2K[11/23] [chromium] › e2e/parity-ops.spec.ts:576:1 › body pattern and transform/copy run on the real kernel
+[1A[2K[2m[WebServer] [22m[2m1:58:45 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mvendor/cadjs/src/services/occ-extrude.ts[22m
+
+[1A[2K[2m[WebServer] [22m[2m1:58:45 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mvendor/cadjs/src/workers/occ-worker-handlers.ts[22m
+
+[1A[2K[2m[WebServer] [22m[2m1:58:45 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mvendor/cadjs/src/services/occ-revolve-loft.ts[22m
+
+[1A[2K[12/23] [chromium] › e2e/parity-ops.spec.ts:611:1 › face pattern and split-by-surface run on the real kernel
+[1A[2K[13/23] [chromium] › e2e/parity-ops.spec.ts:645:1 › sketch-on-datum places a pad on a datum plane
+[1A[2K[14/23] [chromium] › e2e/parity-ops.spec.ts:661:1 › thread cuts real ISO grooves on a cylinder
+[1A[2K[2m[WebServer] [22m[2m1:59:24 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mvendor/cadjs/src/services/occ-revolve-loft.ts[22m
+
+[1A[2K[15/23] [chromium] › e2e/parity-ops.spec.ts:686:1 › createPlane, curveOnFace, scale run on the real kernel
+[1A[2K[2m[WebServer] [22m[2m1:59:33 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css?direct, /src/scenes/simpleCadScene.tsx[22m
+
+[1A[2K[16/23] [chromium] › e2e/parity-ops.spec.ts:725:1 › move-face trims and bosses planar faces
+[1A[2K[17/23] [chromium] › e2e/parity-ops.spec.ts:757:1 › ruled, fill, offset surfaces and projectCurves run on the real kernel
+[1A[2K[18/23] [chromium] › e2e/parity-ops.spec.ts:861:1 › extrude honors midplane and oppositeDirection
+[1A[2K[19/23] [chromium] › e2e/parity-ops.spec.ts:918:1 › face tags stay stable across a parameter rebuild
+[1A[2K[20/23] [chromium] › e2e/parity-ops.spec.ts:957:1 › separate pattern emits one body + element per instance
+[1A[2K[21/23] [chromium] › e2e/parity-ops.spec.ts:1002:1 › modifyFillet re-specs radius on the real kernel
+[1A[2K[2m[WebServer] [22m[2m2:01:34 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mvendor/cadjs/src/services/occ-extrude.ts[22m
+
+[1A[2K[2m[WebServer] [22m[2m2:01:34 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mvendor/cadjs/src/workers/occ-worker-types.ts[22m
+
+[1A[2K[2m[WebServer] [22m[2m2:01:34 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css?direct, /src/index.tsx, /src/scenes/simpleCadScene.tsx, /src/components/ViewCube.tsx, /src/components/SketchPropertiesPanel.tsx, /src/scenes/modes/SketchModeContent.tsx, /src/navbar/ValueInputModal.tsx, /src/navbar/SketchToolbar.tsx, /vendor/cadjs/src/contexts/CoreContext.tsx, /vendor/cadjs/src/contexts/VisualizerContext.tsx, /src/components/FileMenu.tsx, /src/scenes/modes/ExtrudeModeContent.tsx, /src/scenes/modes/CombineModeContent.tsx, /src/scenes/modes/FilletModeContent.tsx, /src/scenes/modes/SweepModeContent.tsx, /src/scenes/modes/MoveModeContent.tsx, /src/scenes/modes/LoftModeContent.tsx, /src/scenes/modes/RevolveModeContent.tsx, /src/scenes/modes/MeasureModeContent.tsx[22m
+
+[1A[2K[2m[WebServer] [22m[2m2:01:34 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mvendor/cadjs/src/workers/occ-worker-handlers.ts[22m
+
+[1A[2K[2m[WebServer] [22m[2m2:01:34 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css?direct, /src/scenes/simpleCadScene.tsx[22m
+[2m[WebServer] [22m[2m2:01:34 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css?direct, /src/scenes/simpleCadScene.tsx, /src/components/FeatureDialog.tsx[22m
+
+[1A[2K[2m[WebServer] [22m[2m2:01:34 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/FeatureDialog.tsx, /src/index.css?direct[22m
+
+[1A[2K[2m[WebServer] [22m[2m2:01:34 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/scenes/simpleCadScene.tsx, /src/index.css?direct[22m
+
+[1A[2K[2m[WebServer] [22m[2m2:01:34 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/model/__tests__/sweepGuideBlend.test.ts[22m
+
+[1A[2K[22/23] (retries) [chromium] › e2e/parity-ops.spec.ts:1002:1 › modifyFillet re-specs radius on the real kernel (retry #1)
+[1A[2K  1) [chromium] › e2e/parity-ops.spec.ts:1002:1 › modifyFillet re-specs radius on the real kernel ──
+
+    Error: page.evaluate: Execution context was destroyed, most likely because of a navigation.
+
+      1002 | test("modifyFillet re-specs radius on the real kernel", async ({ page }) => {
+      1003 |   await boot(page);
+    > 1004 |   const modRes = await page.evaluate(async () => {
+           |                             ^
+      1005 |     const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      1006 |       .__cadDebug.scadgen;
+      1007 |     const boxFid = s.box(2, 2, 1);
+        at /Users/user01/cadjs-starter/e2e/parity-ops.spec.ts:1004:29
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/parity-ops-modifyFillet-re-specs-radius-on-the-real-kernel-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/parity-ops-modifyFillet-re-specs-radius-on-the-real-kernel-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/parity-ops-modifyFillet-re-specs-radius-on-the-real-kernel-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/parity-ops-modifyFillet-re-specs-radius-on-the-real-kernel-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/parity-ops-modifyFillet-re-specs-radius-on-the-real-kernel-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[23/23] [chromium] › e2e/parity-ops.spec.ts:1062:1 › fastener + screwHole hooks emit revolved bodies through the kernel
+[1A[2K[chromium] › e2e/parity-ops.spec.ts:1062:1 › fastener + screwHole hooks emit revolved bodies through the kernel
+PAGE: fastener hook: headShapes: unknown size "M99" for iso
+
+[1A[2KFASTENER RESULT: {
+  "bolt": "OK",
+  "boltFaces": 1211,
+  "boltSk": "OK",
+  "hole": "OK",
+  "holeFaces": 80,
+  "holeSk": "OK",
+  "badStatus": "NOT_IN_REPORT"
+}
+
+[1A[2K[24/23] [chromium] › e2e/perf-budget.spec.ts:26:1 › browser budgets: boot, regenerate, orbit and document reload
+[1A[2K[chromium] › e2e/perf-budget.spec.ts:26:1 › browser budgets: boot, regenerate, orbit and document reload
+PERF MEASUREMENTS {"bootInteractiveMs":6016,"documentReloadMs":5669,"regenerateBoxMs":212,"orbitFpsMin":34}
+
+[1A[2K  1 flaky
+    [chromium] › e2e/parity-ops.spec.ts:1002:1 › modifyFillet re-specs radius on the real kernel ───
+  22 passed (5.4m)
