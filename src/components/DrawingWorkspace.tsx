@@ -866,6 +866,7 @@ export const DrawingWorkspace: React.FC<DrawingWorkspaceProps> = ({
               <input
                 key={key}
                 aria-label={`View ${key}`}
+                data-testid={`drawing-view-${key}`}
                 value={selectedConfig[key] ?? ""}
                 disabled={selectedConfig.locked === true}
                 onChange={(e) => patchView({ [key]: Number(e.target.value) })}
@@ -977,6 +978,7 @@ export const DrawingWorkspace: React.FC<DrawingWorkspaceProps> = ({
               <button
                 type="button"
                 aria-label={`Remove ${view.label}`}
+                data-testid={`drawing-remove-custom-view-${view.id}`}
                 onClick={() => removeCustomView(view.id)}
                 className="text-red-300"
               >
@@ -1481,6 +1483,7 @@ export const DrawingWorkspace: React.FC<DrawingWorkspaceProps> = ({
                 </span>
                 <input
                   aria-label={`Offset ${item.id}`}
+                  data-testid={`drawing-dimension-offset-${item.id}`}
                   value={item.offset ?? 7}
                   onChange={(e) =>
                     updateDimension(item.id, {
@@ -1492,6 +1495,7 @@ export const DrawingWorkspace: React.FC<DrawingWorkspaceProps> = ({
                 <button
                   type="button"
                   aria-label={`Delete ${item.id}`}
+                  data-testid={`drawing-dimension-delete-${item.id}`}
                   onClick={() =>
                     onChange({
                       ...data,
@@ -1741,6 +1745,7 @@ export const DrawingWorkspace: React.FC<DrawingWorkspaceProps> = ({
                 <button
                   type="button"
                   aria-label={`Delete ${item.id}`}
+                  data-testid={`drawing-gdt-delete-${item.id}`}
                   onClick={() =>
                     onChange({
                       ...data,
@@ -1816,6 +1821,7 @@ export const DrawingWorkspace: React.FC<DrawingWorkspaceProps> = ({
                 <div className="flex items-center gap-1">
                   <input
                     aria-label={`Note text ${note.id}`}
+                    data-testid={`drawing-note-text-${note.id}`}
                     value={note.text}
                     onChange={(e) =>
                       onChange({
@@ -1830,6 +1836,7 @@ export const DrawingWorkspace: React.FC<DrawingWorkspaceProps> = ({
                   <button
                     type="button"
                     aria-label={`Delete ${note.id}`}
+                    data-testid={`drawing-note-delete-${note.id}`}
                     onClick={() =>
                       onChange({
                         ...data,
@@ -1846,6 +1853,7 @@ export const DrawingWorkspace: React.FC<DrawingWorkspaceProps> = ({
                     <input
                       key={key}
                       aria-label={`Note ${key} ${note.id}`}
+                      data-testid={`drawing-note-${key}-${note.id}`}
                       value={note[key] ?? (key === "landing" ? 7 : "")}
                       onChange={(e) =>
                         onChange({
@@ -1892,6 +1900,7 @@ export const DrawingWorkspace: React.FC<DrawingWorkspaceProps> = ({
                 <div className="flex items-center gap-1">
                   <input
                     aria-label={`Balloon label ${balloon.id}`}
+                    data-testid={`drawing-balloon-label-${balloon.id}`}
                     value={balloon.label}
                     onChange={(e) =>
                       onChange({
@@ -1908,6 +1917,7 @@ export const DrawingWorkspace: React.FC<DrawingWorkspaceProps> = ({
                   <button
                     type="button"
                     aria-label={`Delete ${balloon.id}`}
+                    data-testid={`drawing-balloon-delete-${balloon.id}`}
                     onClick={() =>
                       onChange({
                         ...data,
@@ -1926,6 +1936,7 @@ export const DrawingWorkspace: React.FC<DrawingWorkspaceProps> = ({
                     <input
                       key={key}
                       aria-label={`Balloon ${key} ${balloon.id}`}
+                      data-testid={`drawing-balloon-${key}-${balloon.id}`}
                       value={balloon[key] ?? (key === "landing" ? 7 : "")}
                       onChange={(e) =>
                         onChange({

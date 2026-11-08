@@ -1,4 +1,5 @@
 import { Page, expect } from "@playwright/test";
+import type { DrawingTabData } from "../src/drawings/model";
 
 type MeasureDebugEntry = {
   id: string;
@@ -29,6 +30,9 @@ declare global {
       getMode: () => string;
       getFeatureTree: () => unknown;
       getCameraQuat: () => [number, number, number, number] | null;
+      drawing?: {
+        state: () => DrawingTabData;
+      };
       selectElement: (id: string) => void;
       deselectElement: (id: string) => void;
       scadgen?: {
