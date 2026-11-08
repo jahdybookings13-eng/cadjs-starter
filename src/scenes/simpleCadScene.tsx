@@ -3480,6 +3480,9 @@ const SimpleCadScene: React.FC<SimpleCadSceneProps> = ({
             ? param.value
             : null;
       },
+      drawing: {
+        state: () => drawingRef.current,
+      },
       scadgen,
     };
     {
