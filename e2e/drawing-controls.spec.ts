@@ -315,16 +315,6 @@ test("drawing BOM overrides and associative dimensions", async ({ page }) => {
   await expect(page.getByTestId("drawing-bom")).toContainText("PN-777");
   await expect(page.getByTestId("drawing-bom")).toContainText("CUSTOM PLATE");
 
-  const bodySelect = page.getByLabel("Anchor dimension to body");
-  const bodyValue = await bodySelect
-    .locator("option")
-    .nth(1)
-    .getAttribute("value");
-  expect(bodyValue).toBeTruthy();
-  await bodySelect.selectOption(bodyValue!);
-  await expect(page.getByLabel("Dimension edge")).toBeEnabled();
-  await page.getByLabel("Dimension edge").selectOption({ index: 1 });
-
   await page.getByLabel("Dimension view").selectOption("front");
   await page.getByLabel("Dimension axis").selectOption("vertical");
   await page.getByLabel("Dimension kind").selectOption("linear");
@@ -334,6 +324,17 @@ test("drawing BOM overrides and associative dimensions", async ({ page }) => {
     .selectOption("symmetric");
   await page.getByLabel("Dimension tolerance upper").fill("0.2");
   await page.getByLabel("Dimension tolerance lower").fill("0.1");
+
+  const bodySelect = page.getByLabel("Anchor dimension to body");
+  const bodyValue = await bodySelect
+    .locator("option")
+    .nth(1)
+    .getAttribute("value");
+  expect(bodyValue).toBeTruthy();
+  await bodySelect.selectOption(bodyValue!);
+  await expect(page.getByLabel("Dimension edge")).toBeEnabled();
+  await page.getByLabel("Dimension edge").selectOption({ index: 1 });
+  await expect(page.getByLabel("Dimension edge")).toHaveValue(/\d+/);
   await page.getByRole("button", { name: "Add dimension" }).click();
 
   state = await drawingState(page);
