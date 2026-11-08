@@ -48,9 +48,12 @@ void loop() {
 export function EcadPanel({
   ecad,
   onClose,
+  embedded = false,
 }: {
   ecad: Ecad;
-  onClose: () => void;
+  onClose?: () => void;
+  /** Fill the host panel instead of floating over the 3D scene. */
+  embedded?: boolean;
 }) {
   const [tab, setTab] = useState<"place" | "code" | "serial">("place");
   const [placed, setPlaced] = useState<PlacedRow[]>([]);
@@ -182,7 +185,11 @@ export function EcadPanel({
   return (
     <div
       data-testid="ecad-panel"
-      className="absolute right-2 top-2 z-40 flex max-h-[80vh] w-96 flex-col rounded-lg border border-neutral-700 bg-neutral-900/95 text-xs text-neutral-200 shadow-2xl"
+      className={
+        embedded
+          ? "flex h-full min-h-0 w-full flex-col bg-neutral-900/95 text-xs text-neutral-200"
+          : "absolute right-2 top-2 z-40 flex max-h-[80vh] w-96 flex-col rounded-lg border border-neutral-700 bg-neutral-900/95 text-xs text-neutral-200 shadow-2xl"
+      }
     >
       <div className="flex items-center justify-between border-b border-neutral-700 px-3 py-2">
         <span className="font-semibold">ECAD · Virtual MCUs</span>
@@ -197,13 +204,15 @@ export function EcadPanel({
               {t}
             </button>
           ))}
-          <button
-            onClick={onClose}
-            aria-label="Close ECAD panel"
-            className="rounded bg-neutral-800 px-2 py-0.5 hover:bg-neutral-700"
-          >
-            ✕
-          </button>
+          {onClose && (
+            <button
+              onClick={onClose}
+              aria-label="Close ECAD panel"
+              className="rounded bg-neutral-800 px-2 py-0.5 hover:bg-neutral-700"
+            >
+              ✕
+            </button>
+          )}
         </div>
       </div>
 

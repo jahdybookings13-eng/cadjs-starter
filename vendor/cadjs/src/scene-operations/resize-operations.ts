@@ -28,8 +28,21 @@ export async function extrudeBRep(
   normalVec?: { x: number; y: number; z: number },
   sourceOccBrep?: string,
   symmetric?: boolean,
+  options?: {
+    draftAngleDeg?: number;
+    draftNeutralPoint?: { x: number; y: number; z: number } | undefined;
+    draftNeutralNormal?: { x: number; y: number; z: number } | undefined;
+    draftMode?: "NEUTRAL" | "PARTING" | undefined;
+    draftPartingLine?: {
+      start: { x: number; y: number; z: number };
+      end: { x: number; y: number; z: number };
+    } | undefined;
+    thinWall?: number;
+    /** Closed wall loop for an open sketch profile (thin extrude only). */
+    ribbonPoints?: { x: number; y: number; z: number }[] | undefined;
+  },
 ): Promise<Result<ExtrusionResult>> {
-  if (!brep.faces.length || !brep.vertices.length) {
+  if (!options?.ribbonPoints?.length && (!brep.faces.length || !brep.vertices.length)) {
     return err("brep has no faces or vertices");
   }
 
@@ -58,6 +71,7 @@ export async function extrudeBRep(
         normalVec: normal,
         sourceOccBrep,
         symmetric,
+        ...options,
       },
     });
 

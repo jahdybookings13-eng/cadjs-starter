@@ -38,6 +38,20 @@ export interface ExtrudeRequest extends WorkerRequestBase {
     normalVec?: Vec3 | undefined;
     sourceOccBrep?: string | undefined;
     symmetric?: boolean | undefined;
+    /** Taper the lateral walls (degrees). 0/undefined = straight. */
+    draftAngleDeg?: number | undefined;
+    /** Neutral-plane point in profile-local coordinates. */
+    draftNeutralPoint?: Vec3 | undefined;
+    /** Neutral-plane normal in world coordinates. */
+    draftNeutralNormal?: Vec3 | undefined;
+    /** NEUTRAL keeps one plane; PARTING flips the angle by face side. */
+    draftMode?: "NEUTRAL" | "PARTING" | undefined;
+    /** Selected parting edge (profile-local coordinates). */
+    draftPartingLine?: { start: Vec3; end: Vec3 } | undefined;
+    /** Hollow the extrusion into a constant-wall feature. */
+    thinWall?: number | undefined;
+    /** Closed wall loop for an open sketch profile (built model-side). */
+    ribbonPoints?: Vec3[] | undefined;
   };
 }
 
@@ -47,10 +61,22 @@ export interface SweepRequest extends WorkerRequestBase {
     brepJson: BrepJSON;
     profilePosition: Vec3;
     pathPoints: Vec3[];
+    /** Path approximation tolerance in document units. */
+    chordalTolerance?: number | undefined;
+    /** One auxiliary spine (guide curve) in world space. */
+    guidePoints?: Vec3[] | undefined;
+    /** Two or more guide rails in world space; drives constrained sections. */
+    guideCurves?: Vec3[][] | undefined;
+    /** Hollow the swept solid into a constant-wall feature. */
+    thinWall?: number | undefined;
     options?:
       | {
           orientation: "perpendicular" | "parallel";
           cornerMode: "right" | "round";
+          /** Total twist from path start to end, in radians. */
+          twistRadians?: number | undefined;
+          /** Path approximation tolerance in document units. */
+          chordalTolerance?: number | undefined;
         }
       | undefined;
     sourceOccBrep?: string | undefined;
@@ -66,6 +92,16 @@ export interface LoftRequest extends WorkerRequestBase {
       occBrep?: string | undefined;
     }>;
     isRuled?: boolean | undefined;
+    /** Close the last section back onto the first (periodic loft). */
+    isClosed?: boolean | undefined;
+    /** Hollow the loft into a constant-wall feature. */
+    thinWall?: number | undefined;
+    /** Total twist from first to last section, in radians. */
+    twistRadians?: number | undefined;
+    /** Per-section seam points (world) that drive connector alignment. */
+    connectors?: Array<Vec3 | undefined> | undefined;
+    /** Centerline (spine) points in world space; switches to a pipe shell. */
+    centerlinePoints?: Vec3[] | undefined;
   };
 }
 
@@ -80,6 +116,10 @@ export interface RevolveRequest extends WorkerRequestBase {
     sourceOccBrep?: string | undefined;
     direction?: "one" | "two" | "symmetric" | undefined;
     angleRadians2?: number | undefined;
+    /** Hollow the revolved solid into a constant-wall feature. */
+    thinWall?: number | undefined;
+    /** Corner join used by the thin-wall profile offset. */
+    cornerType?: "ROUNDED" | "CONICAL" | "TRANSITIONAL" | undefined;
   };
 }
 
@@ -91,6 +131,12 @@ export interface FilletRequest extends WorkerRequestBase {
     edgeIndices: number[];
     radius: number;
     radii?: number[] | undefined;
+    /** RATIONAL (circular), QUASI_ANGULAR or POLYNOMIAL blend section. */
+    section?: "RATIONAL" | "QUASI_ANGULAR" | "POLYNOMIAL" | undefined;
+    /** Per-edge start/end radius; overrides `radius`/`radii` when present. */
+    variableRadii?: Array<{ start: number; end: number }> | undefined;
+    /** Smaller radius applied at contour vertices for corner treatment. */
+    cornerRadius?: number | undefined;
     occBrep?: string | undefined;
     rotation?: EulerJSON | undefined;
   };
@@ -104,6 +150,8 @@ export interface ChamferRequest extends WorkerRequestBase {
     edgeIndices: number[];
     distance: number;
     distances?: number[] | undefined;
+    mode?: "DIST_DISTS" | "DIST_ANG" | "ANG_DISTS" | "SYM_DISTS" | undefined;
+    angleDeg?: number | undefined;
     occBrep?: string | undefined;
     rotation?: EulerJSON | undefined;
   };
@@ -126,8 +174,27 @@ export interface BooleanRequest extends WorkerRequestBase {
           targetId?: string | undefined;
           toolIds?: string[] | undefined;
           keepTools?: boolean | undefined;
+          makeSolid?: boolean | undefined;
         }
       | undefined;
+  };
+}
+
+export interface InterferenceRequest extends WorkerRequestBase {
+  type: "interference";
+  payload: {
+    a: {
+      brepJson: BrepJSON;
+      position: Vec3;
+      occBrep?: string | undefined;
+      rotation?: EulerJSON | undefined;
+    };
+    b: {
+      brepJson: BrepJSON;
+      position: Vec3;
+      occBrep?: string | undefined;
+      rotation?: EulerJSON | undefined;
+    };
   };
 }
 
@@ -189,7 +256,7 @@ export interface UnifyCompoundRequest extends WorkerRequestBase {
 }
 
 // Import/Export
-export type FileFormat = "stl" | "step";
+export type FileFormat = "stl" | "step" | "iges";
 
 export interface ImportFileRequest extends WorkerRequestBase {
   type: "importFile";
@@ -208,6 +275,8 @@ export interface ExportFileRequest extends WorkerRequestBase {
       position: Vec3;
       occBrep?: string | undefined;
       rotation?: EulerJSON | undefined;
+      name?: string | undefined;
+      color?: string | undefined;
     }>;
     format: FileFormat;
   };
@@ -270,6 +339,10 @@ export interface ShellRequest extends WorkerRequestBase {
     rotation?: EulerJSON | undefined;
     faceIndices: number[];
     thickness: number;
+    thicknesses?: number[] | undefined;
+    keepType?: "KEEP_SHELL" | "KEEP_CORE" | undefined;
+    /** Use MakeThickSolid for non-planar caps (slow in wasm). */
+    curvedCap?: boolean | undefined;
   };
 }
 
@@ -284,6 +357,9 @@ export interface DraftRequest extends WorkerRequestBase {
     angleDeg: number;
     neutralNormal: Vec3;
     neutralPoint: Vec3;
+    /** Selected parting edge; its start point overrides neutralPoint. */
+    partingLine?: { start: Vec3; end: Vec3 } | undefined;
+    mode?: "NEUTRAL" | "STEP" | "PARTING" | undefined;
   };
 }
 
@@ -294,8 +370,11 @@ export interface PatternRequest extends WorkerRequestBase {
     position: Vec3;
     occBrep?: string | undefined;
     rotation?: EulerJSON | undefined;
-    kind: "circular" | "linear" | "curve";
+    kind: "circular" | "linear" | "curve" | "body" | "face";
     count: number;
+    faceIndices?: number[] | undefined;
+    /** Instance ordinals (1-based) suppressed by the user. */
+    skip?: number[] | undefined;
     axisOrigin?: Vec3 | undefined;
     axisDir?: Vec3 | undefined;
     angleRad?: number | undefined;
@@ -357,6 +436,10 @@ export interface SplitRequest extends WorkerRequestBase {
     planeOrigin: Vec3;
     planeNormal: Vec3;
     keep?: "positive" | "negative" | "both" | undefined;
+    splitBy?: "plane" | "surface" | undefined;
+    toolBrepJson?: BrepJSON | undefined;
+    toolPosition?: Vec3 | undefined;
+    toolOccBrep?: string | undefined;
   };
 }
 
@@ -377,6 +460,44 @@ export interface ThickenRequest extends WorkerRequestBase {
   };
 }
 
+export interface SewSource {
+  brepJson: BrepJSON;
+  position: Vec3;
+  occBrep?: string | undefined;
+  rotation?: EulerJSON | undefined;
+  /** Selected faces to include; omitted means every face of the source. */
+  faceIndices?: number[] | undefined;
+}
+
+export interface SewRequest extends WorkerRequestBase {
+  type: "sew";
+  payload: {
+    sources: SewSource[];
+    tolerance?: number | undefined;
+    makeSolid?: boolean | undefined;
+    mergeFaces?: boolean | undefined;
+    sewFreeEdges?: boolean | undefined;
+    sewSharedEdges?: boolean | undefined;
+    /** Allow a single source and return its sewn shell (solid-to-surface). */
+    extractShell?: boolean | undefined;
+  };
+}
+
+export interface SurfaceExtendRequest extends WorkerRequestBase {
+  type: "surfaceExtend";
+  payload: {
+    brepJson: BrepJSON;
+    position: Vec3;
+    occBrep?: string | undefined;
+    rotation?: EulerJSON | undefined;
+    /** One-based edge indices into the source body. */
+    edgeIndices: number[];
+    distance: number;
+    mode?: "linear" | "natural" | undefined;
+    tolerance?: number | undefined;
+  };
+}
+
 export interface MoveFaceRequest extends WorkerRequestBase {
   type: "moveFace";
   payload: {
@@ -385,7 +506,9 @@ export interface MoveFaceRequest extends WorkerRequestBase {
     occBrep?: string | undefined;
     rotation?: EulerJSON | undefined;
     faceIndex: number;
+    faceIndices?: number[] | undefined;
     distance: number;
+    extendNeighbors?: boolean | undefined;
   };
 }
 
@@ -417,6 +540,10 @@ export interface WrapRequest extends WorkerRequestBase {
     axisDir: Vec3;
     radius: number;
     polylines: number[][][];
+    /** CURVE projects wires; CUT/EMBOSS sweep a bead and boolean it. */
+    operation?: "CURVE" | "CUT" | "EMBOSS" | undefined;
+    depth?: number | undefined;
+    width?: number | undefined;
   };
 }
 
@@ -436,6 +563,12 @@ export interface ThreadRequest extends WorkerRequestBase {
     kind: "external" | "internal";
     crown?: number | undefined;
     taperPerLength?: number | undefined;
+    /** Sweep a true helical ridge instead of stacked torus grooves. */
+    helical?: boolean | undefined;
+    /** Axial length of the 45-degree chamfer at each thread end. */
+    endChamfer?: number | undefined;
+    /** Shallow visual thread instead of a full-depth modeled thread. */
+    cosmetic?: boolean | undefined;
   };
 }
 
@@ -459,6 +592,35 @@ export interface DeleteFaceRequest extends WorkerRequestBase {
     occBrep?: string | undefined;
     rotation?: EulerJSON | undefined;
     faceIndices: number[];
+    mergeAdjacent?: boolean | undefined;
+  };
+}
+
+export interface ReplaceFaceRequest extends WorkerRequestBase {
+  type: "replaceFace";
+  payload: {
+    brepJson: BrepJSON;
+    position: Vec3;
+    occBrep?: string | undefined;
+    rotation?: EulerJSON | undefined;
+    faceIndices: number[];
+    replacementBrepJson: BrepJSON;
+    replacementPosition: Vec3;
+    replacementOccBrep?: string | undefined;
+    replacementRotation?: EulerJSON | undefined;
+    replacementFaceIndex?: number | undefined;
+  };
+}
+
+export interface TransformRequest extends WorkerRequestBase {
+  type: "transform";
+  payload: {
+    brepJson: BrepJSON;
+    position: Vec3;
+    occBrep?: string | undefined;
+    rotation?: EulerJSON | undefined;
+    /** 4x4 column-major transform (three.js Matrix4.elements). */
+    matrix: number[];
   };
 }
 
@@ -474,6 +636,9 @@ export interface HoleRequest extends WorkerRequestBase {
     radius: number;
     length: number;
     overdrive: number;
+    holeType?: "SIMPLE" | "COUNTERBORE" | "COUNTERSINK" | undefined;
+    countersinkAngleDeg?: number | undefined;
+    taperPerLength?: number | undefined;
   };
 }
 
@@ -504,6 +669,7 @@ export type WorkerRequest =
   | FilletRequest
   | ChamferRequest
   | BooleanRequest
+  | InterferenceRequest
   | EdgeAnalysisRequest
   | PreviewGeometryRequest
   | SketchToBrepRequest
@@ -526,8 +692,12 @@ export type WorkerRequest =
   | MoveFaceRequest
   | SectionRequest
   | ThickenRequest
+  | SewRequest
+  | SurfaceExtendRequest
   | SplitRequest
+  | TransformRequest
   | DeleteFaceRequest
+  | ReplaceFaceRequest
   | FlangeRequest
   | HoleRequest
   | CancelRequest
@@ -540,6 +710,13 @@ export interface WorkerResponse {
   error?: string | undefined;
 }
 
+export interface WorkerSewResult extends WorkerGeometryResult {
+  /** Edges the sewing operation could not join at the requested tolerance. */
+  unstitchedEdges: number;
+  /** Shells produced by the sew; a solid conversion requires exactly one. */
+  shellCount: number;
+}
+
 export interface WorkerGeometryResult {
   brepJson: BrepJSON;
   positionOffset: Vec3;
@@ -549,6 +726,11 @@ export interface WorkerGeometryResult {
   faceGeometry?:
     | { positions: Float32Array; indices: Uint32Array; normals: Float32Array }
     | undefined;
+}
+
+export interface WorkerInterferenceResult {
+  /** Intersection volume in model units. Zero means no solid intersection. */
+  volume: number;
 }
 
 export interface WorkerBooleanResult {
@@ -582,6 +764,8 @@ export interface WorkerPreviewResult {
 
 export interface WorkerSketchBrepResult {
   brepJson: BrepJSON;
+  /** Exact OCC shape for the sketch, preserving inner wires/holes. */
+  occBrep?: string | undefined;
 }
 
 export interface WorkerSketchProfilesResult {
@@ -609,6 +793,8 @@ export interface WorkerImportResult {
     occBrep?: string | undefined;
     edgePositions?: Float32Array | undefined;
     vertexPositions?: Float32Array | undefined;
+    name?: string | undefined;
+    color?: string | undefined;
   }>;
 }
 

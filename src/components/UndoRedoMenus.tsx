@@ -79,11 +79,8 @@ export const UndoRedoMenus: React.FC<UndoRedoMenusProps> = ({
       <div className="relative" ref={undoDropdownRef}>
         <div className="flex">
           <button
-            className={`flex-none px-2 py-1.5 text-sm ${!inSketch && canUndo ? "rounded-l" : "rounded"} ${
-              effectiveCanUndo
-                ? "bg-gray-700 hover:bg-gray-600 text-gray-200"
-                : "bg-gray-800 text-gray-500 cursor-not-allowed"
-            }`}
+            className={`cad-icon-button ${!inSketch && canUndo ? "rounded-r-none" : ""}`}
+            aria-label={undoTitle}
             onClick={() => {
               effectiveUndo();
               setUndoDropdownOpen(false);
@@ -107,11 +104,7 @@ export const UndoRedoMenus: React.FC<UndoRedoMenusProps> = ({
           </button>
           {!inSketch && (
             <button
-              className={`flex-none px-1 py-1.5 text-sm rounded-r border-l border-gray-600 ${
-                canUndo
-                  ? "bg-gray-700 hover:bg-gray-600 text-gray-200"
-                  : "bg-gray-800 text-gray-500 cursor-not-allowed"
-              }`}
+              className="cad-icon-button !min-w-5 rounded-l-none border-l border-[var(--cad-border)] !px-1"
               onClick={() => {
                 setUndoDropdownOpen(!undoDropdownOpen);
                 setRedoDropdownOpen(false);
@@ -136,12 +129,12 @@ export const UndoRedoMenus: React.FC<UndoRedoMenusProps> = ({
           )}
         </div>
         {!inSketch && undoDropdownOpen && undoStack.length > 0 && (
-          <div className="absolute top-full left-0 mt-1 w-48 bg-gray-800 border border-gray-600 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
+          <div className="absolute left-0 top-full z-50 mt-1 max-h-60 w-48 overflow-y-auto rounded-md border border-[var(--cad-border-strong)] bg-[var(--cad-chrome-raised)] shadow-xl">
             {[...undoStack].reverse().map((snapshot, idx) => (
               <button
                 key={snapshot.timestamp}
                 aria-label={`Undo to ${snapshot.actionName}`}
-                className="w-full px-3 py-1.5 text-sm text-left text-gray-200 hover:bg-gray-700"
+                className="w-full px-3 py-1.5 text-left text-xs text-[var(--cad-text)] hover:bg-[var(--cad-chrome-hover)]"
                 onClick={() => {
                   for (let i = 0; i <= idx; i++) {
                     undo();
@@ -160,11 +153,8 @@ export const UndoRedoMenus: React.FC<UndoRedoMenusProps> = ({
       <div className="relative" ref={redoDropdownRef}>
         <div className="flex">
           <button
-            className={`flex-none px-2 py-1.5 text-sm ${!inSketch && canRedo ? "rounded-l" : "rounded"} ${
-              effectiveCanRedo
-                ? "bg-gray-700 hover:bg-gray-600 text-gray-200"
-                : "bg-gray-800 text-gray-500 cursor-not-allowed"
-            }`}
+            className={`cad-icon-button ${!inSketch && canRedo ? "rounded-r-none" : ""}`}
+            aria-label={redoTitle}
             onClick={() => {
               effectiveRedo();
               setRedoDropdownOpen(false);
@@ -188,11 +178,7 @@ export const UndoRedoMenus: React.FC<UndoRedoMenusProps> = ({
           </button>
           {!inSketch && (
             <button
-              className={`flex-none px-1 py-1.5 text-sm rounded-r border-l border-gray-600 ${
-                canRedo
-                  ? "bg-gray-700 hover:bg-gray-600 text-gray-200"
-                  : "bg-gray-800 text-gray-500 cursor-not-allowed"
-              }`}
+              className="cad-icon-button !min-w-5 rounded-l-none border-l border-[var(--cad-border)] !px-1"
               onClick={() => {
                 setRedoDropdownOpen(!redoDropdownOpen);
                 setUndoDropdownOpen(false);
@@ -217,12 +203,12 @@ export const UndoRedoMenus: React.FC<UndoRedoMenusProps> = ({
           )}
         </div>
         {!inSketch && redoDropdownOpen && redoStack.length > 0 && (
-          <div className="absolute top-full left-0 mt-1 w-48 bg-gray-800 border border-gray-600 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
+          <div className="absolute left-0 top-full z-50 mt-1 max-h-60 w-48 overflow-y-auto rounded-md border border-[var(--cad-border-strong)] bg-[var(--cad-chrome-raised)] shadow-xl">
             {[...redoStack].reverse().map((snapshot, idx) => (
               <button
                 key={snapshot.timestamp}
                 aria-label={`Redo to ${snapshot.actionName}`}
-                className="w-full px-3 py-1.5 text-sm text-left text-gray-200 hover:bg-gray-700"
+                className="w-full px-3 py-1.5 text-left text-xs text-[var(--cad-text)] hover:bg-[var(--cad-chrome-hover)]"
                 onClick={() => {
                   for (let i = 0; i <= idx; i++) {
                     redo();

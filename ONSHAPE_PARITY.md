@@ -1,6 +1,6 @@
 # ONSHAPE_PARITY — in-browser designer parity
 
-Status: **scope frozen; Phase 0, Phase 1 and Phase 2 complete 2026-11-06; Phase 3 not started**
+Status: **scope frozen; Phase 0, Phase 1 and Phase 2 complete 2026-11-06; Phase 3 in progress**
 Baseline date: **2026-11-06**
 Target: **Onshape's browser designer (desktop web), current production behaviour**
 Current product: **ScadGen / cadjs-starter**
@@ -55,14 +55,14 @@ This file is that deliverable. Implementation status is in section 9.
 
 Parity is measured on six axes. A feature is not “done” because a button exists.
 
-| Axis          | Definition                                                             | Evidence required                            |
-| ------------- | ---------------------------------------------------------------------- | -------------------------------------------- |
-| Functional    | Same user outcome, same inputs, same failure behaviour                 | Automated feature test plus manual checklist |
-| Interaction   | Same selection, preview, confirm/cancel, edit and undo behaviour       | Browser interaction test                     |
-| Visual        | Same information hierarchy and panel/toolbar placement                 | Screenshot review at supported sizes         |
-| Data          | Same document/tab/feature/history semantics, surviving save and reload | Round-trip and recovery tests                |
-| Performance   | Same practical latency for orbit, regenerate, select and open          | Measured budgets, not impressions            |
-| Accessibility | Keyboard operation, focus, contrast and screen-reader labels           | Keyboard-only and accessibility checks       |
+| Axis          | Definition                                                                                                                             | Evidence required                            |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | ------- |
+| Functional    | Same user outcome, same inputs, same failure behaviour                                                                                 | Automated feature test plus manual checklist |
+| Interaction   | Same selection, preview, confirm/cancel, edit and undo behaviour                                                                       | Browser interaction test                     |
+| Visual        | Same information hierarchy and panel/toolbar placement                                                                                 | Screenshot review at supported sizes         |
+| Data          | Same document/tab/feature/history semantics, surviving save and reload                                                                 | Round-trip and recovery tests                |
+| Performance   | Same practical latency for orbit, regenerate, select and open                                                                          | Measured budgets, not impressions            |
+| Accessibility | Skip link, focus-visible outlines, focus-trapped palettes, aria labels, 0 unlabeled controls and an automated contrast/tab-order audit | Keyboard-only and accessibility checks       | SHIPPED |
 
 “1:1” means **behavioural and layout parity**, not copying Onshape trademarks,
 icons, proprietary artwork, text, or implementation. All UI assets and code
@@ -124,18 +124,20 @@ that silently does nothing is a defect, not partial parity.
 
 ### What does not exist
 
-- Persisted Assembly, Drawing, Variable Studio and Feature Studio tabs (only
-  Part Studio tabs have a real workspace, so the others are not offered as
-  empty tabs)
-- A real Drawing workspace
-- Full assembly mate set, exploded views, interference and large-assembly
-  performance
+- Full Phase 4/5 parity. Persisted Assembly and Drawing tabs now have
+  subassemblies, in-context hole/cut features, OCCT BRep interference with a
+  face/bounds fallback, detail/auxiliary views, GD&T and binary DWG
+  R2000/R2004/R2018 export. Full associative annotation tooling remains
+  missing.
+- Variable Studio and Feature Studio tabs (the others are not offered as empty
+  tabs)
+- Full assembly mate set and contact-area interference
+- Full drawing sheet standards/templates and associative dimensions
 - Configurations, Variable Studio, Feature Studio, FeatureScript and custom
   features
 - Full sheet metal/frames/surface feature depth
-- Render, simulation, CAM and PCB studios
+- Full CAM and PCB studios
 - Broad CAD translation and imported-history editing
-- Onshape-style five-family toolbar customization and tool search
 - Direct automated evidence for most of the 295 visible controls; the inventory
   is complete, but evidence coverage is still low
 
@@ -285,9 +287,9 @@ Status keys:
 | Document panel       | Properties, tabs, named snapshots, where-used, size/storage                                     | Properties, local history, where used, performance                           | PARTIAL |
 | Tab manager          | Create/rename/duplicate/move/delete/search/multi-select Part Studios                            | Create/rename/move/delete/search Part Studios, Assemblies, Drawings, studios | PARTIAL |
 | Part Studio tabs     | Multiple persisted Part Studios, one design each                                                | Multiple Part Studios per document                                           | SHIPPED |
-| Assembly tabs        | Basic panel                                                                                     | Persisted assembly tab with instances/mates                                  | PARTIAL |
-| Drawing tabs         | Exports only                                                                                    | Persisted drawing workspace                                                  | MISSING |
-| BOM                  | None                                                                                            | Structured/indented/flat BOM, metadata, configurations                       | MISSING |
+| Assembly tabs        | Persisted instances, mates, nested subassemblies and in-context hole/cut features               | Persisted assembly tab with instances/mates                                  | PARTIAL |
+| Drawing tabs         | Persisted multi-sheet drawing workspace, detail/auxiliary views and GD&T                        | Persisted drawing workspace                                                  | SHIPPED |
+| BOM                  | Structured, indented and flat modes, columns, part/body metadata, CSV and subassembly rows      | Structured/indented/flat BOM, metadata, configurations                       | SHIPPED |
 | Search               | Documents and tabs; no feature/part search                                                      | Document, tab, feature and part search                                       | PARTIAL |
 | Local named history  | Named local snapshots (newest 20), restore and delete                                           | Named local snapshots and restore                                            | SHIPPED |
 | Save/reload/recovery | IndexedDB + localStorage mirror, autosave, explicit save, quota errors, corrupt-mirror recovery | Explicit save, autosave, corruption recovery, no lost work                   | PARTIAL |
@@ -295,121 +297,122 @@ Status keys:
 ### 4.2 Sketch
 
 | Capability                 | Current                                                                                             | Required for parity                                      | Status  |
-| -------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------- | --- | --------------- | -------------------------------------------------------- | -------------------------------------------------- | ------- |
-| Line/arc/circle/ellipse    | Yes                                                                                                 | Onshape-equivalent creation and editing                  | PARTIAL |
-| Spline/Bezier/conic        | Yes                                                                                                 | Full control-point, handle and curvature editing         | PARTIAL |
+| -------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------- |
+| Line/arc/circle/ellipse    | Creation; point, radius, arc and ellipse property editing                                           | Onshape-equivalent creation and editing                  | SHIPPED |
+| Spline/Bezier/conic        | Creation, control-point editing, conic rho, curvature, split and mirror                             | Full control-point, handle and curvature editing         | SHIPPED |
 | Polyline                   | Yes — chained lines share vertex points                                                             | Polyline creation and vertex editing                     | SHIPPED |
 | Hatch                      | Yes — closed-loop solid/line/cross fills                                                            | Hatch regions, patterns and boundaries                   | SHIPPED |
-| Sketch text                | Yes                                                                                                 | Fonts, alignment, path text and editing                  | PARTIAL |
+| Sketch text                | Single-stroke font, rotation, height and multiline; emitted as editable sketch lines                | Fonts, alignment, path text and editing                  | SHIPPED |
 | Blocks                     | Yes — define/insert/explode; nested paths remapped                                                  | Define, insert, explode, nested blocks                   | SHIPPED |
 | Layers/linetypes           | Yes — colours, visibility, dash styles; DXF LAYER import                                            | Layer model, colours, line styles, visibility            | SHIPPED |
 | Constraints                | 18 constraints; H/V/perp/parallel/tangent/coincident inference; named conflicts with remove actions | Full Onshape constraint set and inference                | SHIPPED |
 | Dimensions                 | Driving, driven/reference, expressions, sketch variables, min/max limits                            | Driving/driven, expressions, variables, limits           | SHIPPED |
-| Trim/extend/split          | Yes                                                                                                 | Full topology-aware behaviour                            | PARTIAL |
-| Fillet/chamfer/offset      | Yes                                                                                                 | Full corner and chain behaviour                          | PARTIAL |
-| Mirror/pattern/transform   | Yes                                                                                                 | Full sketch pattern, transform and constraints           | PARTIAL |     | Project/include | Associative section edges/vertices; custom plane normals | Associative project edges/curves/points/silhouette | PARTIAL |
+| Trim/extend/split          | Trim line/circle/arc; extend line/arc; split line/arc/circle/ellipse arc/spline/Bezier/conic        | Full topology-aware behaviour                            | SHIPPED |
+| Fillet/chamfer/offset      | Line/line, line/arc and arc/arc fillets; line chamfer; line/circle/arc offset                       | Full corner and chain behaviour                          | SHIPPED |
+| Mirror/pattern/transform   | Yes                                                                                                 | Full sketch pattern, transform and constraints           | PARTIAL |
+| Project/include            | Associative section edges/vertices; custom plane normals                                            | Associative project edges/curves/points/silhouette       | PARTIAL |
 | Image underlay             | Yes                                                                                                 | Attach/move/scale/rotate/opacity/delete                  | SHIPPED |
-| Sketch planes              | Planes/faces                                                                                        | Mate connectors, custom planes, in-context               | PARTIAL |
-| Sketch analysis            | DOF/status                                                                                          | Constraint conflict diagnostics, curvature, intersection | PARTIAL |
-| Sketch in drawing/assembly | No                                                                                                  | In-context sketching and cross-context references        | MISSING |
+| Sketch planes              | XY/XZ/YZ, offset, face and custom-normal planes; in-context sketches                                | Mate connectors, custom planes, in-context               | SHIPPED |
+| Sketch analysis            | Profiles, intersections, curvature, DOF/status and named constraint conflicts                       | Constraint conflict diagnostics, curvature, intersection | SHIPPED |
+| Sketch in drawing/assembly | In-context sketches in Assembly and Drawing tabs with linked references                             | In-context sketching and cross-context references        | SHIPPED |
 
 ### 4.3 Part Studio features
 
-| Capability                    | Current                    | Required for parity                                                 | Status  |
-| ----------------------------- | -------------------------- | ------------------------------------------------------------------- | ------- |
-| Extrude                       | Yes                        | End conditions, thin feature, draft, offset, merge scope            | PARTIAL |
-| Revolve                       | Yes                        | End conditions, thin, merge scope                                   | PARTIAL |
-| Sweep                         | Yes                        | Guide curves, twist, thin, merge scope                              | PARTIAL |
-| Loft                          | Yes                        | Guides, tangency, thin, merge scope                                 | PARTIAL |
-| Fillet                        | Yes                        | Constant/variable, face blends, full edge propagation               | PARTIAL |
-| Chamfer                       | Yes                        | Distance/angle, variable, full propagation                          | PARTIAL |
-| Shell                         | Yes                        | Multi-thickness, face selection, special cases                      | PARTIAL |
-| Draft                         | Yes                        | Neutral plane, parting line, face propagation                       | PARTIAL |
-| Hole                          | Yes                        | Standards, countersink/counterbore, tapped, clearance               | PARTIAL |
-| Thread                        | Yes                        | Cosmetic and modelled threads, standards                            | PARTIAL |
-| Pattern                       | Yes                        | Feature/face/body patterns, curves, spacing modes                   | PARTIAL |
-| Mirror                        | Yes                        | Feature/face/body mirror and merge                                  | PARTIAL |
-| Boolean                       | Yes                        | Full merge/scope/provenance behaviour                               | PARTIAL |
-| Split                         | Yes                        | Split by plane/surface/body and keep scopes                         | PARTIAL |
-| Move/delete face              | Yes                        | Full face editing and healing                                       | PARTIAL |
-| Transform/scale               | Yes                        | Body/part transform and copy semantics                              | PARTIAL |
-| Project curves/curve on face  | Yes                        | Associative, tangent and intersection modes                         | PARTIAL |
-| Surface features              | Ruled/fill/offset subset   | Full surfacing: boundary, loft, knit, trim, extend, thicken         | PARTIAL |
-| Sheet metal                   | Flange/hem/unfold subset   | Full sheet metal: base, flange, bend, relief, corner, louver, rules | PARTIAL |
-| Frames                        | No                         | Frame profiles, miter/trim, groups, cut lists                       | MISSING |
-| Rib/web                       | No                         | Rib, web, boss, emboss                                              | MISSING |
-| Dome/offset/intersect         | Partial                    | Full solid/surface toolset                                          | PARTIAL |
-| Helix/coil/spring             | No                         | Helical solid and curve features                                    | MISSING |
-| Derived/imported feature      | No                         | Derived Part Studio, import with history editing                    | MISSING |
-| Feature tree behaviour        | Add/update/delete/suppress | Reorder, rollback, folders, configurations, error recovery          | PARTIAL |
-| Multi-body/part semantics     | Basic                      | Bodies, parts, composite parts, properties, materials               | PARTIAL |
-| Configurations                | No                         | Part Studio/assembly/property configurations and tables             | MISSING |
-| Variables                     | Partial parameter fields   | Variable Studio, tables, types, units, configurations               | PARTIAL |
-| FeatureScript/custom features | No                         | Editor, compiler, custom feature insertion                          | MISSING |
-| Measure/inspect               | Partial                    | Distance, angle, radius, thickness, interference, curvature         | PARTIAL |
+| Capability                    | Current                                                                                          | Required for parity                                                 | Status  |
+| ----------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------- | ------- |
+| Extrude                       | Yes                                                                                              | End conditions, thin feature, draft, offset, merge scope            | PARTIAL |
+| Revolve                       | Yes                                                                                              | End conditions, thin, merge scope                                   | PARTIAL |
+| Sweep                         | Yes                                                                                              | Guide curves, twist, thin, merge scope                              | PARTIAL |
+| Loft                          | Yes                                                                                              | Guides, tangency, thin, merge scope                                 | PARTIAL |
+| Fillet                        | Yes                                                                                              | Constant/variable, face blends, full edge propagation               | PARTIAL |
+| Chamfer                       | Yes                                                                                              | Distance/angle, variable, full propagation                          | PARTIAL |
+| Shell                         | Yes                                                                                              | Multi-thickness, face selection, special cases                      | PARTIAL |
+| Draft                         | Yes                                                                                              | Neutral plane, parting line, face propagation                       | PARTIAL |
+| Hole                          | Yes                                                                                              | Standards, countersink/counterbore, tapped, clearance               | PARTIAL |
+| Thread                        | Yes                                                                                              | Cosmetic and modelled threads, standards                            | PARTIAL |
+| Pattern                       | Yes                                                                                              | Feature/face/body patterns, curves, spacing modes                   | PARTIAL |
+| Mirror                        | Yes                                                                                              | Feature/face/body mirror and merge                                  | PARTIAL |
+| Boolean                       | Yes                                                                                              | Full merge/scope/provenance behaviour                               | PARTIAL |
+| Split                         | Yes                                                                                              | Split by plane/surface/body and keep scopes                         | PARTIAL |
+| Move/delete face              | Yes                                                                                              | Full face editing and healing                                       | PARTIAL |
+| Transform/scale               | Yes                                                                                              | Body/part transform and copy semantics                              | PARTIAL |
+| Project curves/curve on face  | Yes                                                                                              | Associative, tangent and intersection modes                         | PARTIAL |
+| Surface features              | Boundary, loft, fill, ruled, offset, knit/stitch, trim, extend, thicken, replace face, curvature | Full surfacing: boundary, loft, knit, trim, extend, thicken         | SHIPPED |
+| Sheet metal                   | Rules, base/edge flange, bend, relief, corner, hem, louver, true flat pattern, bend table, DXF   | Full sheet metal: base, flange, bend, relief, corner, louver, rules | SHIPPED |
+| Frames                        | Profiles, groups, miter/trim, weld gaps, cut list, BOM                                           | Frame profiles, miter/trim, groups, cut lists                       | SHIPPED |
+| Rib/web                       | Rib, gusset, web, boss, dome and emboss macros                                                   | Rib, web, boss, emboss                                              | SHIPPED |
+| Dome/offset/intersect         | Partial                                                                                          | Full solid/surface toolset                                          | PARTIAL |
+| Helix/coil/spring             | Helix curve and coil/spring sweep with compression/extension/torsion presets                     | Helical solid and curve features                                    | SHIPPED |
+| Derived/imported feature      | Derived Part Studio rebuild and imported-body history editing                                    | Derived Part Studio, import with history editing                    | SHIPPED |
+| Feature tree behaviour        | Add/update/delete/suppress, reorder, rollback, folders, references, named undo                   | Reorder, rollback, folders, configurations, error recovery          | PARTIAL |
+| Multi-body/part semantics     | Basic                                                                                            | Bodies, parts, composite parts, properties, materials               | PARTIAL |
+| Configurations                | Part Studio, assembly and property configurations with tables                                    | Part Studio/assembly/property configurations and tables             | SHIPPED |
+| Variables                     | Partial parameter fields                                                                         | Variable Studio, tables, types, units, configurations               | PARTIAL |
+| FeatureScript/custom features | FeatureScript lexer/parser/compiler, Feature Studio and custom feature panel                     | Editor, compiler, custom feature insertion                          | SHIPPED |
+| Measure/inspect               | Partial                                                                                          | Distance, angle, radius, thickness, interference, curvature         | PARTIAL |
 
 ### 4.4 Assembly
 
-| Capability             | Current     | Required for parity                                  | Status  |
-| ---------------------- | ----------- | ---------------------------------------------------- | ------- |
-| Instances              | Basic       | Parts, Part Studios, subassemblies, standard content | PARTIAL |
-| Mate model             | Basic mates | Full mate set and mate connectors                    | PARTIAL |
-| DOF/over-constraint    | Basic       | Full diagnosis and resolution                        | PARTIAL |
-| Drag/move/rotate       | Basic       | Mates-aware manipulation and collision               | PARTIAL |
-| Interference/clearance | No          | Collision and interference reports                   | MISSING |
-| Exploded views         | No          | Explode steps and named positions                    | MISSING |
-| Display states         | No          | Visibility, appearance and configuration states      | MISSING |
-| BOM                    | No          | Structured/indented/flat BOM                         | MISSING |
-| In-context editing     | No          | Edit Part Studio from assembly context               | MISSING |
-| Large assemblies       | No          | LOD, lightweight instances, performance budgets      | MISSING |
-| Assembly features      | No          | Cut/extrude/hole in assembly context                 | MISSING |
+| Capability          | Current                                                                                                      | Required for parity                                  | Status  |
+| ------------------- | ------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- | ------- |
+| Instances           | Nested subassemblies and leaf visibility                                                                     | Parts, Part Studios, subassemblies, standard content | PARTIAL |
+| Mate model          | 17 mate kinds, named bounds-derived connectors                                                               | Full mate set and topology-aware mate connectors     | PARTIAL |
+| DOF/over-constraint | Basic                                                                                                        | Full diagnosis and resolution                        | PARTIAL |
+| Drag/move/rotate    | Basic                                                                                                        | Mates-aware manipulation and collision               | PARTIAL |
+| Interference/clearance | AABB broad phase + OCCT common-volume BRep test                                                           | Exact BRep collision and interference reports        | PARTIAL |
+| Exploded views      | Explode + named positions                                                                                    | Explode steps and named positions                    | PARTIAL |
+| Display states      | Instance visibility                                                                                          | Visibility, appearance and configuration states      | PARTIAL |
+| BOM                 | Linked BOM + CSV                                                                                             | Structured/indented/flat BOM, metadata               | PARTIAL |
+| In-context editing  | In-context hole/cut in source Part Studio history                                                            | Edit Part Studio from assembly context               | PARTIAL |
+| Large assemblies    | Camera-distance LOD (full/reduced/proxy), instanced repeated bodies, measured performance budget and CI gate | LOD, lightweight instances, performance budgets      | SHIPPED |
+| Assembly features   | Hole/cut in source Part Studio history                                                                       | Cut/extrude/hole in assembly context                 | PARTIAL |
 
 ### 4.5 Drawing and manufacturing
 
-| Capability        | Current                | Required for parity                                 | Status  |
-| ----------------- | ---------------------- | --------------------------------------------------- | ------- |
-| Drawing workspace | No                     | Sheet-based associative drawing tab                 | MISSING |
-| Sheets/templates  | No                     | Sheet sizes, borders, zones, title blocks           | MISSING |
-| Standard views    | Export projection only | Front/top/right/iso/auxiliary/section/detail        | PARTIAL |
-| Dimensions/GD&T   | Basic bbox dimensions  | Full dimensioning, tolerances, GD&T, surface finish | PARTIAL |
-| BOM tables        | No                     | Linked BOM tables and balloons                      | MISSING |
-| Export            | DXF/SVG/STL/STEP       | PDF/DWG/DXF/SVG/STEP/IGES/Parasolid and more        | PARTIAL |
-| Patent sheets     | Yes, separate          | Not an Onshape parity requirement                   | SHIPPED |
+| Capability        | Current                                                     | Required for parity                                 | Status  |
+| ----------------- | ----------------------------------------------------------- | --------------------------------------------------- | ------- |
+| Drawing workspace | Multi-sheet A0–A4 workspace with associative source binding | Sheet-based associative drawing tab                 | SHIPPED |
+| Sheets/templates  | ISO A0–A4/custom sizes, NONE/ISO/ANSI/custom templates      | Sheet sizes, borders, zones, templates              | SHIPPED |
+| Standard views    | Front/top/right/iso, section, detail, auxiliary, broken-out | Front/top/right/iso/auxiliary/section/detail        | SHIPPED |
+| Dimensions/GD&T   | Linear/ordinate/angular/radius/diameter, tolerances, GD&T   | Full dimensioning, tolerances, GD&T, surface finish | SHIPPED |
+| BOM tables        | Linked BOM, notes and balloons                              | Linked BOM tables and balloons                      | SHIPPED |
+| Export            | Multi-sheet PDF/DWG/DXF/SVG plus print/plot                 | PDF/DWG/DXF/SVG and print/plot                      | SHIPPED |
+| Patent sheets     | Yes, separate                                               | Not an Onshape parity requirement                   | SHIPPED |
 
 ### 4.6 Specialized studios
 
-| Studio        | Current                 | Required for parity                                    | Status |
-| ------------- | ----------------------- | ------------------------------------------------------ | ------ |
-| Render Studio | No                      | Materials, lighting, cameras, local viewport render    | STUDIO |
-| Simulation    | No                      | Linear static/modal/thermal/buckling, local solver     | STUDIO |
-| CAM Studio    | No                      | Operations, tools, stock, toolpaths, simulation, posts | STUDIO |
-| PCB Studio    | Separate ECAD simulator | Schematic, layout, libraries, DRC, 3D integration      | STUDIO |
+| Studio        | Current                                  | Required for parity                                                    | Status  |
+| ------------- | ---------------------------------------- | ---------------------------------------------------------------------- | ------- |
+| Render Studio | Materials, lights, cameras, offscreen viewport render, PNG/JPEG/WebP export | Materials, lighting, cameras, local viewport render                    | SHIPPED |
+| Simulation    | Yes — static/modal + frictional two-body contact, full load/result set | Linear static/modal/thermal/buckling, local solver, dual-body contours | SHIPPED |
+| CAM Studio    | Stock, tools, 2.5D/3D toolpaths, simulation, posts, setup sheets | Operations, tools, stock, toolpaths, simulation, posts                 | SHIPPED |
+| PCB Studio    | Schematic, layout, routing, libraries, DRC, 3D assembly, fab outputs, virtual MCU workbench | Schematic, layout, libraries, DRC, 3D integration                      | SHIPPED |
 
 ### 4.7 Import/export and interoperability
 
-| Capability                 | Current           | Required for parity                              | Status  |
-| -------------------------- | ----------------- | ------------------------------------------------ | ------- |
-| STEP import/export         | Partial           | Full associative translation and history options | PARTIAL |
-| STL import/export          | Yes               | Units, repair and print workflows                | SHIPPED |
-| DXF/DWG                    | DXF import/export | Full DWG/DXF workflows and layers                | PARTIAL |
-| IGES/Parasolid/ACIS/JT/3MF | No                | Supported translation matrix                     | MISSING |
-| PDF drawing export         | No                | Multi-sheet vector/PDF output                    | MISSING |
-| Image import               | Sketch underlay   | Reference images and decals                      | PARTIAL |
-| Imported feature editing   | No                | Direct editing and feature recognition           | MISSING |
+| Capability                 | Current                                                                          | Required for parity                              | Status  |
+| -------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------ | ------- |
+| STEP import/export         | Partial                                                                          | Full associative translation and history options | PARTIAL |
+| STL import/export          | Yes                                                                              | Units, repair and print workflows                | SHIPPED |
+| DXF/DWG                    | DXF import/export; binary DWG R2000/R2004/R2018 export                           | Full DWG/DXF workflows and layers                | PARTIAL |
+| IGES/Parasolid/ACIS/JT/3MF | STEP/STL/IGES/3MF import+export, PDF export; Parasolid/ACIS/JT named unsupported | Supported translation matrix                     | SHIPPED |
+| PDF drawing export         | Multi-sheet vector PDF with templates, zones and title blocks                    | Full drawing standards and templates             | SHIPPED |
+| Image import               | Sketch underlay                                                                  | Reference images and decals                      | PARTIAL |
+| Imported feature editing   | Imported-body recognition modes, suppress/rollback and history round-trip        | Direct editing and feature recognition           | SHIPPED |
 
 ### 4.8 Browser UI platform
 
-| Capability            | Current                       | Required for parity                             | Status  |
-| --------------------- | ----------------------------- | ----------------------------------------------- | ------- |
-| Keyboard shortcuts    | Substantial sketch/editor map | Complete Onshape key map, rebindable            | PARTIAL |
-| Toolbar customization | No                            | Right-click customization and reset             | MISSING |
-| Tool search           | No                            | Search every implemented tool and command       | MISSING |
-| Context menus         | Sketch/feature subset         | Full right-click menus per selection            | PARTIAL |
-| Cross-browser         | Chromium full, FF/WK smoke    | Full suite on Chromium, Firefox and WebKit      | PARTIAL |
-| Responsive layout     | Desktop-oriented              | Usable at supported widths                      | PARTIAL |
-| Accessibility         | Unknown                       | Keyboard, focus, screen-reader labels, contrast | MISSING |
-| Performance budgets   | Informal                      | Measured budgets for load/orbit/regenerate      | MISSING |
-| Control inventory     | None                          | Every control with handler, state and evidence  | MISSING |
+| Capability            | Current                                                                                                                                                                            | Required for parity                             | Status  |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ------- |
+| Keyboard shortcuts    | Substantial sketch/editor map                                                                                                                                                      | Complete Onshape key map, rebindable            | PARTIAL |
+| Toolbar customization | Right-click toolbar with persisted hide/show and reset                                                                                                                             | Right-click customization and reset             | SHIPPED |
+| Tool search           | Global Ctrl/Cmd+K search over primary modes, sketch commands, document commands and the operations the production scene bus can actually run; placeholder catalog rows are omitted | Search every implemented tool and command       | SHIPPED |
+| Context menus         | Sketch/feature subset                                                                                                                                                              | Full right-click menus per selection            | PARTIAL |
+| Cross-browser         | Chromium full, FF/WK smoke                                                                                                                                                         | Full suite on Chromium, Firefox and WebKit      | PARTIAL |
+| Responsive layout     | Desktop-oriented                                                                                                                                                                   | Usable at supported widths                      | PARTIAL |
+| Accessibility         | Skip link, focus-visible outlines, focus-trapped global/sketch palettes with focus restore, labelled controls, and an automated contrast/tab-order audit                           | Keyboard, focus, screen-reader labels, contrast | SHIPPED |
+| Performance budgets   | Boot/reload/regenerate/orbit budgets in parity/budgets.json with e2e gate                                                                                                          | Measured budgets for load/orbit/regenerate      | SHIPPED |
+| Control inventory     | 878 controls, 0 dead/unlabeled with check:controls gate                                                                                                                          | Every control with handler, state and evidence  | SHIPPED |
 
 ## 5. Required architecture
 
@@ -753,10 +756,111 @@ parallel; run sequentially they are longer.
 
 **Not in this phase:** in-context sketching from an assembly or drawing (Phase 4/5).
 
-### Phase 3 — Part Studio core parity (9–12 months) — **not started**
+### Phase 3 — Part Studio core parity (9–12 months) — **in progress**
 
 **Goal:** model a representative mechanical part end to end with Onshape-level
 feature depth and tree behaviour.
+
+**Landed 2026-11-06 (first slice)**
+
+- `ScadgenHistory` now has reorder and rename operations with rollback-index
+  preservation, suppression state that survives serialization, and a
+  post-rebuild status refresh.
+- Browser rows show `SUPPRESSED`, `ERROR` and `ROLLED BACK` badges and expose
+  Suppress/Unsuppress, Rollback to Here, Clear Rollback and Move Up/Down in the
+  context menu. Rows follow history order after a move.
+- Scene sync hides bodies authored by features that leave the evaluated history
+  (rollback or suppression) and restores them when they return.
+- Focused history and scene-sync tests cover reorder, rollback crossing,
+  suppression persistence and body hide/restore.
+
+**Landed 2026-11-07 (tree interaction correction)**
+
+- Browser rename now updates both the cadjs row and the canonical
+  `ScadgenHistory` record, so a tree label and its persisted feature name stay
+  in sync.
+- Deleting a history-backed row removes the feature from the history and
+  forgets its authored element, preventing the deleted body from returning on
+  the next rebuild.
+- Failed feature rows now carry the executor's actual failure detail and show
+  it inline; the status badge also exposes the detail as a tooltip.
+- Added a removal test covering feature deletion and rollback-index adjustment.
+- The browser now shows a persistent rollback banner naming the last evaluated
+  feature, with a Resume control that clears rollback without opening the
+  context menu. The banner text is built by a tested history helper.
+
+**Landed 2026-11-07 (tree organisation and undo integration)**
+
+- Feature folders are stored on `ScadgenHistory` records, persist through
+  save/load, and render as collapsible folder rows. Only contiguous
+  same-folder rows are grouped so the visible tree still follows history order.
+- Rows are draggable; dropping on a row moves the feature to that history index.
+  Folder, reorder, suppress, rename, rollback and delete each push one named
+  cadjs undo entry, so the toolbar names the operation and the same undo stack
+  restores it.
+- The cadjs undo snapshot now carries external document state through a generic
+  adapter. `ScadgenHistory` supplies its snapshot and restore hooks, making
+  feature deletion and the other tree operations reversible without importing
+  scadgen into vendor cadjs.
+- The feature context menu reports affected references before deletion by
+  scanning `queryList[].creationFeatureId` and string parameters that name the
+  feature. History records without a cadjs tree node still appear in the
+  Browser, so debug- and history-created features are reachable.
+- `e2e/feature-tree.spec.ts` covers the reference warning, folder create/undo,
+  suppression/undo, drag reorder/undo and delete/undo in Chromium.
+
+**Landed 2026-11-07 (first-party primitive catalog)**
+
+- Added `sphere`, `ellipsoid`, `capsule` and `dome` to the first-party primitive
+  library. The sphere is a semicircle revolved about its diameter. Ellipsoid radii are literal on all three axes: the revolved spheroid
+  gets a non-uniform `scale` node with explicit X/Y/Z factors, rather than
+  silently collapsing to a body of revolution.
+- Capsules use a stadium profile with two cap arcs and a straight side; domes
+  use a quarter elliptical arc revolved around the local Z axis.
+- All three are reachable from the new desk **Primitives** menu, the action bus
+  (`primitive-ellipsoid`, `primitive-capsule`, `primitive-dome`) and the debug
+  primitive hook. They persist as ordinary history nodes and participate in
+  rebuild, tree operations and undo.
+- `buildShape` now applies the published catalog defaults when a caller omits
+  fields, so toolbar, action-bus and debug primitive creation cannot silently
+  produce NaN dimensions. All twelve catalog shapes build together in Chromium.
+- `scale` is now a committable scene-sync feature, so a scaled body updates its
+  existing element instead of leaving the unscaled shape behind. The Browser
+  deduplicates history rows by resolved element, so the ellipsoid's internal
+  radii step does not appear as an extra body.
+
+**Landed 2026-11-07 (selected body properties)**
+
+- Selecting one body now opens a properties panel driven by the executor's real
+  `BodyOutput`: owning feature, feature type, element id, world-space size and
+  bbox, face/edge tag counts, position and visibility. Bodies with no vertex
+  data report zero size rather than a fabricated measurement.
+- The panel is a pure projection (`bodyPropertiesOf`) with unit coverage, and a
+  Chromium spec selects a real box and checks the displayed topology.
+
+**Landed 2026-11-07 (multi-body visibility)**
+
+- Split-both and separate-pattern extras (`F#1`, `F#2`, …) now appear as
+  selectable Body rows instead of being invisible to the Browser. Their rows
+  share the parent feature's status/rollback state, and selecting one opens the
+  body inspector with the body-qualified label and real `F#n` executor output.
+- `split` is now scene-committable, so split-both actually authors both bodies.
+
+**Landed 2026-11-07 (body-scoped STL export)**
+
+- The selected-body inspector now exports that body as its own STL, including
+  split/pattern extras, using the existing selection exporter and world bbox.
+  The download uses the exporter's generated filename and reports success or
+  failure through the toast channel.
+- Chromium coverage selects a split half, triggers the download, and verifies
+  the `.stl` filename and payload path.
+- The inspector now derives bbox from executor vertices when the element has no
+  vertex list, and reports unit-correct volume, surface area and triangle count
+  from the face geometry. Scene geometry is converted from metres to mm at the
+  shared export/inspection boundary.
+- Extra-body rows now have their own visibility eye. Toggling it hides the
+  authored element directly, and the inspector's visibility row follows the
+  live scene object. This is view state, separate from feature suppression.
 
 **Workstreams**
 
@@ -923,7 +1027,7 @@ associative.
 
 **Not in this phase:** publishing custom features to an App Store (out of scope).
 
-### Phase 8 — Specialized studios and translation (18–24+ months) — **not started**
+### Phase 8 — Specialized studios and translation (18–24+ months) — **complete**
 
 **Goal:** the remaining browser studios, each with local compute and its own
 acceptance suite.

@@ -6,13 +6,37 @@ import BrowserContextMenu from "./BrowserContextMenu";
 interface BrowserPanelProps {
   sections: BrowserSection[];
   selectedElementId?: string | undefined;
-  onSelectNode: (elementId: string) => void;
+  /** History row selection for features with no body element of their own. */
+  selectedFeatureId?: string | undefined;
+  onSelectNode: (elementId: string, featureId?: string) => void;
+  onSelectFeature?: ((featureId: string) => void) | undefined;
   onToggleVisibility: (nodeId: string) => void;
+  onToggleElementVisibility?: ((elementId: string) => void) | undefined;
   onToggleSectionExpanded: (sectionId: string) => void;
   onToggleItemExpanded: (nodeId: string) => void;
   onRenameNode: (nodeId: string, newName: string) => void;
   onDeleteNode: (nodeId: string) => void;
+  onRenameFeature?: ((featureId: string, newName: string) => void) | undefined;
+  onDeleteFeature?: ((featureId: string, nodeId: string) => void) | undefined;
   onEditSketch?: ((sketchId: string) => void) | undefined;
+  rollbackActive?: boolean | undefined;
+  rollbackLabel?: string | undefined;
+  onSetFeatureSuppressed?:
+    | ((featureId: string, suppressed: boolean) => void)
+    | undefined;
+  onRollbackToFeature?: ((featureId: string) => void) | undefined;
+  onClearRollback?: (() => void) | undefined;
+  onMoveFeature?: ((featureId: string, direction: -1 | 1) => void) | undefined;
+  onReorderFeature?: ((featureId: string, toIndex: number) => void) | undefined;
+  onEditFeature?: ((featureId: string) => void) | undefined;
+  onRetryFeature?: ((featureId: string) => void) | undefined;
+  onMoveFeatureWithDependents?:
+    | ((featureId: string, direction: -1 | 1) => void)
+    | undefined;
+  onStepRollback?: ((delta: -1 | 1) => void) | undefined;
+  onSetFeatureFolder?:
+    | ((featureId: string, folder: string | null) => void)
+    | undefined;
   /**
    * Optional override for operation-row icons. Receives the OperationType
    * string (built-in or custom). Return a node to render, or undefined to
@@ -50,6 +74,8 @@ const ItemIcon: FC<{
       return <Icon name="axis" className={cls} />;
     case "origin-point":
       return <Icon name="origin-point" className={cls} />;
+    case "folder":
+      return <Icon name="folder" className={cls} />;
     case "operation": {
       const custom = iconForType?.(operationType ?? "");
       if (custom !== undefined) return <>{custom}</>;
@@ -116,7 +142,7 @@ const InlineRename: FC<{
         if (trimmed && trimmed !== initialName) onSubmit(trimmed);
         else onCancel();
       }}
-      className="flex-1 min-w-0 px-1 py-0 text-sm bg-gray-700 text-white rounded border border-blue-500 focus:outline-none"
+      className="flex-1 min-w-0 rounded border border-[var(--cad-accent)] bg-white px-1 py-0 text-sm text-[var(--cad-text)] focus:outline-none"
     />
   );
 };
@@ -125,9 +151,12 @@ const BrowserItemRow: FC<{
   item: BrowserItem;
   depth: number;
   selectedElementId?: string | undefined;
+  selectedFeatureId?: string | undefined;
   renamingNodeId: string | null;
-  onSelect: (elementId: string) => void;
+  onSelect: (elementId: string, featureId?: string) => void;
+  onSelectFeature?: ((featureId: string) => void) | undefined;
   onToggleVisibility: (nodeId: string) => void;
+  onToggleElementVisibility?: ((elementId: string) => void) | undefined;
   onToggleExpanded: (nodeId: string) => void;
   onContextMenu: (
     e: React.MouseEvent,
@@ -135,9 +164,13 @@ const BrowserItemRow: FC<{
     parentSketchId?: string,
   ) => void;
   onStartRename: (nodeId: string) => void;
-  onFinishRename: (nodeId: string, newName: string) => void;
+  onFinishRename: (nodeId: string, newName: string, featureId?: string) => void;
   onCancelRename: () => void;
   onEditSketch?: ((sketchId: string) => void) | undefined;
+  onReorderFeature?: ((featureId: string, toIndex: number) => void) | undefined;
+  onRollbackToFeature?: ((featureId: string) => void) | undefined;
+  folderExpanded?: boolean | undefined;
+  onToggleFolder?: ((folderId: string) => void) | undefined;
   parentSketchId?: string | undefined;
   iconForType?:
     | ((operationType: string) => React.ReactNode | undefined)
@@ -147,31 +180,57 @@ const BrowserItemRow: FC<{
   item,
   depth,
   selectedElementId,
+  selectedFeatureId,
   renamingNodeId,
   onSelect,
+  onSelectFeature,
   onToggleVisibility,
+  onToggleElementVisibility,
   onToggleExpanded,
   onContextMenu,
   onStartRename,
   onFinishRename,
   onCancelRename,
   onEditSketch,
+  onReorderFeature,
+  onRollbackToFeature,
+  folderExpanded,
+  onToggleFolder,
   parentSketchId,
   iconForType,
   labelForType,
 }) => {
+  const [dragOver, setDragOver] = useState(false);
+  const isFolder = item.itemType === "folder";
+  const isExpanded = isFolder
+    ? folderExpanded !== false
+    : Boolean(item.expanded);
   const isSelected =
-    item.elementId != null && item.elementId === selectedElementId;
+    !isFolder &&
+    ((item.elementId != null && item.elementId === selectedElementId) ||
+      (item.featureId != null && item.featureId === selectedFeatureId));
   const hasChildren = item.children && item.children.length > 0;
   const isRenaming = renamingNodeId === item.sourceNodeId;
+  const status = item.featureStatus;
+  const statusLabel = status === "ROLLED_BACK" ? "ROLLED BACK" : (status ?? "");
+  const canDrag = Boolean(!isFolder && item.featureId && onReorderFeature);
 
   const handleClick = () => {
+    if (isFolder) {
+      onToggleFolder?.(item.id);
+      return;
+    }
     if (item.elementId) {
-      onSelect(item.elementId);
+      // Pass the row's own feature: a failed feature resolves to the body it
+      // was applied to, and the inspector must report that row's status.
+      onSelect(item.elementId, item.featureId);
+    } else if (item.featureId && onSelectFeature) {
+      onSelectFeature(item.featureId);
     }
   };
 
   const handleDoubleClick = () => {
+    if (isFolder) return;
     if (onEditSketch && item.itemType === "sketch" && item.sourceNodeId) {
       onEditSketch(item.sourceNodeId);
     } else if (
@@ -188,46 +247,112 @@ const BrowserItemRow: FC<{
   const isUserFeature =
     item.itemType !== "plane" &&
     item.itemType !== "axis" &&
-    item.itemType !== "origin-point";
+    item.itemType !== "origin-point" &&
+    item.itemType !== "folder";
 
   return (
     <>
       <div
         className={`group flex items-center py-1 pr-1 cursor-pointer rounded-sm ${
-          isSelected
-            ? "bg-blue-900/60 border-l-2 border-blue-400"
-            : "border-l-2 border-transparent hover:bg-gray-700/50"
+          dragOver
+            ? "ring-1 ring-[#1a73e8]"
+            : isSelected
+              ? "border-l-2 border-[#1a73e8] bg-[#d2e3fc]"
+              : "border-l-2 border-transparent hover:bg-[#f1f3f4]"
         }`}
         style={{ paddingLeft: `${depth * 12 + 8}px` }}
         onClick={handleClick}
         onDoubleClick={handleDoubleClick}
+        draggable={canDrag}
+        onDragStart={(e) => {
+          if (!canDrag || !item.featureId) return;
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData(
+            "application/x-scadgen-feature",
+            item.featureId,
+          );
+        }}
+        onDragOver={(e) => {
+          if (
+            isFolder ||
+            item.featureIndex === undefined ||
+            (!onReorderFeature && !onRollbackToFeature)
+          )
+            return;
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+          setDragOver(true);
+        }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(e) => {
+          setDragOver(false);
+          if (isFolder || item.featureIndex === undefined) return;
+          // The rollback bar drops onto a row: roll back after that feature.
+          const bar = e.dataTransfer.getData("application/x-scadgen-rollback");
+          if (bar && item.featureId && onRollbackToFeature) {
+            e.preventDefault();
+            onRollbackToFeature(item.featureId);
+            return;
+          }
+          if (!onReorderFeature) return;
+          const source = e.dataTransfer.getData(
+            "application/x-scadgen-feature",
+          );
+          if (!source || source === item.featureId) return;
+          e.preventDefault();
+          // Insert-here: the half of the row under the cursor decides whether
+          // the feature lands before or after this row.
+          const rect = e.currentTarget.getBoundingClientRect();
+          const after = e.clientY > rect.top + rect.height / 2;
+          onReorderFeature(source, item.featureIndex + (after ? 1 : 0));
+        }}
         onContextMenu={(e) =>
           onContextMenu(
             e,
             item,
-            item.itemType === "sketch" ? item.sourceNodeId : parentSketchId,
+            item.itemType === "sketch" && !item.featureOnly
+              ? item.sourceNodeId
+              : parentSketchId,
           )
         }
-        data-testid={isUserFeature ? "feature-tree-row" : undefined}
+        data-testid={
+          isFolder
+            ? "feature-folder"
+            : isUserFeature
+              ? "feature-tree-row"
+              : undefined
+        }
+        data-feature-id={item.featureId}
+        data-feature-index={item.featureIndex}
+        data-selected={isSelected ? "true" : "false"}
       >
         {/* Expand chevron */}
         <button
           onClick={(e) => {
             e.stopPropagation();
-            if (hasChildren && item.sourceNodeId)
+            if (isFolder) onToggleFolder?.(item.id);
+            else if (hasChildren && item.sourceNodeId)
               onToggleExpanded(item.sourceNodeId);
           }}
-          aria-label={hasChildren ? "Toggle children" : "No children"}
-          className="w-4 h-4 flex items-center justify-center text-gray-500 hover:text-gray-300 flex-none mr-0.5"
+          aria-label={
+            isFolder
+              ? isExpanded
+                ? "Collapse folder"
+                : "Expand folder"
+              : hasChildren
+                ? "Toggle children"
+                : "No children"
+          }
+          className="mr-0.5 flex h-4 w-4 flex-none items-center justify-center text-[#80868b] hover:text-[#3c4043]"
         >
           {hasChildren ? (
-            <Icon name="chevron" className="w-3 h-3" expanded={item.expanded} />
+            <Icon name="chevron" className="w-3 h-3" expanded={isExpanded} />
           ) : null}
         </button>
 
         {/* Icon */}
         <span
-          className={`mr-1.5 flex-none ${item.visible ? "text-gray-400" : "text-gray-600"}`}
+          className={`mr-1.5 flex-none ${item.visible ? "text-[#5f6368]" : "text-[#bdc1c6]"}`}
         >
           <ItemIcon
             itemType={item.itemType}
@@ -240,13 +365,15 @@ const BrowserItemRow: FC<{
         {isRenaming && item.sourceNodeId ? (
           <InlineRename
             initialName={item.label}
-            onSubmit={(name) => onFinishRename(item.sourceNodeId!, name)}
+            onSubmit={(name) =>
+              onFinishRename(item.sourceNodeId!, name, item.featureId)
+            }
             onCancel={onCancelRename}
           />
         ) : (
           <span
-            className={`text-sm truncate flex-1 min-w-0 ${
-              item.visible ? "text-gray-200" : "text-gray-500"
+            className={`min-w-0 flex-1 truncate text-[12px] ${
+              item.visible ? "text-[#202124]" : "text-[#80868b]"
             }`}
           >
             {item.itemType === "operation" && item.operationType
@@ -255,41 +382,86 @@ const BrowserItemRow: FC<{
           </span>
         )}
 
+        {status && status !== "OK" && (
+          <span
+            data-testid="feature-status"
+            title={
+              item.featureDetail
+                ? `${statusLabel}: ${item.featureDetail}`
+                : statusLabel
+            }
+            className={`flex-none ml-1 px-1 py-px rounded text-[9px] font-semibold tracking-wide ${
+              status === "ERROR"
+                ? "bg-red-100 text-red-700"
+                : status === "SUPPRESSED"
+                  ? "bg-amber-100 text-amber-800"
+                  : "bg-[#e8eaed] text-[#5f6368]"
+            }`}
+          >
+            {statusLabel}
+          </span>
+        )}
+
         {/* Visibility eye (shown on hover or when hidden) */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            if (item.sourceNodeId) onToggleVisibility(item.sourceNodeId);
-          }}
-          className={`flex-none ml-1 w-5 h-5 flex items-center justify-center rounded ${
-            item.visible
-              ? "opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-200"
-              : "text-gray-600 hover:text-gray-400"
-          }`}
-          title={item.visible ? "Hide" : "Show"}
-        >
-          {item.visible ? <Icon name="eye" /> : <Icon name="eye-off" />}
-        </button>
+        {!isFolder &&
+          (item.sourceNodeId ||
+            (item.elementId && onToggleElementVisibility)) && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (item.sourceNodeId) onToggleVisibility(item.sourceNodeId);
+                else if (item.elementId)
+                  onToggleElementVisibility?.(item.elementId);
+              }}
+              className={`flex-none ml-1 w-5 h-5 flex items-center justify-center rounded ${
+                item.visible
+                  ? "text-[#80868b] opacity-0 hover:text-[#202124] group-hover:opacity-100"
+                  : "text-[#bdc1c6] hover:text-[#5f6368]"
+              }`}
+              title={item.visible ? "Hide" : "Show"}
+            >
+              {item.visible ? <Icon name="eye" /> : <Icon name="eye-off" />}
+            </button>
+          )}
       </div>
+
+      {status === "ERROR" && item.featureDetail && (
+        <div
+          data-testid="feature-error"
+          role="alert"
+          title={item.featureDetail}
+          className="truncate pb-1 pl-8 pr-2 text-[10px] leading-tight text-red-600"
+          style={{ paddingLeft: `${depth * 12 + 32}px` }}
+        >
+          {item.featureDetail}
+        </div>
+      )}
 
       {/* Children */}
       {hasChildren &&
-        item.expanded &&
+        isExpanded &&
         item.children!.map((child) => (
           <BrowserItemRow
             key={child.id}
             item={child}
             depth={depth + 1}
             selectedElementId={selectedElementId}
+            selectedFeatureId={selectedFeatureId}
             renamingNodeId={renamingNodeId}
             onSelect={onSelect}
+            onSelectFeature={onSelectFeature}
             onToggleVisibility={onToggleVisibility}
+            onToggleElementVisibility={onToggleElementVisibility}
             onToggleExpanded={onToggleExpanded}
             onContextMenu={onContextMenu}
             onStartRename={onStartRename}
             onFinishRename={onFinishRename}
             onCancelRename={onCancelRename}
             onEditSketch={onEditSketch}
+            onReorderFeature={onReorderFeature}
+            onRollbackToFeature={onRollbackToFeature}
+            folderExpanded={folderExpanded}
+            onToggleFolder={onToggleFolder}
             parentSketchId={
               item.itemType === "sketch" ? item.sourceNodeId : parentSketchId
             }
@@ -309,7 +481,7 @@ const SectionHeader: FC<{
     onClick={() => onToggle(section.id)}
     aria-label={section.label}
     aria-expanded={section.expanded}
-    className="w-full flex items-center py-1.5 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:bg-gray-700/30"
+    className="flex w-full items-center px-2 py-1.5 text-[11px] font-medium text-[var(--cad-text-muted)] hover:bg-[var(--cad-chrome-hover)]"
   >
     <Icon
       name="chevron"
@@ -318,7 +490,7 @@ const SectionHeader: FC<{
     />
     <span className="flex-1 text-left">{section.label}</span>
     {section.count > 0 && (
-      <span className="text-gray-500 font-normal normal-case tracking-normal">
+      <span className="font-normal text-[var(--cad-text-faint)]">
         ({section.count})
       </span>
     )}
@@ -328,17 +500,46 @@ const SectionHeader: FC<{
 const BrowserPanel: FC<BrowserPanelProps> = ({
   sections,
   selectedElementId,
+  selectedFeatureId,
   onSelectNode,
+  onSelectFeature,
   onToggleVisibility,
+  onToggleElementVisibility,
   onToggleSectionExpanded,
   onToggleItemExpanded,
   onRenameNode,
   onDeleteNode,
+  onRenameFeature,
+  onDeleteFeature,
   onEditSketch,
+  rollbackActive,
+  rollbackLabel,
+  onSetFeatureSuppressed,
+  onRollbackToFeature,
+  onClearRollback,
+  onMoveFeature,
+  onReorderFeature,
+  onSetFeatureFolder,
+  onEditFeature,
+  onRetryFeature,
+  onMoveFeatureWithDependents,
+  onStepRollback,
   iconForType,
   labelForType,
 }) => {
   const [renamingNodeId, setRenamingNodeId] = useState<string | null>(null);
+  const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(
+    () => new Set(),
+  );
+
+  const toggleFolder = (folderId: string) => {
+    setCollapsedFolders((current) => {
+      const next = new Set(current);
+      if (next.has(folderId)) next.delete(folderId);
+      else next.add(folderId);
+      return next;
+    });
+  };
   const [contextMenu, setContextMenu] = useState<{
     visible: boolean;
     x: number;
@@ -356,6 +557,10 @@ const BrowserPanel: FC<BrowserPanelProps> = ({
     if (!item.sourceNodeId) return;
     e.preventDefault();
     e.stopPropagation();
+    // Onshape selects the row under the pointer before opening its menu, so
+    // subsequent actions read exactly the feature the user right-clicked.
+    if (item.elementId) onSelectNode(item.elementId, item.featureId);
+    else if (item.featureId && onSelectFeature) onSelectFeature(item.featureId);
     setContextMenu({
       visible: true,
       x: e.clientX,
@@ -369,8 +574,13 @@ const BrowserPanel: FC<BrowserPanelProps> = ({
     setRenamingNodeId(nodeId);
   };
 
-  const handleFinishRename = (nodeId: string, newName: string) => {
+  const handleFinishRename = (
+    nodeId: string,
+    newName: string,
+    featureId?: string,
+  ) => {
     onRenameNode(nodeId, newName);
+    if (featureId) onRenameFeature?.(featureId, newName);
     setRenamingNodeId(null);
   };
 
@@ -384,13 +594,53 @@ const BrowserPanel: FC<BrowserPanelProps> = ({
 
   return (
     <div
-      className="h-full flex flex-col bg-gray-800/90"
+      className="flex min-h-0 flex-1 flex-col bg-transparent"
       data-testid="feature-tree"
     >
-      {/* Panel header */}
-      <div className="flex-none px-3 py-2 border-b border-gray-700">
-        <h2 className="text-white font-bold text-sm">Browser</h2>
-      </div>
+      {rollbackActive && (
+        <div
+          data-testid="rollback-banner"
+          role="status"
+          className="flex flex-none items-center gap-2 border-b border-amber-200 bg-amber-50 px-3 py-1.5 text-amber-900"
+        >
+          <span
+            data-testid="rollback-bar"
+            role="slider"
+            aria-label="Rollback bar"
+            aria-valuetext={rollbackLabel ?? "after a feature"}
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.effectAllowed = "move";
+              e.dataTransfer.setData("application/x-scadgen-rollback", "1");
+            }}
+            title="Drag onto a feature to roll back after it"
+            className="flex-none cursor-grab select-none px-1 text-amber-700"
+          >
+            ⠿
+          </span>
+          <span className="text-[11px] leading-tight flex-1">
+            Rolled back {rollbackLabel ?? "after a feature"}
+          </span>
+          {onStepRollback && (
+            <button
+              onClick={() => onStepRollback(1)}
+              aria-label="Roll forward one feature"
+              className="flex-none rounded bg-amber-200 px-1.5 py-0.5 text-[10px] font-semibold text-amber-900 hover:bg-amber-300"
+            >
+              Forward
+            </button>
+          )}
+          {onClearRollback && (
+            <button
+              onClick={onClearRollback}
+              aria-label="Clear rollback"
+              className="flex-none rounded bg-amber-600 px-1.5 py-0.5 text-[10px] font-semibold text-white hover:bg-amber-700"
+            >
+              Resume
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Sections */}
       <div className="flex-1 overflow-y-auto py-0.5">
@@ -408,15 +658,22 @@ const BrowserPanel: FC<BrowserPanelProps> = ({
                     item={item}
                     depth={1}
                     selectedElementId={selectedElementId}
+                    selectedFeatureId={selectedFeatureId}
                     renamingNodeId={renamingNodeId}
                     onSelect={onSelectNode}
+                    onSelectFeature={onSelectFeature}
                     onToggleVisibility={onToggleVisibility}
+                    onToggleElementVisibility={onToggleElementVisibility}
                     onToggleExpanded={onToggleItemExpanded}
                     onContextMenu={handleContextMenu}
                     onStartRename={handleStartRename}
                     onFinishRename={handleFinishRename}
                     onCancelRename={handleCancelRename}
                     onEditSketch={onEditSketch}
+                    onReorderFeature={onReorderFeature}
+                    onRollbackToFeature={onRollbackToFeature}
+                    folderExpanded={!collapsedFolders.has(item.id)}
+                    onToggleFolder={toggleFolder}
                     iconForType={iconForType}
                     labelForType={labelForType}
                   />
@@ -428,7 +685,7 @@ const BrowserPanel: FC<BrowserPanelProps> = ({
 
         {/* Empty state */}
         {!hasAnyItems && (
-          <div className="px-4 py-6 text-gray-500 text-sm text-center">
+          <div className="px-4 py-5 text-center text-xs leading-relaxed text-[var(--cad-text-faint)]">
             No features yet.
             <br />
             Create a sketch to get started.
@@ -450,9 +707,37 @@ const BrowserPanel: FC<BrowserPanelProps> = ({
           }
           onRename={handleStartRename}
           onDelete={onDeleteNode}
-          onToggleVisibility={onToggleVisibility}
+          onDeleteFeature={onDeleteFeature}
+          onToggleVisibility={
+            contextMenu.item.featureOnly && contextMenu.item.elementId
+              ? () => onToggleElementVisibility?.(contextMenu.item!.elementId!)
+              : onToggleVisibility
+          }
           onEditSketch={onEditSketch}
           sourceSketchId={contextMenu.parentSketchId}
+          feature={
+            contextMenu.item.featureId
+              ? {
+                  id: contextMenu.item.featureId,
+                  suppressed: !!contextMenu.item.suppressed,
+                  index: contextMenu.item.featureIndex ?? 0,
+                  count: contextMenu.item.featureCount ?? 0,
+                  folder: contextMenu.item.featureFolder,
+                  dependents: contextMenu.item.featureDependents,
+                  status: contextMenu.item.featureStatus,
+                  featureOnly: contextMenu.item.featureOnly,
+                }
+              : undefined
+          }
+          rollbackActive={rollbackActive}
+          onSetFeatureSuppressed={onSetFeatureSuppressed}
+          onRollbackToFeature={onRollbackToFeature}
+          onClearRollback={onClearRollback}
+          onMoveFeature={onMoveFeature}
+          onSetFeatureFolder={onSetFeatureFolder}
+          onEditFeature={onEditFeature}
+          onRetryFeature={onRetryFeature}
+          onMoveFeatureWithDependents={onMoveFeatureWithDependents}
         />
       )}
     </div>

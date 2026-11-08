@@ -148,10 +148,17 @@ describe("commit bridge", () => {
     if (param?.kind === "quantity") expect(param.value).toBe(0.005);
   });
 
-  it("rejects non-committable kinds and non-finite numbers", () => {
+  it("commits query lists and rejects non-finite numbers", () => {
     const panel = paramPanelForFeature([mkExtrude()], "Fex")!;
     const q = panel.rows.find((r) => r.kind === "queryList");
-    if (q) expect(panelEditToParameter(q, q.value)).toBeNull();
+    if (q) {
+      // A dialog pick writes queries, so this kind is committable.
+      const param = panelEditToParameter(q, q.value);
+      expect(param?.kind).toBe("queryList");
+      if (param?.kind === "queryList") {
+        expect(param.queries).toEqual(q.value);
+      }
+    }
     const depth = panel.rows.find((r) => r.parameterId === "depth")!;
     expect(panelEditToParameter(depth, NaN)).toBeNull();
   });

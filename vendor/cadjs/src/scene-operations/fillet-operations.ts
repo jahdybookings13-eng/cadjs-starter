@@ -24,6 +24,11 @@ export async function filletBRep(
   radius: number | number[],
   occBrep?: string,
   rotation?: THREE.Euler,
+  options?: {
+    section?: "RATIONAL" | "QUASI_ANGULAR" | "POLYNOMIAL";
+    variableRadii?: Array<{ start: number; end: number }>;
+    cornerRadius?: number;
+  },
 ): Promise<Result<FilletResult>> {
   try {
     const client = OccWorkerClient.getInstance();
@@ -37,6 +42,7 @@ export async function filletBRep(
         edgeIndices,
         radius: base,
         radii: arr,
+        ...options,
         occBrep,
         rotation: rotation ? toEulerJSON(rotation) : undefined,
       },
@@ -55,6 +61,10 @@ export async function chamferBRep(
   distance: number | number[],
   occBrep?: string,
   rotation?: THREE.Euler,
+  options?: {
+    mode?: "DIST_DISTS" | "DIST_ANG" | "ANG_DISTS" | "SYM_DISTS";
+    angleDeg?: number;
+  },
 ): Promise<Result<FilletResult>> {
   try {
     const client = OccWorkerClient.getInstance();
@@ -68,6 +78,7 @@ export async function chamferBRep(
         edgeIndices,
         distance: base,
         distances: arr,
+        ...options,
         occBrep,
         rotation: rotation ? toEulerJSON(rotation) : undefined,
       },

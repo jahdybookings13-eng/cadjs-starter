@@ -1,6 +1,7 @@
 import React from "react";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { SceneMode, type PickItem } from "@vitekk02/cadjs";
+import type { NamedView } from "@vitekk02/cadjs/react";
 import SelectOtherMenu from "./SelectOtherMenu";
 import NavigationBar from "./NavigationBar";
 import ModeInfoCard from "./ModeInfoCard";
@@ -33,6 +34,7 @@ interface SceneOverlaysProps {
   controlsRef: React.MutableRefObject<OrbitControls | null>;
   navToolActiveRef: React.MutableRefObject<boolean>;
   onFitAll: () => void;
+  onViewChange?: ((view: NamedView) => void) | undefined;
   activeSketch: boolean;
 }
 
@@ -44,6 +46,7 @@ export const SceneOverlays: React.FC<SceneOverlaysProps> = ({
   controlsRef,
   navToolActiveRef,
   onFitAll,
+  onViewChange,
   activeSketch,
 }) => {
   return (
@@ -68,6 +71,7 @@ export const SceneOverlays: React.FC<SceneOverlaysProps> = ({
         controlsRef={controlsRef}
         navToolActiveRef={navToolActiveRef}
         onFitAll={onFitAll}
+        onViewChange={onViewChange}
       />
 
       <ModeInfoCard

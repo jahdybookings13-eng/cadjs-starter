@@ -1,0 +1,14 @@
+{
+  "bootInteractiveMs": 6135,
+  "documentReloadMs": 6470,
+  "regenerateBoxMs": 223,
+  "orbitFpsMin": 55,
+  "studioRenderMs": 38,
+  "studioSimMeshMs": 760,
+  "studioSimStaticMs": 88,
+  "studioSimModalMs": 233,
+  "studioCamToolpathMs": 2.18,
+  "studioCamSimulationMs": 1.22,
+  "studioPcbBuildMs": 50,
+  "studioUiStallMs": 86
+}

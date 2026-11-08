@@ -11,6 +11,16 @@ export type SweepCornerMode = "right" | "round";
 export interface SweepOptions {
   orientation: SweepOrientation;
   cornerMode: SweepCornerMode;
+  /** Path approximation tolerance in document units. */
+  chordalTolerance?: number | undefined;
+  /** One guide curve (auxiliary spine) in world space. */
+  guidePoints?: { x: number; y: number; z: number }[] | undefined;
+  /** Two or more guide rails in world space; drives constrained sections. */
+  guideCurves?: { x: number; y: number; z: number }[][] | undefined;
+  /** Total twist from path start to end, in radians. */
+  twistRadians?: number | undefined;
+  /** Hollow the swept solid into a constant-wall feature. */
+  thinWall?: number | undefined;
 }
 
 export interface SweepResult {
@@ -41,7 +51,21 @@ export async function sweepBRep(
         brepJson: profileBrep.toJSON(),
         profilePosition: toVec3(profilePosition),
         pathPoints,
-        options,
+        options: options
+          ? {
+              orientation: options.orientation,
+              cornerMode: options.cornerMode,
+              ...(options.chordalTolerance !== undefined
+                ? { chordalTolerance: options.chordalTolerance }
+                : {}),
+              ...(options.twistRadians !== undefined
+                ? { twistRadians: options.twistRadians }
+                : {}),
+            }
+          : undefined,
+        ...(options?.guidePoints ? { guidePoints: options.guidePoints } : {}),
+        ...(options?.guideCurves ? { guideCurves: options.guideCurves } : {}),
+        ...(options?.thinWall ? { thinWall: options.thinWall } : {}),
         sourceOccBrep,
       },
     });

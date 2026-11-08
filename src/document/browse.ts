@@ -67,7 +67,15 @@ export function documentKindLabel(doc: CadDocument): string {
         ? "Variable Studio"
         : kind === "featurestudio"
           ? "Feature Studio"
-          : kind.charAt(0).toUpperCase() + kind.slice(1);
+          : kind === "renderstudio"
+            ? "Render Studio"
+            : kind === "simulationstudio"
+              ? "Simulation Studio"
+              : kind === "camstudio"
+                ? "CAM Studio"
+                : kind === "pcbstudio"
+                  ? "ScadStudio:pcb"
+                  : kind.charAt(0).toUpperCase() + kind.slice(1);
   }
   return "Mixed";
 }

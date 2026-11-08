@@ -18,6 +18,7 @@ import {
   renameDocument,
   restoreDocument,
   saveDocument,
+  TAB_KIND_LABEL,
   trashDocument,
   type CadDocument,
   type DocumentKindFilter,
@@ -429,7 +430,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({
   return (
     <div
       data-testid="documents-page"
-      className="fixed inset-0 z-[90] flex flex-col bg-gray-950 text-gray-100"
+      className="cad-studio-light fixed inset-0 z-[90] flex flex-col bg-gray-950 text-gray-100"
     >
       <header className="flex flex-wrap items-center gap-2 border-b border-gray-800 px-4 py-3">
         <button
@@ -512,6 +513,12 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({
           <option value="drawing">Drawing</option>
           <option value="variablestudio">Variable Studio</option>
           <option value="featurestudio">Feature Studio</option>
+          <option value="renderstudio">{TAB_KIND_LABEL.renderstudio}</option>
+          <option value="simulationstudio">
+            {TAB_KIND_LABEL.simulationstudio}
+          </option>
+          <option value="camstudio">{TAB_KIND_LABEL.camstudio}</option>
+          <option value="pcbstudio">{TAB_KIND_LABEL.pcbstudio}</option>
         </select>
         <select
           value={sort}

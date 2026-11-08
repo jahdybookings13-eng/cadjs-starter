@@ -31,6 +31,7 @@ const E2E = resolve(ROOT, "e2e");
 const PARITY = resolve(ROOT, "parity");
 const OUT_JSON = resolve(PARITY, "controls.json");
 const OUT_MD = resolve(ROOT, "CONTROL_INVENTORY.md");
+const OUT_AUDIT = resolve(ROOT, "CONTROL_AUDIT.md");
 const ALLOWLIST = resolve(PARITY, "control-allowlist.json");
 
 const CHECK = process.argv.includes("--check");
@@ -216,17 +217,48 @@ const EXISTING_TESTS = [...walk(SRC), ...walk(E2E)]
   )
   .map(({ file, text }) => ({ file: rel(file), text }));
 
-function evidenceFor(testid, ariaLabel) {
+/**
+ * Evidence levels, strongest first:
+ * - direct: a test contains the exact `data-testid` string.
+ * - aria:   a test contains the exact `aria-label` string.
+ * - label:  a test contains a stable (≥8 character) literal segment of the
+ *           control's label or testid template. This catches regex locators
+ *           such as `/Add source body/` and prefixed selectors like
+ *           `[data-testid^="assembly-instance-"]` without pretending that an
+ *           exact selector was used.
+ * - none:   no test reference; recorded as a static-only gap in the audit.
+ */
+function evidenceFor(testid, ariaLabel, label) {
   const needles = [];
   if (testid) needles.push(`"${testid}"`);
   if (ariaLabel) needles.push(`"${ariaLabel}"`);
-  if (!needles.length) return { level: "none", files: [] };
-  const files = EXISTING_TESTS.filter(({ text }) =>
-    needles.some((needle) => text.includes(needle)),
-  ).map(({ file }) => file);
-  return files.length
-    ? { level: testid ? "direct" : "aria", files: files.slice(0, 4) }
-    : { level: "none", files: [] };
+  if (needles.length) {
+    const exact = EXISTING_TESTS.filter(({ text }) =>
+      needles.some((needle) => text.includes(needle)),
+    ).map(({ file }) => file);
+    if (exact.length) {
+      return {
+        level: testid ? "direct" : "aria",
+        files: exact.slice(0, 4),
+      };
+    }
+  }
+  const segments = [label, testid]
+    .flatMap((value) =>
+      String(value ?? "")
+        .split(/\$\{[^}]*\}/g)
+        .map((part) => part.replace(/\s+/g, " ").trim()),
+    )
+    .filter((part) => part.length >= 8);
+  if (segments.length) {
+    const referenced = EXISTING_TESTS.filter(({ text }) =>
+      segments.some((segment) => text.includes(segment)),
+    ).map(({ file }) => file);
+    if (referenced.length) {
+      return { level: "label", files: referenced.slice(0, 4) };
+    }
+  }
+  return { level: "none", files: [] };
 }
 
 function scanFile(file) {
@@ -286,7 +318,7 @@ function scanFile(file) {
         );
         const status = statusOf(tag, attrs, handler, disabled);
         const keyboard = keyboardOf(aria.value || title.value || "");
-        const evidence = evidenceFor(testid.value, aria.value);
+        const evidence = evidenceFor(testid.value, aria.value, labelSource);
 
         entries.push({
           file: rel(file),
@@ -353,6 +385,9 @@ const byFamily = countBy("family");
 const directEvidence = controls.filter(
   (c) => c.evidence.level === "direct",
 ).length;
+const labelEvidence = controls.filter(
+  (c) => c.evidence.level === "label",
+).length;
 const anyEvidence = controls.filter((c) => c.evidence.level !== "none").length;
 
 const summary = {
@@ -363,6 +398,7 @@ const summary = {
   byFamily,
   evidence: {
     direct: directEvidence,
+    label: labelEvidence,
     any: anyEvidence,
     missing: controls.length - anyEvidence,
   },
@@ -374,6 +410,32 @@ const summary = {
 
 if (CHECK) {
   const problems = [];
+  // The per-control audit is only evidence if it matches the source. A
+  // control added, removed or relabelled without regenerating the registry
+  // and ledger fails the gate instead of leaving stale coverage claims.
+  const registry = existsSync(OUT_JSON)
+    ? JSON.parse(readFileSync(OUT_JSON, "utf8"))
+    : null;
+  if (!registry || registry.summary?.controls !== controls.length) {
+    problems.push(
+      `parity/controls.json is stale (${registry?.summary?.controls ?? "missing"} vs ${controls.length} controls); run npm run inventory:controls`,
+    );
+  }
+  const auditText = existsSync(OUT_AUDIT)
+    ? readFileSync(OUT_AUDIT, "utf8")
+    : "";
+  const auditCount = Number(
+    /<!-- control-audit-count: (\d+) -->/.exec(auditText)?.[1],
+  );
+  if (!auditText) {
+    problems.push(
+      "CONTROL_AUDIT.md is missing; run npm run inventory:controls",
+    );
+  } else if (auditCount !== controls.length) {
+    problems.push(
+      `CONTROL_AUDIT.md is stale (${Number.isFinite(auditCount) ? auditCount : "no count"} vs ${controls.length} controls); run npm run inventory:controls`,
+    );
+  }
   if (dead.length) {
     problems.push(`${dead.length} dead control(s) with no handler:`);
     for (const entry of dead.slice(0, 25))
@@ -399,7 +461,8 @@ if (CHECK) {
   console.log(
     `control inventory: PASS — ${controls.length} controls in ${files.length} files, ` +
       `${dead.length} dead, ${unlabeled.length} unlabeled, ` +
-      `${directEvidence} with direct test evidence`,
+      `${directEvidence} direct + ${labelEvidence} label-level test evidence ` +
+      `(${anyEvidence}/${controls.length} referenced)`,
   );
   process.exit(0);
 }
@@ -484,12 +547,70 @@ for (const family of Object.keys(byFamily).sort()) {
 
 writeFileSync(OUT_MD, lines.join("\n") + "\n");
 
+// Per-control audit: every visible control is listed with its handler, enabled
+// rule and the strongest evidence found. `static-only` is an explicit finding,
+// not a pass: it means the control is statically wired but has no test that
+// names it. TEST_BIBLE.md records the audit method and the current totals.
+const auditLines = [
+  "# CONTROL AUDIT",
+  "",
+  "Generated by `scripts/control-inventory.mjs` from the JSX in `src/**/*.tsx`.",
+  "Do not edit by hand. Regenerate with `npm run inventory:controls`.",
+  "",
+  `Generated: ${summary.generatedAt}`,
+  "",
+  "## Method",
+  "",
+  "Every visible control is accounted for. Evidence levels:",
+  "",
+  "- `direct` — an automated test uses the exact `data-testid`.",
+  "- `aria` — an automated test uses the exact `aria-label`.",
+  "- `label` — an automated test contains a stable literal segment of the label or testid template (regex/prefixed locator).",
+  "- `static-only` — no test names the control. Handler, label and enabled rule are still verified by `npm run check:controls`; behavior is not.",
+  "",
+  "## Summary",
+  "",
+  `- Visible controls: **${controls.length}** in **${files.length}** files`,
+  `- Direct testid evidence: **${directEvidence}** (${pct(directEvidence, controls.length)})`,
+  `- Label-level test evidence: **${labelEvidence}** (${pct(labelEvidence, controls.length)})`,
+  `- Any test reference: **${anyEvidence}** (${pct(anyEvidence, controls.length)})`,
+  `- Static-only gaps: **${controls.length - anyEvidence}**`,
+  `- Dead: **${summary.dead}** · unlabeled: **${summary.unlabeled}**`,
+  "",
+  "## Controls",
+];
+for (const family of Object.keys(byFamily).sort()) {
+  const group = controls.filter((entry) => entry.family === family);
+  const referenced = group.filter(
+    (entry) => entry.evidence.level !== "none",
+  ).length;
+  auditLines.push(
+    "",
+    `### ${escapeCell(family)} (${group.length}, ${referenced} referenced)`,
+    "",
+    "| Control | Where | Handler | Enabled rule | Evidence | Test files |",
+    "| --- | --- | --- | --- | --- | --- |",
+  );
+  for (const entry of group) {
+    auditLines.push(
+      `| ${escapeCell(entry.label)} | \`${entry.file}:${entry.line}\` | ${
+        entry.handler || "—"
+      } | ${entry.enabledRule ? `\`${escapeCell(entry.enabledRule)}\`` : "always"} | ${
+        entry.evidence.level === "none" ? "static-only" : entry.evidence.level
+      } | ${entry.evidence.files.length ? escapeCell(entry.evidence.files.join(", ")) : "—"} |`,
+    );
+  }
+}
+auditLines.push("", `<!-- control-audit-count: ${controls.length} -->`);
+writeFileSync(OUT_AUDIT, auditLines.join("\n") + "\n");
+
 console.log(
   `control inventory: ${summary.controls} controls in ${summary.files} files — ` +
     `${summary.dead} dead, ${summary.unlabeled} unlabeled, ` +
-    `${directEvidence} direct evidence (${pct(directEvidence, controls.length)})`,
+    `${directEvidence} direct + ${labelEvidence} label-level evidence ` +
+    `(${anyEvidence} referenced, ${controls.length - anyEvidence} static-only gaps)`,
 );
-console.log(`wrote ${rel(OUT_JSON)} and ${rel(OUT_MD)}`);
+console.log(`wrote ${rel(OUT_JSON)}, ${rel(OUT_MD)} and ${rel(OUT_AUDIT)}`);
 
 function pct(part, total) {
   return total ? `${((part / total) * 100).toFixed(0)}%` : "0%";

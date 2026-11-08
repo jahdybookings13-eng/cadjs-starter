@@ -44,6 +44,14 @@ export function importElements(
       occBrep: imp.occBrep,
       edgeGeometry: imp.edgeGeometry,
       vertexPositions: imp.vertexPositions,
+      ...(imp.name || imp.color
+        ? {
+            userData: {
+              ...(imp.name ? { translationName: imp.name } : {}),
+              ...(imp.color ? { translationColor: imp.color } : {}),
+            },
+          }
+        : {}),
     });
   }
 

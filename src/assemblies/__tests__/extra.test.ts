@@ -34,7 +34,7 @@ describe("assemblies extra", () => {
     expect(asm2.instances.length).toBe(1);
     expect(asm2.mates.length).toBe(0);
   });
-  it("overConstrained detects duplicate pairs", () => {
+  it("overConstrained accepts complementary mates and rejects duplicates", () => {
     let asm: any = { id: "a", instances: [], mates: [] };
     asm = addInstance(asm, { id: "i1", partId: "p", transform: identity() });
     asm = addInstance(asm, { id: "i2", partId: "p", transform: identity() });
@@ -51,7 +51,18 @@ describe("assemblies extra", () => {
       b: { bodyId: "i2", ref: "f" },
       value: 5,
     });
-    expect(overConstrained(asm).length).toBeGreaterThan(0);
+    expect(overConstrained(asm).length).toBe(0);
+
+    const duplicate = addMate(asm, {
+      id: "m3",
+      kind: "distance",
+      a: { bodyId: "i1", ref: "f" },
+      b: { bodyId: "i2", ref: "f" },
+      value: 5,
+    });
+    expect(overConstrained(duplicate)).toContain(
+      "duplicate distance constraint",
+    );
   });
   it("serialization roundtrip", () => {
     let asm: any = { id: "a", instances: [], mates: [] };

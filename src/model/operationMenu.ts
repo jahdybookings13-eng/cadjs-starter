@@ -111,7 +111,28 @@ const P_SPLIT = op(
   "Split",
   "ready",
   "split",
-  "plane split via BRepAlgoAPI_Splitter; keep param selects side — split twice for both halves",
+  "plane or surface split via BRepAlgoAPI_Splitter; keep positive/negative/both",
+);
+const P_BODY_PATTERN = op(
+  "body-pattern",
+  "Body Pattern",
+  "ready",
+  "pattern",
+  "patternType=body over selected bodies; spacing modes, flip, second direction, suppression",
+);
+const P_FACE_PATTERN = op(
+  "face-pattern",
+  "Face Pattern",
+  "ready",
+  "pattern",
+  "patternType=face: selected faces copied across the direction; compound surface result",
+);
+const P_TRANSFORM = op(
+  "transform",
+  "Move / Rotate / Copy",
+  "ready",
+  "transform",
+  "body transform with explicit copy semantics and kernel re-serialization",
 );
 const P_CIRC_PATTERN = op(
   "circular-pattern",
@@ -139,7 +160,7 @@ const P_FITNESS = op(
   "Pattern Features",
   "ready",
   "featurePattern",
-  "clones a serialized feature chain (id-remapped, plane-origin shifted), independent bodies; join-mode deferred",
+  "clones a serialized feature chain (id-remapped, plane-origin shifted); join mode fuses back into the source",
 );
 const P_DIM = op(
   "dimension",
@@ -202,14 +223,14 @@ const P_WRAP = op(
   "Wrap",
   "ready",
   "wrap",
-  "curve mode v1: unfolded (arc,height) polylines mapped onto the target cylinder as on-surface wires; cut/emboss modes follow the helix rebuild",
+  "CURVE maps unfolded (arc,height) polylines onto the target cylinder as on-surface wires; CUT/EMBOSS thicken closed regions or sweep a bead along open paths",
 );
 const P_THREAD = op(
   "thread",
   "Thread",
   "ready",
   "thread",
-  "ISO metric/unified/NPT tables + groove cut (torus-stack v1; true helix boolean parked for native-speed wasm rebuild)",
+  "ISO metric/unified/NPT tables + groove cut; cosmetic shallow visual thread; fast torus-stack default with opt-in true helix",
 );
 const P_SHEET = op(
   "sheet-metal",
@@ -218,12 +239,40 @@ const P_SHEET = op(
   "flange",
   "sheet-metal v1: flange + radius + relief + two-stage Z-hem + flat pattern (unfold)",
 );
-const P_DERIVED = op(
-  "derived",
-  "Derived",
-  "deferred",
-  null,
-  "tier 6: importDerived/mergeContexts",
+const P_DERIVE = op(
+  "derive",
+  "Derive Part Studio",
+  "ready",
+  "derive",
+  "source tab resolved on every rebuild; bodies retagged, optional merge",
+);
+const P_HELIX_CURVE = op(
+  "helix-curve",
+  "Helix Curve",
+  "ready",
+  "helixCurve",
+  "3D helix edge curve; same path the coil sweep uses",
+);
+const P_FIT_SPLINE = op(
+  "fit-spline",
+  "Fit Spline",
+  "ready",
+  "fitSpline",
+  "Catmull-Rom curve through the selected points",
+);
+const P_BRIDGING_CURVE = op(
+  "bridging-curve",
+  "Bridging Curve",
+  "ready",
+  "bridgingCurve",
+  "3D curve between two vertices/points",
+);
+const P_ENCLOSE = op(
+  "enclose",
+  "Enclose / Endcap",
+  "ready",
+  "surface",
+  "fills selected opening edges with a surface cap",
 );
 const READY_VARIABLES = op(
   "variables",
@@ -253,6 +302,13 @@ const P_PRIM_BOX = op(
   "ready",
   "primitive.box",
   "sketch+extrude via library",
+);
+const P_PRIM_SPHERE = op(
+  "primitive-sphere",
+  "Sphere",
+  "ready",
+  "primitive.sphere",
+  "semicircle revolve via library",
 );
 const P_PRISM_PRISM = op(
   "primitive-prism",
@@ -303,6 +359,76 @@ const P_PRISM_PIPE = op(
   "primitive.pipe",
   "sweep via library",
 );
+const P_PRIM_ELLIPSOID = op(
+  "primitive-ellipsoid",
+  "Ellipsoid",
+  "ready",
+  "primitive.ellipsoid",
+  "tri-axial revolve + scale",
+);
+const P_PRIM_CAPSULE = op(
+  "primitive-capsule",
+  "Capsule",
+  "ready",
+  "primitive.capsule",
+  "stadium revolve via library",
+);
+const P_PRIM_DOME = op(
+  "primitive-dome",
+  "Dome",
+  "ready",
+  "primitive.dome",
+  "quarter-ellipse revolve via library",
+);
+const P_RIB = op(
+  "rib",
+  "Rib",
+  "ready",
+  "rib",
+  "macro: profile line + thickness/depth + merge/draft/flip",
+);
+const P_GUSSET = op(
+  "gusset",
+  "Gusset",
+  "ready",
+  "gusset",
+  "macro: triangular rib profile + thickness/height + merge",
+);
+const P_WEB = op(
+  "web",
+  "Web",
+  "ready",
+  "web",
+  "macro: rectangular web between two points + merge/draft",
+);
+const P_BOSS = op(
+  "boss",
+  "Boss",
+  "ready",
+  "boss",
+  "macro: circle on a face + extrude + optional union",
+);
+const P_EMBOSS = op(
+  "emboss",
+  "Emboss / Engrave",
+  "ready",
+  "wrap",
+  "wrap EMBOSS/CUT mode over text or logo polylines",
+);
+const P_DOME_FEATURE = op(
+  "dome-feature",
+  "Dome Feature",
+  "ready",
+  "domeFeature",
+  "macro: quarter-ellipse revolve + optional union",
+);
+const P_COIL = op(
+  "coil",
+  "Coil / Spring",
+  "ready",
+  "coil",
+  "circular profile swept along a true 3D helix; pitch/turns/taper/hand/presets",
+);
 
 export const MENU_BY_SELECTION: Record<SelectionKind, MenuOp[]> = {
   empty: [
@@ -312,6 +438,7 @@ export const MENU_BY_SELECTION: Record<SelectionKind, MenuOp[]> = {
     READY_MEASURE,
     P_CPLANE,
     P_PRIM_BOX,
+    P_PRIM_SPHERE,
     P_PRISM_PRISM,
     P_PRISM_PYRAMID,
     P_PRISM_WEDGE,
@@ -319,19 +446,36 @@ export const MENU_BY_SELECTION: Record<SelectionKind, MenuOp[]> = {
     P_PRISM_CONE,
     P_PRISM_TORUS,
     P_PRISM_PIPE,
-    P_DERIVED,
+    P_PRIM_ELLIPSOID,
+    P_PRIM_CAPSULE,
+    P_PRIM_DOME,
+    P_DOME_FEATURE,
+    P_COIL,
+    P_HELIX_CURVE,
+    P_DERIVE,
   ],
   body: [
+    P_RIB,
+    P_GUSSET,
+    P_WEB,
+    P_BOSS,
+    P_EMBOSS,
+    P_COIL,
+    P_ENCLOSE,
+    P_DERIVE,
     READY_BOOLEAN,
     READY_MIRROR,
     READY_PATTERN,
     P_CIRC_PATTERN,
     P_CURVE_PATTERN,
+    P_BODY_PATTERN,
+    P_FACE_PATTERN,
     P_SHELL,
     P_HOLE,
     P_DRAFT,
     P_SPLIT,
     READY_TRANSFORM_SCALE,
+    P_TRANSFORM,
     P_COMPOSITE,
     P_THREAD,
     P_SHEET,
@@ -352,6 +496,7 @@ export const MENU_BY_SELECTION: Record<SelectionKind, MenuOp[]> = {
   ],
   "curved-face": [
     READY_MODIFY_FILLET,
+    P_FACE_PATTERN,
     P_HOLE,
     P_DRAFT,
     P_THICKEN,
@@ -376,6 +521,11 @@ export const MENU_BY_SELECTION: Record<SelectionKind, MenuOp[]> = {
     READY_REVOLVE,
     READY_LOFT,
     READY_SWEEP,
+    P_RIB,
+    P_GUSSET,
+    P_WEB,
+    P_FIT_SPLINE,
+    P_BRIDGING_CURVE,
     P_DIM,
     P_RELATION,
     P_TRIM,
@@ -386,6 +536,9 @@ export const MENU_BY_SELECTION: Record<SelectionKind, MenuOp[]> = {
     READY_REVOLVE,
     READY_LOFT,
     READY_SWEEP,
+    P_RIB,
+    P_GUSSET,
+    P_WEB,
     P_DIM,
     P_RELATION,
     P_TRIM,

@@ -65,11 +65,14 @@ import {
   type ToolResult,
 } from "./agent/orchestrator";
 import type { TraceLog } from "./agent/trace";
+import type { PcbStudioDocument } from "../pcb/model";
 
 export interface FluxSessionOpts {
   projectRef?: string;
   projectName?: string;
   brain?: BrainConfig;
+  /** Full PCB studio document; project must be the same live tree. */
+  pcbDocument?: PcbStudioDocument;
 }
 
 export interface FluxSession {
@@ -78,6 +81,8 @@ export interface FluxSession {
   readonly orchestrator: Orchestrator;
   getProject(): PcbProject;
   setProject(p: PcbProject): void;
+  getPcbDocument(): PcbStudioDocument | null;
+  setPcbDocument(doc: PcbStudioDocument): void;
   getLinks(): DesignLink[];
   addLink(link: DesignLink): void;
   getHoles(): MountingHole[];
@@ -155,6 +160,8 @@ function reassignGroup(
 interface SessInternals {
   get(): PcbProject;
   set(p: PcbProject): void;
+  getPcbDocument(): PcbStudioDocument | null;
+  setPcbDocument(doc: PcbStudioDocument): void;
   getLinks(): DesignLink[];
   setLinks(l: DesignLink[]): void;
   getHoles(): MountingHole[];
@@ -247,7 +254,11 @@ function buildPcbAgent(s: SessInternals): SubAgent {
     };
   };
 
-  const run = (a: AgentArgs): ToolResult | null => {
+  const pcbDoc = (): PcbStudioDocument | null => s.getPcbDocument();
+
+  const run = (
+    a: AgentArgs,
+  ): ToolResult | null | Promise<ToolResult | null> => {
     const k = a.action;
     const { args } = a;
     const argNum = (n: string, def: number) =>
@@ -518,6 +529,222 @@ function buildPcbAgent(s: SessInternals): SubAgent {
         s.set(changeEl(s.get(), dd, { [prop]: val } as never));
         return { ok: true, data: { designator: dd, [prop]: val } };
       }
+
+      // ---- PCB studio build pipeline -----------------------------------------
+      // Loaded on demand so the PCB engine never ships in the initial bundle.
+      case "buildPcb":
+        return (async () => {
+          const doc = pcbDoc();
+          if (!doc)
+            return {
+              ok: false,
+              error: "Open a ScadStudio:pcb tab before building a board",
+            };
+          const { buildPcb } = await import("../pcb/build");
+          const built = buildPcb(doc, { gridMM: argNum("gridMM", 0.5) });
+          s.setPcbDocument(built.doc);
+          const route = built.report.route;
+          return {
+            ok: built.report.drc.clean,
+            data: {
+              steps: built.report.steps,
+              ms: built.report.ms,
+              netlist: built.report.netlist,
+              placement: built.report.placement,
+              route: route
+                ? {
+                    routed: route.routed,
+                    failed: route.failed,
+                    vias: route.vias,
+                    traces: route.traces,
+                    ms: route.ms,
+                    failures: route.edges.filter((edge) => !edge.ok),
+                  }
+                : null,
+              drc: {
+                errors: built.report.drc.errors,
+                warnings: built.report.drc.warnings,
+                clean: built.report.drc.clean,
+              },
+              fab: {
+                ok: built.report.fab.ok,
+                stats: built.report.fab.stats,
+                issues: built.report.fab.issues,
+                files: built.report.fab.files.map((file) => file.name),
+              },
+            },
+          };
+        })();
+      case "createPcbDemo":
+        return (async () => {
+          const { createPcbDemo } = await import("../pcb/build");
+          const demo = createPcbDemo();
+          s.setPcbDocument(demo);
+          return {
+            ok: true,
+            data: {
+              parts: allElements(demo.project).length,
+              nets: demo.project.nets.length,
+              sheets: demo.schematic.sheets.length,
+              traces: demo.traces.length,
+              vias: demo.vias.length,
+              services: demo.zones.length,
+            },
+          };
+        })();
+      case "autoPlaceBoard":
+        return (async () => {
+          const doc = pcbDoc();
+          if (!doc)
+            return { ok: false, error: "No PCB studio document is attached" };
+          const { autoPlacePcb } = await import("../pcb/layout");
+          const placed = autoPlacePcb(doc);
+          s.setPcbDocument(placed.doc);
+          return { ok: true, data: placed.report };
+        })();
+      case "autorouteBoard":
+        return (async () => {
+          const doc = pcbDoc();
+          if (!doc)
+            return { ok: false, error: "No PCB studio document is attached" };
+          const { autoroutePcb } = await import("../pcb/layout");
+          const routed = autoroutePcb(doc, { gridMM: argNum("gridMM", 0.5) });
+          s.setPcbDocument(routed.doc);
+          return {
+            ok: routed.report.failed === 0,
+            data: {
+              routed: routed.report.routed,
+              failed: routed.report.failed,
+              vias: routed.report.vias,
+              traces: routed.report.traces,
+              ms: routed.report.ms,
+              failures: routed.report.edges.filter((edge) => !edge.ok),
+            },
+          };
+        })();
+      case "runPcbDrc":
+        return (async () => {
+          const doc = pcbDoc();
+          if (!doc)
+            return { ok: false, error: "No PCB studio document is attached" };
+          const { drcSummary, runDesignRuleCheck } = await import("../pcb/drc");
+          const violations = runDesignRuleCheck(doc);
+          return {
+            ok: violations.every((violation) => violation.severity !== "error"),
+            data: { ...drcSummary(violations), violations },
+          };
+        })();
+      case "exportPcbFabrication":
+        return (async () => {
+          const doc = pcbDoc();
+          if (!doc)
+            return { ok: false, error: "No PCB studio document is attached" };
+          const { buildFabrication } = await import("../pcb/fabrication");
+          const fab = buildFabrication(doc);
+          return {
+            ok: fab.ok,
+            ...(fab.ok ? {} : { error: "Fabrication package has errors" }),
+            data: {
+              files: fab.files.map((file) => ({
+                name: file.name,
+                kind: file.kind,
+                layer: file.layer,
+                bytes: file.bytes,
+              })),
+              issues: fab.issues,
+              stats: fab.stats,
+              zipBytes: fab.zip.length,
+            },
+          };
+        })();
+      case "addSchematicSheet":
+        return (async () => {
+          const doc = pcbDoc();
+          if (!doc)
+            return { ok: false, error: "No PCB studio document is attached" };
+          const { addSchematicSheet } = await import("../pcb/schematic");
+          const next = addSchematicSheet(doc, argStr("name", ""));
+          s.setPcbDocument(next);
+          const sheet = next.schematic.sheets[next.schematic.sheets.length - 1];
+          return {
+            ok: true,
+            data: {
+              sheet: sheet?.name,
+              id: sheet?.id,
+              sheets: next.schematic.sheets.length,
+            },
+          };
+        })();
+      case "addPcbPart":
+        return (async () => {
+          const doc = pcbDoc();
+          if (!doc)
+            return { ok: false, error: "No PCB studio document is attached" };
+          const libraryId = argStr("libraryId", "");
+          if (!libraryId)
+            return { ok: false, error: "addPcbPart needs a libraryId" };
+          const before = new Set(
+            allElements(doc.project).map((element) => element.designator),
+          );
+          const { addPcbLibraryPart } = await import("../pcb/model");
+          const next = addPcbLibraryPart(
+            doc,
+            libraryId,
+            argStr("designator", "") || undefined,
+          );
+          if (next === doc)
+            return { ok: false, error: `unknown library part ${libraryId}` };
+          s.setPcbDocument(next);
+          const added = allElements(next.project).find(
+            (element) => !before.has(element.designator),
+          );
+          return {
+            ok: true,
+            data: { designator: added?.designator, libraryId },
+          };
+        })();
+      case "addPcbVia":
+        return (async () => {
+          const doc = pcbDoc();
+          if (!doc)
+            return { ok: false, error: "No PCB studio document is attached" };
+          const net = argStr("net", "");
+          if (!net) return { ok: false, error: "addPcbVia needs a net" };
+          const { addPcbVia } = await import("../pcb/layout");
+          const next = addPcbVia(
+            doc,
+            net,
+            argNum("x", doc.board.widthMM / 2),
+            argNum("y", doc.board.heightMM / 2),
+          );
+          s.setPcbDocument(next);
+          const via = next.vias[next.vias.length - 1];
+          return {
+            ok: true,
+            data: { id: via?.id, net, x: via?.x, y: via?.y },
+          };
+        })();
+      case "checkPcbAssembly":
+        return (async () => {
+          const doc = pcbDoc();
+          if (!doc)
+            return { ok: false, error: "No PCB studio document is attached" };
+          const { checkPcbAssembly, enclosureLid } =
+            await import("../pcb/assembly");
+          const report = checkPcbAssembly(doc, [
+            enclosureLid(doc, argNum("cavityMM", 8), argNum("wallMM", 1.5)),
+          ]);
+          return {
+            ok: report.pass,
+            data: {
+              pass: report.pass,
+              components: report.componentCount,
+              maxComponentHeightMM: report.maxComponentHeightMM,
+              boardTopZ: report.boardTopZ,
+              collisions: report.collisions,
+            },
+          };
+        })();
 
       // ---- read-only / analysis ---------------------------------------------
       case "runErcDrc":
@@ -1109,15 +1336,25 @@ function buildOrchestratorAgent(s: SessInternals): SubAgent {
 
 export function makeFluxSession(opts: FluxSessionOpts = {}): FluxSession {
   const ref = opts.projectRef ?? "flux-0";
-  let proj = makeProject(ref, opts.projectName ?? ref);
+  let proj =
+    opts.pcbDocument?.project ?? makeProject(ref, opts.projectName ?? ref);
+  let pcbDocument: PcbStudioDocument | null = opts.pcbDocument ?? null;
   let links: DesignLink[] = [];
   let holes: MountingHole[] = [];
   let mcadParts: DevicePart[] = [];
+  let refreshContext: (p: PcbProject) => void = () => {};
 
   const internals: SessInternals = {
     get: () => proj,
     set: (p) => {
       proj = p;
+      refreshContext(p);
+    },
+    getPcbDocument: () => pcbDocument,
+    setPcbDocument: (doc) => {
+      pcbDocument = doc;
+      proj = doc.project;
+      refreshContext(proj);
     },
     getLinks: () => links,
     setLinks: (l) => {
@@ -1131,6 +1368,7 @@ export function makeFluxSession(opts: FluxSessionOpts = {}): FluxSession {
   };
 
   const orch = makeOrchestrator(projectContextOf(proj));
+  refreshContext = (p) => orch.setProjectContext(projectContextOf(p));
   for (const agent of [
     buildOrchestratorAgent(internals),
     buildPcbAgent(internals),
@@ -1149,6 +1387,13 @@ export function makeFluxSession(opts: FluxSessionOpts = {}): FluxSession {
     getProject: () => proj,
     setProject: (p) => {
       proj = p;
+      refreshContext(p);
+    },
+    getPcbDocument: () => pcbDocument,
+    setPcbDocument: (doc) => {
+      pcbDocument = doc;
+      proj = doc.project;
+      refreshContext(proj);
     },
     getLinks: () => links,
     addLink: (link) => {

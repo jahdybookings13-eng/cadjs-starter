@@ -160,7 +160,7 @@ export function CollaborationPanel({
 
   return (
     <div
-      className="fixed top-12 right-3 z-50 w-[min(430px,calc(100vw-1.5rem))] max-h-[calc(100vh-4rem)] overflow-y-auto rounded-lg border border-gray-600 bg-gray-900/98 shadow-2xl text-gray-100"
+      className="cad-light-panel fixed right-3 top-14 z-50 max-h-[calc(100vh-4.5rem)] w-[min(430px,calc(100vw-1.5rem))] overflow-y-auto rounded-lg border border-[var(--cad-border-strong)] bg-white text-[var(--cad-text)] shadow-2xl"
       data-testid="collaboration-panel"
       data-role={role}
       data-project-id={doc.id}

@@ -15,6 +15,17 @@ export default defineConfig({
   server: {
     port: 3000,
     host: true,
+    // Generated parity docs and test artifacts are not part of the app; do
+    // not full-reload a running session when a report is regenerated.
+    watch: {
+      ignored: [
+        "**/*.md",
+        "parity/**",
+        "scripts/**",
+        "test-results/**",
+        "playwright-report/**",
+      ],
+    },
     fs: {
       allow: [
         fileURLToPath(new URL(".", import.meta.url)),
@@ -44,6 +55,9 @@ export default defineConfig({
       "@salusoft89/planegcs",
       // Emscripten glue resolves its own .wasm next to the module; keep it raw.
       "@horang-corp/avr-gcc-wasm",
+      // Gmsh's Emscripten glue locates its worker/wasm assets relative to the
+      // package entry; let Vite serve it unwrapped.
+      "@loumalouomega/gmsh-wasm",
     ],
     esbuildOptions: {
       target: "es2020",

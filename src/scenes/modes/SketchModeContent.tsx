@@ -36,7 +36,9 @@ import ValueInputModal from "../../navbar/ValueInputModal";
 import {
   sketchCommandAvailability,
   type SketchCommand,
+  findSketchCommand,
 } from "../../model/sketchControls";
+import { RUN_SKETCH_COMMAND_EVENT } from "../../model/toolSearch";
 import { describeConstraintIds } from "../../model/sketchDiagnostics";
 import { analyzeSketch } from "../../model/sketchAnalysis";
 import { mirrorSelectedPrimitives } from "../../model/sketchMirror";
@@ -1679,6 +1681,20 @@ const SketchModeContent: FC<ModeContentProps> = ({
         break;
     }
   };
+
+  const runSketchCommandRef = useRef(runSketchCommand);
+  runSketchCommandRef.current = runSketchCommand;
+  useEffect(() => {
+    const handleGlobalCommand = (event: Event) => {
+      const id = (event as CustomEvent<{ id?: string }>).detail?.id;
+      if (!id) return;
+      const command = findSketchCommand(id);
+      if (command) runSketchCommandRef.current(command);
+    };
+    window.addEventListener(RUN_SKETCH_COMMAND_EVENT, handleGlobalCommand);
+    return () =>
+      window.removeEventListener(RUN_SKETCH_COMMAND_EVENT, handleGlobalCommand);
+  }, []);
 
   const showPanel = !isSelectingPlane && !!activeSketch;
   const conflictLabels = describeConstraintIds(

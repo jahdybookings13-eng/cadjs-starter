@@ -21,6 +21,8 @@ export interface BusAction {
   kind: "op" | "command";
   /** Menu op ids this action answers (kebab or executor ids). */
   aliases: string[];
+  /** Catalog entry without an implementation; run throws honestly. */
+  placeholder?: boolean;
   run: (...args: unknown[]) => unknown;
 }
 
@@ -36,6 +38,12 @@ export class ActionBus {
 
   has(id: string): boolean {
     return this.byId.has(id);
+  }
+
+  /** True when the action exists and has a real implementation. */
+  isRunnable(id: string): boolean {
+    const def = this.byId.get(id);
+    return Boolean(def && !def.placeholder);
   }
 
   ids(kind?: "op" | "command"): string[] {
@@ -91,6 +99,9 @@ const OP_TO_HOOK: Record<string, string> = {
   "curve-pattern": "curvePattern",
   "circular-pattern": "circPattern",
   "feature-pattern": "featurePattern",
+  "body-pattern": "bodyPattern",
+  "face-pattern": "facePattern",
+  transform: "transform",
   "delete-bodies": "delBodies",
   "project-curves": "projectCurves",
   "ruled-fill-surface": "ruledSurface",
@@ -116,6 +127,7 @@ const OP_TO_HOOK: Record<string, string> = {
   "export-stl": "exportSceneStl",
   "export-step": "exportSceneStep",
   "primitive-box": "primBox",
+  "primitive-sphere": "primSphere",
   "primitive-prism": "primPrism",
   "primitive-pyramid": "primPyramid",
   "primitive-wedge": "primWedge",
@@ -123,6 +135,21 @@ const OP_TO_HOOK: Record<string, string> = {
   "primitive-cone": "primCone",
   "primitive-torus": "primTorus",
   "primitive-pipe": "primPipe",
+  "primitive-ellipsoid": "primEllipsoid",
+  "primitive-capsule": "primCapsule",
+  "primitive-dome": "primDome",
+  rib: "rib",
+  gusset: "gusset",
+  web: "web",
+  boss: "boss",
+  emboss: "emboss",
+  coil: "coil",
+  "dome-feature": "domeFeature",
+  "helix-curve": "helixCurve",
+  derive: "derive",
+  "fit-spline": "fitSpline",
+  "bridging-curve": "bridgingCurve",
+  enclose: "enclose",
 };
 
 const PLACEHOLDER = (label: string) => (): unknown => {
@@ -152,6 +179,7 @@ export function createSceneBus(hooks: HookBag): ActionBus {
         id: o.id,
         kind: "op",
         aliases: [],
+        placeholder: true,
         run: PLACEHOLDER(o.id),
       });
     }
@@ -177,6 +205,7 @@ export function createSceneBus(hooks: HookBag): ActionBus {
         id: cmd,
         kind: "command",
         aliases: [],
+        placeholder: true,
         run: PLACEHOLDER(cmd),
       });
   }

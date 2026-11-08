@@ -60,8 +60,19 @@ export class SketchToBrepService {
    * and returns a serialized BRep JSON.
    */
   async convertSketchToBrep(sketch: Sketch): Promise<Brep> {
+    return (await this.convertSketchToBrepWithShape(sketch)).brep;
+  }
+
+  /**
+   * Convert a sketch and keep the exact OCC shape as well as the JSON BRep.
+   * The exact shape is what preserves inner wires (holes) and disconnected
+   * regions through an extrude.
+   */
+  async convertSketchToBrepWithShape(
+    sketch: Sketch,
+  ): Promise<{ brep: Brep; occBrep?: string | undefined }> {
     if (!sketch.primitives.length) {
-      return new Brep([], [], []);
+      return { brep: new Brep([], [], []) };
     }
 
     const client = OccWorkerClient.getInstance();
@@ -77,7 +88,10 @@ export class SketchToBrepService {
     debugLog(
       `[SketchToBrepService] Built BRep with ${brep.faces.length} faces, ${brep.vertices.length} vertices`,
     );
-    return brep;
+    return {
+      brep,
+      ...(result.occBrep !== undefined ? { occBrep: result.occBrep } : {}),
+    };
   }
 
   /**

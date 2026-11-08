@@ -7,10 +7,21 @@
 // This module is pure: it owns the shape, the tab operations and migration
 // from the old single-design project blob. Persistence lives in store.ts.
 //
-// Each tab carries its design as a serialized documentStore blob (the exact
-// `scadgen.project.v1` JSON). That keeps tabs independent without inventing a
-// second geometry format: switching a tab is serialize-active-tab, restore-
-// target-tab, the same path a reload uses.
+// Each Part Studio tab carries its design as a serialized documentStore blob
+// (the exact `scadgen.project.v1` JSON). Assembly and Drawing tabs carry their
+// own small payloads instead; they reference a source Part Studio and do not
+// pretend to be geometry documents.
+
+import { emptyAssemblyTab } from "../assemblies/document";
+import { emptyDrawingTab } from "../drawings/model";
+import { emptyPhase7TabDesign } from "../phase7/store";
+import { camStudioTabDesign, emptyCamDocument } from "../cam/model";
+import { emptyRenderDocument, renderStudioTabDesign } from "../render/model";
+import {
+  emptySimulationDocument,
+  simulationStudioTabDesign,
+} from "../sim/model";
+import { emptyPcbStudio, pcbStudioTabDesign } from "../pcb/empty";
 
 export const DOCUMENT_VERSION = 1 as const;
 
@@ -19,7 +30,11 @@ export type DocumentTabKind =
   | "assembly"
   | "drawing"
   | "variablestudio"
-  | "featurestudio";
+  | "featurestudio"
+  | "renderstudio"
+  | "simulationstudio"
+  | "camstudio"
+  | "pcbstudio";
 
 export const DOCUMENT_TAB_KINDS: readonly DocumentTabKind[] = [
   "partstudio",
@@ -27,6 +42,10 @@ export const DOCUMENT_TAB_KINDS: readonly DocumentTabKind[] = [
   "drawing",
   "variablestudio",
   "featurestudio",
+  "renderstudio",
+  "simulationstudio",
+  "camstudio",
+  "pcbstudio",
 ];
 
 export const TAB_KIND_LABEL: Record<DocumentTabKind, string> = {
@@ -35,6 +54,10 @@ export const TAB_KIND_LABEL: Record<DocumentTabKind, string> = {
   drawing: "Drawing",
   variablestudio: "Variable Studio",
   featurestudio: "Feature Studio",
+  renderstudio: "Render Studio",
+  simulationstudio: "Simulation Studio",
+  camstudio: "CAM Studio",
+  pcbstudio: "ScadStudio:pcb",
 };
 
 export interface DocumentTab {
@@ -78,6 +101,20 @@ export function emptyDesign(now = Date.now()): string {
   });
 }
 
+function emptyDesignForKind(kind: DocumentTabKind, now: number): string {
+  if (kind === "assembly") return JSON.stringify(emptyAssemblyTab(""));
+  if (kind === "drawing") return JSON.stringify(emptyDrawingTab("", null));
+  if (kind === "variablestudio" || kind === "featurestudio")
+    return emptyPhase7TabDesign(kind);
+  if (kind === "camstudio") return camStudioTabDesign(emptyCamDocument());
+  if (kind === "renderstudio")
+    return renderStudioTabDesign(emptyRenderDocument());
+  if (kind === "simulationstudio")
+    return simulationStudioTabDesign(emptySimulationDocument());
+  if (kind === "pcbstudio") return pcbStudioTabDesign(emptyPcbStudio());
+  return emptyDesign(now);
+}
+
 export function newDocumentTab(
   kind: DocumentTabKind = "partstudio",
   opts: { name?: string; design?: string; now?: number } = {},
@@ -87,7 +124,7 @@ export function newDocumentTab(
     id: nextTabId(now),
     name: opts.name?.trim() || TAB_KIND_LABEL[kind],
     kind,
-    design: opts.design ?? emptyDesign(now),
+    design: opts.design ?? emptyDesignForKind(kind, now),
     createdAt: now,
     updatedAt: now,
   };
@@ -237,9 +274,8 @@ export function moveTab(
 }
 
 /**
- * Remove a tab. Refuses to remove the last tab — a document always has at
- * least one Part Studio, matching Onshape's behaviour. If the removed tab was
- * active, the neighbour becomes active.
+ * Remove a tab. Refuses to remove the last tab. If the removed tab was active,
+ * the neighbour becomes active.
  */
 export function deleteTab(doc: CadDocument, tabId: string): CadDocument | null {
   if (doc.tabs.length <= 1) return null;

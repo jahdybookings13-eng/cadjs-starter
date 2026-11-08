@@ -72,7 +72,7 @@ const SelectOtherMenu: FC<SelectOtherMenuProps> = ({
   return createPortal(
     <div
       ref={menuRef}
-      className="bg-gray-800 rounded shadow-lg border border-gray-600 py-1 min-w-[180px] max-h-[320px] overflow-y-auto"
+      className="cad-light-panel min-w-[180px] max-h-[320px] overflow-y-auto rounded border border-[var(--cad-border-strong)] bg-white py-1 shadow-lg"
       style={{
         position: "fixed",
         left: `${clamped.left}px`,
@@ -101,7 +101,7 @@ const SelectOtherMenu: FC<SelectOtherMenuProps> = ({
             onPick(item);
           }}
           aria-label={item.label}
-          className="w-full px-3 py-1.5 text-left text-sm text-white hover:bg-gray-700 flex justify-between items-center gap-3"
+          className="flex w-full items-center justify-between gap-3 px-3 py-1.5 text-left text-sm text-[#202124] hover:bg-[var(--cad-chrome-hover)]"
         >
           <span className="truncate">{item.label}</span>
           <span className="text-xs text-gray-400 tabular-nums">

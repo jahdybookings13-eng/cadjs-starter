@@ -224,7 +224,7 @@ describe("ecad — flux AI agent path", () => {
     // placement + wiring + deploy + run via the agent's local executor
     const agent = makeEcadAgent(ecadStub(sim));
     const ctx = { designators: [] } as never;
-    const placed = agent.runLocal(
+    const placed = await agent.runLocal(
       PROMPT_REGISTRY.insertMcu!,
       { part: "esp32-devkit", x: 5 },
       ctx,
@@ -232,25 +232,25 @@ describe("ecad — flux AI agent path", () => {
     expect(placed?.ok).toBe(true);
     const inst = (placed!.data as { instance: string }).instance;
 
-    const oled = agent.runLocal(
+    const oled = await agent.runLocal(
       PROMPT_REGISTRY.insertMcu!,
       { part: "ssd1306-128x64" },
       ctx,
     );
     const oledId = (oled!.data as { instance: string }).instance;
-    const wired = agent.runLocal(
+    const wired = await agent.runLocal(
       PROMPT_REGISTRY.wirePins!,
       { from: `${inst}.21`, to: `${oledId}.SDA` },
       ctx,
     );
     expect(wired?.ok).toBe(true);
-    const deployed = agent.runLocal(
+    const deployed = await agent.runLocal(
       PROMPT_REGISTRY.deployFirmware!,
       { board: inst, firmwareId: "hello-oled" },
       ctx,
     );
     expect(deployed?.ok).toBe(true);
-    const started = agent.runLocal(
+    const started = await agent.runLocal(
       PROMPT_REGISTRY.runFirmware!,
       { board: inst, verb: "run" },
       ctx,
@@ -269,7 +269,7 @@ describe("ecad — flux AI agent path", () => {
     expect(sd.running.length).toBe(1);
 
     // bad part name fails honestly
-    const bad = agent.runLocal(
+    const bad = await agent.runLocal(
       PROMPT_REGISTRY.insertMcu!,
       { part: "nonexistent-chip" },
       ctx,

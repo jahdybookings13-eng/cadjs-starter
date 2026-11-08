@@ -48,6 +48,9 @@ for (const [name, budget] of Object.entries(config.budgets ?? {})) {
   }
   if (measured === undefined) {
     rows.push({ name, budget, measured: "—", status: "not recorded" });
+    if (name.startsWith("studio")) {
+      errors.push(`${name}: studio budget has no recorded measurement`);
+    }
     continue;
   }
   const lowerIsBetter = name.endsWith("Ms") || name.endsWith("Bytes");

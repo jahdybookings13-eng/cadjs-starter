@@ -4,7 +4,7 @@
 // for the shape, the profile is a single closed region, and the op is one of
 // the four proven kernel ops: extrude, revolve, sweep, loft.
 //
-// The eight builders share one node-assembly contract (buildShapeNodeChain):
+// All catalog builders share one node-assembly contract (buildShapeNodeChain):
 // one sketch node + one op node, in evaluation order. The sketch carries
 // the real closed profile (so the executor's newSketch case produces a body)
 // plus the l0 axis line the op needs for revolve/sweep world placement. For
@@ -19,6 +19,7 @@ import {
   provenanceForFeature,
   type ScadgenFeatureNode,
 } from "./onshapeHistory";
+import { buildScaleNode } from "./primitives";
 
 export interface PlacementFrame {
   origin: [number, number, number];
@@ -30,6 +31,13 @@ const DEFAULT_FRAME: PlacementFrame = {
   origin: [0, 0, 0],
   xAxis: [1, 0, 0],
   normal: [0, 0, 1],
+};
+
+/** XZ is the sketch plane used by the revolved primitives. */
+const REVOLVE_FRAME: PlacementFrame = {
+  origin: [0, 0, 0],
+  xAxis: [1, 0, 0],
+  normal: [0, 1, 0],
 };
 
 const norm = (v: [number, number, number]): [number, number, number] => {
@@ -94,6 +102,29 @@ const C = (id: string, centerId: string, radius: number) => ({
   centerId,
   radius,
 });
+const A = (
+  id: string,
+  centerId: string,
+  startId: string,
+  endId: string,
+  radius: number,
+) => ({ id, type: "arc", centerId, startId, endId, radius });
+const EA = (
+  id: string,
+  centerId: string,
+  majorRadius: number,
+  minorRadius: number,
+  rotation: number,
+) => ({
+  id,
+  type: "ellipticalArc",
+  centerId,
+  majorRadius,
+  minorRadius,
+  rotation,
+  startAngle: Math.PI,
+  endAngle: Math.PI * 2,
+});
 const q = (meters: number) => ({
   value: meters,
   units: "m",
@@ -105,7 +136,12 @@ const rad = (radians: number) => ({
   expression: `${(radians * 180) / Math.PI} deg`,
 });
 
-type Prim = ReturnType<typeof P> | ReturnType<typeof L> | ReturnType<typeof C>;
+type Prim =
+  | ReturnType<typeof P>
+  | ReturnType<typeof L>
+  | ReturnType<typeof C>
+  | ReturnType<typeof A>
+  | ReturnType<typeof EA>;
 
 export type ShapeKind =
   | "box"
@@ -114,14 +150,19 @@ export type ShapeKind =
   | "wedge"
   | "cylinder"
   | "cone"
+  | "sphere"
   | "torus"
-  | "pipe";
+  | "pipe"
+  | "ellipsoid"
+  | "capsule"
+  | "dome";
 
 export interface ShapeResult {
   /**
    * All feature nodes in evaluation order (sketch(es), then op). Append to
    * scadgenHistory in this order. For most shapes = [sketch, op]; pyramid
-   * emits two sketches (base and apex) before the loft op.
+   * emits two sketches before the loft, and ellipsoid emits a scale after the
+   * revolve.
    */
   nodes: ScadgenFeatureNode[];
   /** Convenience aliases for the common single-sketch case. */
@@ -322,7 +363,40 @@ export function buildCone(
   };
 }
 
-// ── torus: circle at (R,0) in XZ revolved 360° about the Z axis ─────────
+// ── sphere: semicircle in XZ revolved 360° about its diameter ───────────
+export function buildSphere(
+  shapeId: string,
+  opts: { r: number; frame?: PlacementFrame },
+): ShapeResult {
+  const { r } = opts;
+  if (r <= 0) throw new Error("sphere: radius must be > 0");
+  const frame = opts.frame ?? REVOLVE_FRAME;
+  const skId = `${shapeId}_sk`;
+  const prims: Prim[] = [
+    P("pc", 0, 0),
+    P("ps", 0, -r),
+    P("pe", 0, r),
+    A("a1", "pc", "ps", "pe", r),
+    L("l1", "pe", "ps"),
+  ];
+  const sketch = makeSketch(skId, shapeId, frame, prims);
+  const op = buildRevolveNode(
+    shapeId,
+    `${shapeId} (sphere)`,
+    [provenanceForFeature(skId, "SKETCH_ENTITY", "a1")],
+    [provenanceForFeature(skId, "SKETCH_ENTITY", "l1")],
+    rad(Math.PI * 2),
+  );
+  return {
+    nodes: [sketch, op],
+    sketch,
+    op,
+    bodyFeatureId: shapeId,
+    profileFeatureId: skId,
+  };
+}
+
+// ── torus: two semicircles at (R,0) in XZ revolved 360° about the Z axis ─
 export function buildTorus(
   shapeId: string,
   opts: { ringR: number; tubeR: number; frame?: PlacementFrame },
@@ -334,9 +408,14 @@ export function buildTorus(
     normal: [0, 1, 0],
   };
   const skId = `${shapeId}_sk`;
+  // Two semicircles rather than one periodic circle: OCC's full-turn revolve
+  // serializes fine but meshes the periodic seam to an empty BREP.
   const prims: Prim[] = [
     P("pc", ringR, 0),
-    C("c1", "pc", tubeR),
+    P("p1", ringR + tubeR, 0),
+    P("p2", ringR - tubeR, 0),
+    A("a1", "pc", "p1", "p2", tubeR),
+    A("a2", "pc", "p2", "p1", tubeR),
     P("pa", 0, 0),
     P("pb", 0, Math.max(ringR, 1e-3)),
     L("l1", "pa", "pb"),
@@ -345,7 +424,140 @@ export function buildTorus(
   const op = buildRevolveNode(
     shapeId,
     `${shapeId} (torus)`,
-    [provenanceForFeature(skId, "SKETCH_ENTITY", "c1")],
+    [provenanceForFeature(skId, "SKETCH_ENTITY", "a1")],
+    [provenanceForFeature(skId, "SKETCH_ENTITY", "l1")],
+    rad(Math.PI * 2),
+  );
+  return {
+    nodes: [sketch, op],
+    sketch,
+    op,
+    bodyFeatureId: shapeId,
+    profileFeatureId: skId,
+  };
+}
+
+// ── ellipsoid: half of a tri-axial ellipse revolved, then Y-scaled ───────
+export function buildEllipsoid(
+  shapeId: string,
+  opts: {
+    rx: number;
+    ry: number;
+    rz: number;
+    frame?: PlacementFrame;
+  },
+): ShapeResult {
+  const { rx, ry, rz } = opts;
+  if (rx <= 0 || ry <= 0 || rz <= 0)
+    throw new Error("ellipsoid: rx, ry, and rz must be > 0");
+  const frame = opts.frame ?? REVOLVE_FRAME;
+  const skId = `${shapeId}_sk`;
+  const revId = `${shapeId}_rev`;
+  const prims: Prim[] = [
+    P("pc", 0, 0),
+    P("pb", 0, -rz),
+    P("pt", 0, rz),
+    EA("a1", "pc", rz, rx, Math.PI / 2),
+    L("l1", "pt", "pb"),
+  ];
+  const sketch = makeSketch(skId, shapeId, frame, prims);
+  const revolve = buildRevolveNode(
+    revId,
+    `${shapeId} (ellipsoid)`,
+    [provenanceForFeature(skId, "SKETCH_ENTITY", "a1")],
+    [provenanceForFeature(skId, "SKETCH_ENTITY", "l1")],
+    rad(Math.PI * 2),
+  );
+  const op = buildScaleNode(
+    shapeId,
+    `${shapeId} (ellipsoid radii)`,
+    revId,
+    1,
+    [0, 0, 0],
+    [1, ry / rx, 1],
+  );
+  return {
+    nodes: [sketch, revolve, op],
+    sketch,
+    op,
+    bodyFeatureId: shapeId,
+    profileFeatureId: skId,
+  };
+}
+
+// ── capsule: stadium profile revolved 360° about its long axis ──────────
+export function buildCapsule(
+  shapeId: string,
+  opts: { r: number; length: number; frame?: PlacementFrame },
+): ShapeResult {
+  const { r, length } = opts;
+  if (r <= 0) throw new Error("capsule: radius must be > 0");
+  if (length < r * 2)
+    throw new Error("capsule: length must be at least twice the radius");
+  const frame = opts.frame ?? REVOLVE_FRAME;
+  const skId = `${shapeId}_sk`;
+  const h = (length - r * 2) / 2;
+  const prims: Prim[] = [
+    P("pb", 0, -h - r),
+    P("pt", 0, h + r),
+    P("cb", 0, -h),
+    P("ct", 0, h),
+  ];
+  if (h <= 1e-9) {
+    prims.push(P("ps", r, 0));
+    prims.push(A("a1", "cb", "pb", "ps", r));
+    prims.push(A("a2", "ct", "ps", "pt", r));
+  } else {
+    prims.push(P("psb", r, -h));
+    prims.push(P("pst", r, h));
+    prims.push(A("a1", "cb", "pb", "psb", r));
+    prims.push(L("l1", "psb", "pst"));
+    prims.push(A("a2", "ct", "pst", "pt", r));
+  }
+  prims.push(L("l2", "pt", "pb"));
+  const sketch = makeSketch(skId, shapeId, frame, prims);
+  const op = buildRevolveNode(
+    shapeId,
+    `${shapeId} (capsule)`,
+    [provenanceForFeature(skId, "SKETCH_ENTITY", "a1")],
+    [provenanceForFeature(skId, "SKETCH_ENTITY", "l2")],
+    rad(Math.PI * 2),
+  );
+  return {
+    nodes: [sketch, op],
+    sketch,
+    op,
+    bodyFeatureId: shapeId,
+    profileFeatureId: skId,
+  };
+}
+
+// ── dome: quarter ellipse revolved around the Z axis ────────────────────
+export function buildDome(
+  shapeId: string,
+  opts: { r: number; h: number; frame?: PlacementFrame },
+): ShapeResult {
+  const { r, h } = opts;
+  if (r <= 0 || h <= 0) throw new Error("dome: radius and height must be > 0");
+  const frame = opts.frame ?? REVOLVE_FRAME;
+  const skId = `${shapeId}_sk`;
+  const prims: Prim[] = [
+    P("pc", 0, 0),
+    P("pb", r, 0),
+    P("pt", 0, h),
+    {
+      ...EA("a1", "pc", h, r, Math.PI / 2),
+      startAngle: (Math.PI * 3) / 2,
+      endAngle: Math.PI * 2,
+    },
+    L("l1", "pc", "pt"),
+    L("l2", "pc", "pb"),
+  ];
+  const sketch = makeSketch(skId, shapeId, frame, prims);
+  const op = buildRevolveNode(
+    shapeId,
+    `${shapeId} (dome)`,
+    [provenanceForFeature(skId, "SKETCH_ENTITY", "a1")],
     [provenanceForFeature(skId, "SKETCH_ENTITY", "l1")],
     rad(Math.PI * 2),
   );
@@ -402,9 +614,12 @@ export function buildShape(
   kind: ShapeKind,
   opts?: Record<string, unknown>,
 ): ShapeResult {
+  // Callers include the toolbar, action bus and debug hook. Missing fields must
+  // fall back to the published catalog defaults, never become NaN geometry.
+  const options = { ...defaultPrimitiveOptions(kind), ...(opts ?? {}) };
   switch (kind) {
     case "box": {
-      const o = (opts ?? {}) as {
+      const o = options as {
         w: number;
         h: number;
         d: number;
@@ -414,7 +629,7 @@ export function buildShape(
       return buildBox(shapeId, o);
     }
     case "prism": {
-      const o = (opts ?? {}) as {
+      const o = options as {
         points: [number, number][];
         d: number;
         frame?: PlacementFrame;
@@ -423,7 +638,7 @@ export function buildShape(
       return buildPrism(shapeId, o);
     }
     case "pyramid": {
-      const o = (opts ?? {}) as {
+      const o = options as {
         w: number;
         h: number;
         frame?: PlacementFrame;
@@ -432,7 +647,7 @@ export function buildShape(
       return buildPyramid(shapeId, o);
     }
     case "wedge": {
-      const o = (opts ?? {}) as {
+      const o = options as {
         x: number;
         y: number;
         z: number;
@@ -443,7 +658,7 @@ export function buildShape(
       return buildWedge(shapeId, o);
     }
     case "cylinder": {
-      const o = (opts ?? {}) as {
+      const o = options as {
         r: number;
         h: number;
         frame?: PlacementFrame;
@@ -451,15 +666,19 @@ export function buildShape(
       return buildCylinder(shapeId, o);
     }
     case "cone": {
-      const o = (opts ?? {}) as {
+      const o = options as {
         r: number;
         h: number;
         frame?: PlacementFrame;
       };
       return buildCone(shapeId, o);
     }
+    case "sphere": {
+      const o = options as { r: number; frame?: PlacementFrame };
+      return buildSphere(shapeId, o);
+    }
     case "torus": {
-      const o = (opts ?? {}) as {
+      const o = options as {
         ringR: number;
         tubeR: number;
         frame?: PlacementFrame;
@@ -467,12 +686,37 @@ export function buildShape(
       return buildTorus(shapeId, o);
     }
     case "pipe": {
-      const o = (opts ?? {}) as {
+      const o = options as {
         r: number;
         points: [number, number, number][];
         frame?: PlacementFrame;
       };
       return buildPipe(shapeId, o);
+    }
+    case "ellipsoid": {
+      const o = options as {
+        rx: number;
+        ry: number;
+        rz: number;
+        frame?: PlacementFrame;
+      };
+      return buildEllipsoid(shapeId, o);
+    }
+    case "capsule": {
+      const o = options as {
+        r: number;
+        length: number;
+        frame?: PlacementFrame;
+      };
+      return buildCapsule(shapeId, o);
+    }
+    case "dome": {
+      const o = options as {
+        r: number;
+        h: number;
+        frame?: PlacementFrame;
+      };
+      return buildDome(shapeId, o);
     }
     default:
       throw new Error(`unknown shape kind: ${kind}`);
@@ -488,7 +732,55 @@ export const PRIMITIVE_SHAPES: { kind: ShapeKind; label: string }[] = [
   { kind: "cone", label: "Cone" },
   { kind: "torus", label: "Torus" },
   { kind: "pipe", label: "Pipe" },
+  { kind: "sphere", label: "Sphere" },
+  { kind: "ellipsoid", label: "Ellipsoid" },
+  { kind: "capsule", label: "Capsule" },
+  { kind: "dome", label: "Dome" },
 ];
+
+export function defaultPrimitiveOptions(
+  kind: ShapeKind,
+): Record<string, unknown> {
+  switch (kind) {
+    case "box":
+      return { w: 0.05, h: 0.04, d: 0.03 };
+    case "prism":
+      return {
+        points: Array.from({ length: 6 }, (_, i) => {
+          const a = (i / 6) * Math.PI * 2;
+          return [Math.cos(a) * 0.03, Math.sin(a) * 0.03] as [number, number];
+        }),
+        d: 0.03,
+      };
+    case "pyramid":
+      return { w: 0.05, h: 0.04 };
+    case "wedge":
+      return { x: 0.05, y: 0.03, z: 0.04 };
+    case "cylinder":
+      return { r: 0.02, h: 0.05 };
+    case "cone":
+      return { r: 0.025, h: 0.05 };
+    case "torus":
+      return { ringR: 0.04, tubeR: 0.012 };
+    case "sphere":
+      return { r: 0.03 };
+    case "pipe":
+      return {
+        r: 0.008,
+        points: [
+          [0, 0, 0],
+          [0.03, 0, 0],
+          [0.03, 0.03, 0],
+        ],
+      };
+    case "ellipsoid":
+      return { rx: 0.03, ry: 0.02, rz: 0.04 };
+    case "capsule":
+      return { r: 0.012, length: 0.06 };
+    case "dome":
+      return { r: 0.03, h: 0.03 };
+  }
+}
 
 // ── prism: polygon profile extruded along the normal ─────────────────────
 export function buildPrism(

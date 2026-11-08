@@ -16,8 +16,33 @@ const COMMITTABLE = new Set([
   "boolean",
   "pattern",
   "mirror",
+  "split",
+  "scale",
+  "transform",
   "insertedBody",
+  // Phase 3 F: macro, derived, surface and edge-only curve features are
+  // history nodes too. Without these entries they evaluate but never author
+  // an element, so the body is missing from the 3D view and Browser.
+  "rib",
+  "gusset",
+  "web",
+  "boss",
+  "domeFeature",
+  "coil",
+  "derive",
+  "surface",
+  "wrap",
+  "helixCurve",
+  "fitSpline",
+  "bridgingCurve",
 ]);
+
+/**
+ * Features that build a new surface/body from a target instead of editing the
+ * target in place. Reusing the target's element would replace the source body
+ * with the surface, so these always author their own element.
+ */
+const OWN_BODY = new Set(["surface", "boundarySurface", "constrainedSurface"]);
 
 export interface ElementAppearance {
   color?: string | undefined;
@@ -41,6 +66,8 @@ export interface SceneSyncCore {
     occBrep?: string,
     faceGeometry?: THREE.BufferGeometry,
     vertexPositions?: Float32Array,
+    /** false for rebuild syncs: the creating action owns the undo entry. */
+    recordUndo?: boolean,
   ) => void;
 }
 
@@ -49,12 +76,14 @@ export class ScadgenSceneSync {
   private history: ScadgenHistory | null = null;
   private synced = new Set<string>();
   private hiddenBySync = new Set<string>();
+  private hiddenByHistory = new Set<string>();
   private authored = new Map<string, string>();
 
   configure(core: SceneSyncCore, history: ScadgenHistory): void {
     if (this.history !== history) {
       this.synced.clear();
       this.hiddenBySync.clear();
+      this.hiddenByHistory.clear();
       this.authored.clear();
     }
     this.core = core;
@@ -73,6 +102,7 @@ export class ScadgenSceneSync {
   reset(): void {
     this.synced.clear();
     this.hiddenBySync.clear();
+    this.hiddenByHistory.clear();
     this.authored.clear();
   }
 
@@ -91,6 +121,7 @@ export class ScadgenSceneSync {
       if (id === from) this.authored.set(fid, to);
     }
     if (this.hiddenBySync.delete(from)) this.hiddenBySync.add(to);
+    if (this.hiddenByHistory.delete(from)) this.hiddenByHistory.add(to);
   }
 
   applyAppearance(featureId: string, ap: ElementAppearance): number {
@@ -99,6 +130,27 @@ export class ScadgenSceneSync {
     if (!id) return 0;
     this.core.setElementAppearance?.(id, ap);
     return 1;
+  }
+
+  /**
+   * Apply part/body state (hide, material colour, transparency) to the live
+   * element. Body ids include extras (`<featureId>#<k>`), which resolve
+   * through the authored map.
+   */
+  applyBodyState(
+    bodyId: string,
+    state: { hidden: boolean; appearance: ElementAppearance },
+  ): boolean {
+    if (!this.core) return false;
+    const id = this.elementOf(bodyId);
+    if (!id) return false;
+    this.core.setElementHidden?.(id, state.hidden);
+    if (
+      state.appearance.color !== undefined ||
+      state.appearance.opacity !== undefined
+    )
+      this.core.setElementAppearance?.(id, state.appearance);
+    return true;
   }
 
   elementOf(featureId: string): string | null {
@@ -135,6 +187,8 @@ export class ScadgenSceneSync {
 
   forget(featureId: string): void {
     this.synced.delete(featureId);
+    const gone = this.authored.get(featureId);
+    if (gone) this.hiddenByHistory.delete(gone);
     this.authored.delete(featureId);
     for (const key of [...this.authored.keys()])
       if (key.startsWith(`${featureId}#`)) {
@@ -163,7 +217,10 @@ export class ScadgenSceneSync {
       // A separate (multi-body) pattern must NOT consume its source element —
       // every instance is a new body with its own element.
       const multi = (out.additionalBodies?.length ?? 0) > 0;
-      let targetId = multi ? undefined : this.resolveTargetElementId(node);
+      let targetId =
+        multi || OWN_BODY.has(node.featureType)
+          ? undefined
+          : this.resolveTargetElementId(node);
       let justCreated = false;
       if (!targetId) {
         const created = this.core.createElement?.(out.brep, out.position);
@@ -177,7 +234,13 @@ export class ScadgenSceneSync {
       if (justCreated) {
         this.core.postCreate?.(targetId, out);
         this.synced.add(node.featureId);
-        if (node.featureType === "boolean") {
+        if (
+          node.featureType === "boolean" ||
+          node.featureType === "extrude" ||
+          node.featureType === "revolve" ||
+          node.featureType === "sweep" ||
+          node.featureType === "loft"
+        ) {
           for (const toolId of this.toolElementIds(node)) {
             stillConsumed.add(toolId);
             if (!this.hiddenBySync.has(toolId)) {
@@ -197,9 +260,16 @@ export class ScadgenSceneSync {
         out.occBrep,
         out.faceGeometry,
         out.vertexPositions,
+        false,
       );
       this.synced.add(node.featureId);
-      if (node.featureType === "boolean") {
+      if (
+        node.featureType === "boolean" ||
+        node.featureType === "extrude" ||
+        node.featureType === "revolve" ||
+        node.featureType === "sweep" ||
+        node.featureType === "loft"
+      ) {
         for (const toolId of this.toolElementIds(node)) {
           stillConsumed.add(toolId);
           if (!this.hiddenBySync.has(toolId)) {
@@ -216,13 +286,50 @@ export class ScadgenSceneSync {
       }
     }
 
+    // Rollback and suppression remove features from evaluatedNodes(), but the
+    // element authored by an earlier rebuild still exists. Hide those bodies
+    // without touching bodies the user hid themselves.
+    const live = new Set(nodes.map((n) => n.featureId));
+    for (const [fid, id] of this.authored) {
+      const root = fid.includes("#") ? fid.slice(0, fid.indexOf("#")) : fid;
+      if (!live.has(fid) && !live.has(root)) {
+        if (!this.hiddenByHistory.has(id)) {
+          this.core.setElementHidden?.(id, true);
+          this.hiddenByHistory.add(id);
+        }
+      } else if (this.hiddenByHistory.delete(id)) {
+        this.core.setElementHidden?.(id, false);
+      }
+    }
+
     this.applyAppearances();
   };
 
   toolElementIds(node: ScadgenFeatureNode): string[] {
     if (!this.history) return [];
+    if (node.featureType === "boolean") {
+      const keep = node.parameters.find(
+        (p) => p.kind === "boolean" && p.parameterId === "keepTools",
+      );
+      if (keep && keep.kind === "boolean" && keep.value) return [];
+    }
+    if (
+      node.featureType === "extrude" ||
+      node.featureType === "revolve" ||
+      node.featureType === "sweep" ||
+      node.featureType === "loft"
+    ) {
+      const op = node.parameters.find(
+        (p) => p.kind === "enum" && p.parameterId === "operationType",
+      );
+      if (!op || op.kind !== "enum" || op.value === "NEW") return [];
+    }
+    // Boolean consumes `tools`; the modelling features consume `targets`.
     const list = node.parameters.find(
-      (p) => p.kind === "queryList" && p.parameterId === "tools",
+      (p) =>
+        p.kind === "queryList" &&
+        p.parameterId ===
+          (node.featureType === "boolean" ? "tools" : "targets"),
     );
     const queries = list && list.kind === "queryList" ? list.queries : [];
     const ids: string[] = [];
@@ -272,6 +379,7 @@ export class ScadgenSceneSync {
         b.occBrep,
         b.faceGeometry,
         b.vertexPositions,
+        false,
       );
       this.synced.add(key);
     });
@@ -283,6 +391,19 @@ export class ScadgenSceneSync {
 
   private resolveTargetElementId(node: ScadgenFeatureNode): string | undefined {
     if (!this.history) return undefined;
+    if (node.featureType === "transform") {
+      const copy = node.parameters.find(
+        (p) => p.kind === "boolean" && p.parameterId === "copy",
+      );
+      const type = node.parameters.find(
+        (p) => p.kind === "enum" && p.parameterId === "transformType",
+      );
+      if (
+        (copy && copy.kind === "boolean" && copy.value) ||
+        (type && type.kind === "enum" && type.value === "COPY")
+      )
+        return undefined;
+    }
     const list = (id: string) =>
       node.parameters.find(
         (p) => p.kind === "queryList" && p.parameterId === id,

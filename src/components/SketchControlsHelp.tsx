@@ -54,9 +54,9 @@ const SketchControlsHelp: FC<SketchControlsHelpProps> = ({ open, onClose }) => {
         role="dialog"
         aria-modal="true"
         aria-labelledby="sketch-controls-title"
-        className="w-full max-w-4xl max-h-[80vh] overflow-y-auto bg-gray-900 border border-gray-600 rounded-lg shadow-2xl"
+        className="cad-light-panel max-h-[80vh] w-full max-w-4xl overflow-y-auto rounded-lg border border-[var(--cad-border-strong)] bg-white shadow-2xl"
       >
-        <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-700">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[var(--cad-border)] bg-white px-4 py-2">
           <div>
             <h2 id="sketch-controls-title" className="text-sm text-gray-100">
               2D controls

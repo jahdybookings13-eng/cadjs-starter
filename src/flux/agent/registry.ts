@@ -725,6 +725,145 @@ export const PROMPT_REGISTRY: Record<string, PromptAction> = {
     },
     desc: "Edit a part property.",
   },
+  // ---- pcb studio build pipeline ------------------------------------------
+  buildPcb: {
+    key: "buildPcb",
+    label: "Build PCB",
+    selectionMode: "none",
+    submenuGroup: "root",
+    prompt:
+      "Build this PCB end to end: resolve the schematic netlist, place the footprints, pour copper, autoroute every net, run DRC and generate the fabrication package. Report every failed route or rule by name.",
+    kind: "mutate",
+    tool: {
+      name: "build_pcb",
+      args: { gridMM: { type: "number", desc: "router grid in mm" } },
+    },
+    desc: "Netlist → place → pour → route → DRC → fab.",
+  },
+  autoPlaceBoard: {
+    key: "autoPlaceBoard",
+    label: "Auto-place board",
+    selectionMode: "none",
+    submenuGroup: "root",
+    prompt:
+      "Place every footprint on the board inside the outline with courtyard spacing. Report any part that does not fit.",
+    kind: "mutate",
+    tool: { name: "auto_place_board", args: {} },
+    desc: "Shelf-place all footprints with real courtyards.",
+  },
+  autorouteBoard: {
+    key: "autorouteBoard",
+    label: "Autoroute board",
+    selectionMode: "none",
+    submenuGroup: "root",
+    prompt:
+      "Autoroute every unrouted net on the current board. Use vias where a layer change is required and list every edge that has no legal path.",
+    kind: "mutate",
+    tool: {
+      name: "autoroute_board",
+      args: { gridMM: { type: "number", desc: "router grid in mm" } },
+    },
+    desc: "Two-layer A* routing with vias.",
+  },
+  runPcbDrc: {
+    key: "runPcbDrc",
+    label: "Run PCB DRC",
+    selectionMode: "none",
+    submenuGroup: "detailedReviews",
+    prompt:
+      "Run the physical PCB design-rule check: clearance, trace width, via size and annular ring, courtyard, silkscreen, board outline, copper connectivity and missing nets. Return each violation with its stable code, location and fix target.",
+    kind: "review",
+    tool: { name: "run_pcb_drc", args: {} },
+    desc: "Physical board DRC with stable codes.",
+  },
+  exportPcbFabrication: {
+    key: "exportPcbFabrication",
+    label: "Export fabrication package",
+    selectionMode: "none",
+    submenuGroup: "manufacturingPrep",
+    prompt:
+      "Generate the fabrication package: RS-274X Gerbers for every copper/mask/silk layer, Excellon drill, pick-and-place CSV, grouped BOM and a layer-mapping README. Fail named if a required layer is empty.",
+    kind: "generate",
+    tool: { name: "export_pcb_fabrication", args: {} },
+    desc: "Gerbers, drill, CPL, BOM and ZIP.",
+  },
+  addSchematicSheet: {
+    key: "addSchematicSheet",
+    label: "Add schematic sheet",
+    selectionMode: "none",
+    submenuGroup: "root",
+    prompt: "Add a new schematic sheet to this PCB project.",
+    kind: "mutate",
+    tool: {
+      name: "add_schematic_sheet",
+      args: { name: { type: "string", desc: "sheet name" } },
+    },
+    desc: "Create a sheet with navigation + connectivity.",
+  },
+  addPcbPart: {
+    key: "addPcbPart",
+    label: "Add PCB library part",
+    selectionMode: "none",
+    submenuGroup: "root",
+    prompt:
+      "Place a footprint from the local PCB library on this board and give it the next free designator.",
+    kind: "mutate",
+    tool: {
+      name: "add_pcb_part",
+      args: {
+        libraryId: { type: "string", desc: "library part id" },
+        designator: { type: "string", desc: "optional designator" },
+      },
+    },
+    desc: "Place a real footprint with pads and silk.",
+  },
+  addPcbVia: {
+    key: "addPcbVia",
+    label: "Add PCB via",
+    selectionMode: "none",
+    submenuGroup: "root",
+    prompt:
+      "Add a plated through via on the requested net at the given board coordinates.",
+    kind: "mutate",
+    tool: {
+      name: "add_pcb_via",
+      args: {
+        net: { type: "string", desc: "net name" },
+        x: { type: "number", desc: "mm" },
+        y: { type: "number", desc: "mm" },
+      },
+    },
+    desc: "Drop a real via with drill + annular ring.",
+  },
+  checkPcbAssembly: {
+    key: "checkPcbAssembly",
+    label: "Check 3D board assembly",
+    selectionMode: "none",
+    submenuGroup: "detailedReviews",
+    prompt:
+      "Check the 3D board assembly: extrude the board, place every component model, compare component heights against the enclosure lid and report collisions with a measured depth.",
+    kind: "review",
+    tool: {
+      name: "check_pcb_assembly",
+      args: {
+        cavityMM: { type: "number", desc: "cavity height" },
+        wallMM: { type: "number", desc: "enclosure wall" },
+      },
+    },
+    desc: "Component/enclosure collision report.",
+  },
+  createPcbDemo: {
+    key: "createPcbDemo",
+    label: "Load PCB demo",
+    selectionMode: "none",
+    submenuGroup: "root",
+    prompt:
+      "Load the two-sheet controller demo, build the board, route it, run DRC and generate the fabrication package.",
+    kind: "generate",
+    tool: { name: "create_pcb_demo", args: {} },
+    desc: "Two-sheet demo with a clean, routed board.",
+  },
+
   // ---- mcad (board ↔ enclosure co-design) ---------------------------------
   importPart: {
     key: "importPart",

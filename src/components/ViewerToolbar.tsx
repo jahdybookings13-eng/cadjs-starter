@@ -26,22 +26,26 @@ export function ViewerToolbar({
   onFitAll,
 }: ViewerToolbarProps) {
   return (
-    <div className="flex-none h-12 bg-gray-900 border-b border-gray-700 flex items-center gap-2 px-3 z-30">
-      <div className="min-w-0 flex-1 truncate text-sm font-medium text-gray-200">
+    <div className="cad-chrome z-30 flex h-10 flex-none items-center gap-2 border-b px-3">
+      <div className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--cad-text)]">
         {projectName}
       </div>
-      <span className="rounded bg-amber-500/15 px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-amber-300">
+      <span className="rounded border border-[var(--cad-border)] bg-[#f8f9fa] px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-[var(--cad-text-muted)]">
         {ROLE_LABEL[role]}
       </span>
       <button
+        type="button"
         onClick={onFitAll}
-        className="rounded bg-gray-700 px-2 py-1.5 text-xs text-gray-100 hover:bg-gray-600"
+        className="cad-icon-button"
+        title="Fit all (F)"
+        aria-label="Fit all"
       >
         Fit
       </button>
       <button
+        type="button"
         onClick={onShare}
-        className="rounded bg-blue-600 px-2 py-1.5 text-xs font-medium text-white hover:bg-blue-500"
+        className="h-8 rounded bg-[#1a73e8] px-3 text-xs font-medium text-white hover:bg-[#1765cc]"
         data-testid="tool-share"
       >
         People

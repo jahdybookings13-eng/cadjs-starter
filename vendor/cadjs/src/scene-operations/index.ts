@@ -22,6 +22,7 @@ export * from "./revolve-operations";
 export * from "./sketch-intersection-utils";
 export * from "./sweep-operations";
 export * from "./undo-types";
+export * from "./undo-extras";
 export * from "./browser-sections";
 export * from "./constraint-validation";
 

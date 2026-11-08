@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import type { NamedView } from "@vitekk02/cadjs/react";
 import { Icon } from "./icons/BrowserIcons";
 
 type NavTool = "orbit" | "pan" | "zoom";
@@ -9,7 +10,18 @@ interface NavigationBarProps {
   controlsRef: React.MutableRefObject<OrbitControls | null>;
   navToolActiveRef: React.MutableRefObject<boolean>;
   onFitAll: () => void;
+  onViewChange?: ((view: NamedView) => void) | undefined;
 }
+
+const VIEW_ITEMS: { label: string; view: NamedView }[] = [
+  { label: "Front", view: "front" },
+  { label: "Back", view: "back" },
+  { label: "Top", view: "top" },
+  { label: "Bottom", view: "bottom" },
+  { label: "Left", view: "left" },
+  { label: "Right", view: "right" },
+  { label: "Isometric", view: "isometric" },
+];
 
 const NAV_TOOL_MOUSE: Record<NavTool, THREE.MOUSE> = {
   orbit: THREE.MOUSE.ROTATE,
@@ -27,8 +39,10 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
   controlsRef,
   navToolActiveRef,
   onFitAll,
+  onViewChange,
 }) => {
   const [activeTool, setActiveTool] = useState<NavTool | null>(null);
+  const [viewsOpen, setViewsOpen] = useState(false);
 
   const deactivate = useCallback(() => {
     if (controlsRef.current) {
@@ -92,43 +106,83 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
   }, [navToolActiveRef]);
 
   const btnClass = (tool: NavTool) =>
-    `p-2 md:p-1.5 rounded transition-colors ${
-      activeTool === tool
-        ? "bg-blue-600 text-white"
-        : "text-gray-300 hover:bg-gray-600 hover:text-white"
+    `cad-icon-button !h-7 !min-w-7 md:!h-6 md:!min-w-6 ${
+      activeTool === tool ? "!bg-[var(--cad-accent-strong)] !text-white" : ""
     }`;
 
   return (
-    <div className="absolute bottom-12 md:bottom-10 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 bg-gray-800 bg-opacity-90 border border-gray-600 rounded-lg px-1.5 py-1">
+    <div className="absolute bottom-10 left-1/2 z-10 flex -translate-x-1/2 items-center gap-0.5 rounded-md border border-[var(--cad-border-strong)] bg-[var(--cad-chrome)]/95 px-1 py-0.5 shadow-lg backdrop-blur-sm">
       <button
         className={btnClass("orbit")}
         onClick={() => handleToggle("orbit")}
         title="Orbit (Alt+Left-click)"
+        aria-label="Orbit"
       >
-        <Icon name="orbit" className="w-5 h-5 md:w-4 md:h-4" />
+        <Icon name="orbit" className="h-5 w-5 md:h-4 md:w-4" />
       </button>
       <button
         className={btnClass("pan")}
         onClick={() => handleToggle("pan")}
         title="Pan"
+        aria-label="Pan"
       >
-        <Icon name="pan" className="w-5 h-5 md:w-4 md:h-4" />
+        <Icon name="pan" className="h-5 w-5 md:h-4 md:w-4" />
       </button>
       <button
         className={btnClass("zoom")}
         onClick={() => handleToggle("zoom")}
         title="Zoom"
+        aria-label="Zoom"
       >
-        <Icon name="zoom" className="w-5 h-5 md:w-4 md:h-4" />
+        <Icon name="zoom" className="h-5 w-5 md:h-4 md:w-4" />
       </button>
-      <div className="w-px h-5 bg-gray-600 mx-0.5" />
+      <div className="mx-0.5 h-4 w-px bg-[var(--cad-border)]" />
       <button
-        className="p-2 md:p-1.5 rounded text-gray-300 hover:bg-gray-600 hover:text-white transition-colors"
+        className="cad-icon-button !h-7 !min-w-7 md:!h-6 md:!min-w-6"
         onClick={onFitAll}
-        title="Fit All (F)"
+        title="Fit all (F)"
+        aria-label="Fit all"
       >
-        <Icon name="fit-all" className="w-5 h-5 md:w-4 md:h-4" />
+        <Icon name="fit-all" className="h-5 w-5 md:h-4 md:w-4" />
       </button>
+      {onViewChange && (
+        <div className="relative">
+          <button
+            type="button"
+            className="cad-icon-button !h-7 !min-w-7 px-1.5 text-[10px] md:!h-6"
+            onClick={() => setViewsOpen((value) => !value)}
+            title="Standard views"
+            aria-label="Standard views"
+            aria-haspopup="menu"
+            aria-expanded={viewsOpen}
+          >
+            Views
+          </button>
+          {viewsOpen && (
+            <div
+              role="menu"
+              aria-label="Standard views"
+              className="absolute bottom-full right-0 z-50 mb-1 w-40 rounded-md border border-[var(--cad-border-strong)] bg-white py-1 shadow-xl"
+            >
+              {VIEW_ITEMS.map((item) => (
+                <button
+                  key={item.view}
+                  type="button"
+                  role="menuitem"
+                  aria-label={item.label}
+                  onClick={() => {
+                    setViewsOpen(false);
+                    onViewChange(item.view);
+                  }}
+                  className="w-full px-3 py-1.5 text-left text-[11px] text-[var(--cad-text)] hover:bg-[var(--cad-chrome-hover)]"
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

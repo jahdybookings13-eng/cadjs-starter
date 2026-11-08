@@ -1,6 +1,7 @@
 // One handler per operation pipeline; results are plain objects with typed arrays so they
 // transfer cleanly across the worker boundary (no THREE.js).
-import type { gp_Pnt_3,
+import type {
+  gp_Pnt_3,
   OpenCascadeInstance,
   TopoDS_Shape,
   TopoDS_Edge,
@@ -13,6 +14,7 @@ import type {
   Vec3,
   WorkerGeometryResult,
   WorkerBooleanResult,
+  WorkerInterferenceResult,
   WorkerEdgeAnalysisResult,
   WorkerPreviewResult,
   WorkerSketchBrepResult,
@@ -30,6 +32,7 @@ import type {
   FilletRequest,
   ChamferRequest,
   BooleanRequest,
+  InterferenceRequest,
   EdgeAnalysisRequest,
   PreviewGeometryRequest,
   SketchToBrepRequest,
@@ -53,9 +56,14 @@ import type {
   SplitBothResult,
   ProjectCurvesRequest,
   SplitRequest,
+  SewRequest,
+  SurfaceExtendRequest,
+  WorkerSewResult,
   SurfaceOpRequest,
   ThickenRequest,
   DeleteFaceRequest,
+  ReplaceFaceRequest,
+  TransformRequest,
   HoleRequest,
   FlangeRequest,
 } from "./occ-worker-types";
@@ -69,8 +77,11 @@ import {
   buildWireFromPointsHelper,
   extrudeShapeHelper,
   sweepShapeAdvancedHelper,
+  sweepMultiGuideHelper,
+  sweepTwistedHelper,
   revolveShapeHelper,
   loftShapesHelper,
+  loftAlongCenterlineHelper,
   booleanUnionHelper,
   booleanDifferenceHelper,
   booleanIntersectionHelper,
@@ -90,12 +101,15 @@ import {
   faceToBrepWithCenterHelper,
   readSTLHelper,
   writeSTLHelper,
-  readSTEPHelper,
+  readSTEPCAFHelper,
   writeSTEPHelper,
+  readIGESHelper,
+  writeIGESHelper,
   getEdgeLengthHelper,
   getEdgeDirectionAtMidpointHelper,
   sketchToWireHelper,
 } from "../services/occ-helpers";
+import { offsetProfileFace } from "../services/occ-extrude";
 import {
   applyTransform,
   asEdge,
@@ -121,7 +135,7 @@ import {
 } from "../services/occ-facade";
 import { negateVec3 } from "../vectorHelpers";
 import { debugLog } from "../config";
-import { TESSELLATE_LINEAR_EDGE } from "../tolerances";
+import { EDGES_TO_WIRES_TOL, TESSELLATE_LINEAR_EDGE } from "../tolerances";
 
 function tryOptional<T>(fn: () => T): T | undefined {
   try {
@@ -202,19 +216,114 @@ export function handleExtrude(
   oc: OpenCascadeInstance,
   payload: ExtrudeRequest["payload"],
 ): WorkerGeometryResult {
-  const cleanFace = restoreCleanFace(
-    oc,
-    payload.brepJson,
-    payload.sourceOccBrep,
-  );
-  const extrudedShape = extrudeShapeHelper(
+  const ribbonWire =
+    payload.ribbonPoints && payload.ribbonPoints.length >= 3
+      ? buildWireFromPointsHelper(oc, payload.ribbonPoints)
+      : null;
+  if (payload.ribbonPoints?.length && !ribbonWire) {
+    throw new Error("extrude: open-profile wall could not build a wire");
+  }
+  const cleanFace = ribbonWire
+    ? makePlanarFace(oc, ribbonWire)
+    : restoreCleanFace(oc, payload.brepJson, payload.sourceOccBrep);
+  const draft = {
+    ...(payload.draftNeutralPoint
+      ? { neutralPoint: payload.draftNeutralPoint }
+      : {}),
+    ...(payload.draftNeutralNormal
+      ? { neutralNormal: payload.draftNeutralNormal }
+      : {}),
+    ...(payload.draftMode ? { mode: payload.draftMode } : {}),
+    ...(payload.draftPartingLine
+      ? { partingLine: payload.draftPartingLine }
+      : {}),
+  };
+  const buildExtrude = (face: TopoDS_Shape): TopoDS_Shape =>
+    extrudeShapeHelper(
+      oc,
+      face,
+      payload.depth,
+      payload.direction,
+      payload.normalVec,
+      payload.symmetric,
+      payload.draftAngleDeg,
+      draft,
+    );
+  // A sketch with multiple disjoint regions arrives as a compound. Extrude
+  // each region and union the solids instead of silently using only face 0.
+  const profileFaces = collectSubShapes(
     oc,
     cleanFace,
-    payload.depth,
-    payload.direction,
-    payload.normalVec,
-    payload.symmetric,
-  );
+    oc.TopAbs_ShapeEnum.TopAbs_FACE as typeof oc.TopAbs_ShapeEnum,
+  ).map((s) => asFace(oc, s));
+  let extrudedShape: TopoDS_Shape;
+  if (profileFaces.length > 1) {
+    extrudedShape = buildExtrude(profileFaces[0]!);
+    for (let i = 1; i < profileFaces.length; i++) {
+      const next = buildExtrude(profileFaces[i]!);
+      const merged = booleanUnionHelper(oc, extrudedShape, next);
+      extrudedShape.delete();
+      next.delete();
+      extrudedShape = merged;
+    }
+  } else {
+    extrudedShape = buildExtrude(cleanFace);
+  }
+  if (!ribbonWire && payload.thinWall && payload.thinWall > 0) {
+    const buildThin = (profileShape: TopoDS_Shape): TopoDS_Shape => {
+      const profileFace = asFace(oc, profileShape);
+      const outerWire = (
+        oc as unknown as {
+          BRepTools: { OuterWire: (f: TopoDS_Face) => TopoDS_Wire };
+        }
+      ).BRepTools.OuterWire(profileFace);
+      if (!outerWire)
+        throw new Error("extrude: thin wall needs a closed profile");
+      const hollow = withOccScope((track) => {
+        const off = track(new oc.BRepOffsetAPI_MakeOffset_1());
+        const join = oc.GeomAbs_JoinType
+          .GeomAbs_Arc as typeof oc.GeomAbs_JoinType;
+        off.Init_2(join, false);
+        off.AddWire(outerWire);
+        off.Perform(-payload.thinWall!, 0);
+        if (!off.IsDone()) {
+          off.Init_2(join, false);
+          off.AddWire(outerWire);
+          off.Perform(payload.thinWall!, 0);
+        }
+        if (!off.IsDone())
+          throw new Error(
+            "extrude: thin-wall offset failed (open or self-intersecting profile)",
+          );
+        const innerFace = track(makePlanarFace(oc, asWire(oc, off.Shape())));
+        const innerShape = buildExtrude(innerFace);
+        const outerShape = buildExtrude(profileShape);
+        try {
+          return booleanDifferenceHelper(oc, outerShape, innerShape);
+        } finally {
+          outerShape.delete();
+          innerShape.delete();
+        }
+      });
+      return hollow;
+    };
+    if (profileFaces.length > 1) {
+      let hollow = buildThin(profileFaces[0]!);
+      for (let i = 1; i < profileFaces.length; i++) {
+        const next = buildThin(profileFaces[i]!);
+        const merged = booleanUnionHelper(oc, hollow, next);
+        hollow.delete();
+        next.delete();
+        hollow = merged;
+      }
+      extrudedShape.delete();
+      extrudedShape = hollow;
+    } else {
+      const hollow = buildThin(cleanFace);
+      extrudedShape.delete();
+      extrudedShape = hollow;
+    }
+  }
   return postProcessShape(oc, extrudedShape);
 }
 
@@ -238,11 +347,69 @@ export function handleSweep(
   const pathWire = buildWireFromPointsHelper(oc, localPathPoints);
   if (!pathWire) throw new Error("Could not build path wire");
 
+  const localGuide = payload.guidePoints?.map((p) => ({
+    x: p.x - payload.profilePosition.x,
+    y: p.y - payload.profilePosition.y,
+    z: p.z - payload.profilePosition.z,
+  }));
+  const localGuideCurves = (
+    payload.guideCurves ?? (localGuide ? [localGuide] : [])
+  )
+    .filter((curve) => curve.length >= 2)
+    .map((curve) =>
+      curve.map((p) => ({
+        x: p.x - payload.profilePosition.x,
+        y: p.y - payload.profilePosition.y,
+        z: p.z - payload.profilePosition.z,
+      })),
+    );
+  const guideWire =
+    localGuide && localGuide.length >= 2
+      ? buildWireFromPointsHelper(oc, localGuide)
+      : null;
+  if (payload.guidePoints && payload.guidePoints.length > 0 && !guideWire) {
+    throw new Error("sweep: guide curve could not build a wire");
+  }
+  if (
+    payload.guideCurves &&
+    payload.guideCurves.length !== localGuideCurves.length
+  ) {
+    throw new Error("sweep: every guide curve needs >=2 points");
+  }
+
   const options = payload.options || {
     orientation: "perpendicular" as const,
     cornerMode: "right" as const,
   };
-  const sweptShape = sweepShapeAdvancedHelper(oc, cleanFace, pathWire, options);
+  const twistRadians = options.twistRadians ?? 0;
+  if (twistRadians !== 0 && localGuideCurves.length) {
+    throw new Error("sweep: twist cannot combine with guide curves");
+  }
+  const buildSweep = (face: TopoDS_Shape): TopoDS_Shape =>
+    twistRadians !== 0
+      ? sweepTwistedHelper(oc, face, localPathPoints, twistRadians, {
+          ...(options.chordalTolerance !== undefined
+            ? { chordalTolerance: options.chordalTolerance }
+            : {}),
+          ...(options.cornerMode ? { cornerMode: options.cornerMode } : {}),
+        })
+      : localGuideCurves.length > 1
+        ? sweepMultiGuideHelper(oc, face, localPathPoints, localGuideCurves, {
+            ...options,
+          })
+        : sweepShapeAdvancedHelper(oc, face, pathWire, {
+            ...options,
+            ...(guideWire ? { guideWire } : {}),
+          });
+  let sweptShape = buildSweep(cleanFace);
+  if (payload.thinWall && payload.thinWall > 0) {
+    const innerFace = offsetProfileFace(
+      oc,
+      asFace(oc, cleanFace),
+      payload.thinWall,
+    );
+    sweptShape = booleanDifferenceHelper(oc, sweptShape, buildSweep(innerFace));
+  }
 
   return postProcessShape(oc, sweptShape);
 }
@@ -263,12 +430,46 @@ export function handleLoft(
     return face;
   });
 
-  const loftedShape = loftShapesHelper(
-    oc,
-    worldFaces,
-    true,
-    payload.isRuled ?? false,
-  );
+  const centerlineWire =
+    payload.centerlinePoints && payload.centerlinePoints.length >= 2
+      ? buildWireFromPointsHelper(oc, payload.centerlinePoints)
+      : null;
+  if (
+    payload.centerlinePoints &&
+    payload.centerlinePoints.length > 0 &&
+    !centerlineWire
+  ) {
+    throw new Error("loft: centerline could not build a wire");
+  }
+
+  const buildLoft = (faces: TopoDS_Shape[]): TopoDS_Shape =>
+    centerlineWire
+      ? loftAlongCenterlineHelper(oc, faces, centerlineWire)
+      : loftShapesHelper(
+          oc,
+          faces,
+          true,
+          payload.isRuled ?? false,
+          payload.isClosed ?? false,
+          {
+            ...(payload.twistRadians
+              ? { twistRadians: payload.twistRadians }
+              : {}),
+            ...(payload.connectors ? { connectors: payload.connectors } : {}),
+          },
+        );
+
+  let loftedShape = buildLoft(worldFaces);
+  if (payload.thinWall && payload.thinWall > 0) {
+    const innerFaces = worldFaces.map((face) =>
+      offsetProfileFace(oc, asFace(oc, face), payload.thinWall!),
+    );
+    loftedShape = booleanDifferenceHelper(
+      oc,
+      loftedShape,
+      buildLoft(innerFaces),
+    );
+  }
   return postProcessShape(oc, loftedShape);
 }
 
@@ -285,24 +486,57 @@ export function handleRevolve(
   // Axis coordinates are in world space, so the face has to follow.
   const positionedFace = translateShape(oc, cleanFace, payload.profilePosition);
 
-  let revolvedShape = revolveShapeHelper(
-    oc,
-    positionedFace,
-    payload.axisOrigin,
-    payload.axisDir,
-    payload.angleRadians,
-  );
+  // A symmetric revolve is two half sweeps around the same axis; "two" keeps
+  // independent forward/back angles.
+  const symmetric = payload.direction === "symmetric";
+  const totalAngle = payload.angleRadians ?? Math.PI * 2;
+  const forwardAngle = symmetric ? totalAngle / 2 : payload.angleRadians;
+  const backAngle = symmetric ? totalAngle / 2 : payload.angleRadians2;
+  const needsBack =
+    (payload.direction === "two" || symmetric) &&
+    backAngle !== undefined &&
+    backAngle > 0 &&
+    Math.abs(backAngle - Math.PI * 2) > 1e-6;
 
-  if (payload.direction === "two" && payload.angleRadians2) {
-    const reverseDir = negateVec3(payload.axisDir);
-    const reverseShape = revolveShapeHelper(
+  const buildRevolve = (face: TopoDS_Shape): TopoDS_Shape => {
+    let shape = revolveShapeHelper(
       oc,
-      positionedFace,
+      face,
       payload.axisOrigin,
-      reverseDir,
-      payload.angleRadians2,
+      payload.axisDir,
+      forwardAngle,
     );
-    revolvedShape = booleanUnionHelper(oc, revolvedShape, reverseShape);
+    if (needsBack) {
+      const reverseShape = revolveShapeHelper(
+        oc,
+        face,
+        payload.axisOrigin,
+        negateVec3(payload.axisDir),
+        backAngle,
+      );
+      shape = booleanUnionHelper(oc, shape, reverseShape);
+    }
+    return shape;
+  };
+
+  let revolvedShape = buildRevolve(positionedFace);
+  if (payload.thinWall && payload.thinWall > 0) {
+    const innerLocal = offsetProfileFace(
+      oc,
+      asFace(oc, cleanFace),
+      payload.thinWall,
+      payload.cornerType,
+    );
+    const innerPositioned = translateShape(
+      oc,
+      innerLocal,
+      payload.profilePosition,
+    );
+    revolvedShape = booleanDifferenceHelper(
+      oc,
+      revolvedShape,
+      buildRevolve(innerPositioned),
+    );
   }
 
   const result = postProcessShape(oc, revolvedShape);
@@ -334,6 +568,9 @@ export function handleFillet(
     payload.radius,
     skipFix,
     payload.radii,
+    payload.section,
+    payload.variableRadii,
+    payload.cornerRadius,
   );
   const result = postProcessShape(oc, filleted, {
     invertRotation: payload.rotation,
@@ -366,6 +603,8 @@ export function handleChamfer(
     payload.distance,
     skipFix,
     payload.distances,
+    payload.mode,
+    payload.angleDeg,
   );
   const result = postProcessShape(oc, chamfered, {
     invertRotation: payload.rotation,
@@ -439,8 +678,85 @@ export function handleBoolean(
     resultShape = booleanFn(oc, resultShape, shapes[i]!);
   }
 
+  // makeSolid=false returns the boolean's faces as a surface compound instead
+  // of claiming the result is a closed solid. Callers can thicken/stitch it.
+  if (payload.options?.makeSolid === false) {
+    const faceShapes = collectSubShapes(
+      oc,
+      resultShape,
+      oc.TopAbs_ShapeEnum.TopAbs_FACE as typeof oc.TopAbs_ShapeEnum,
+    );
+    if (!faceShapes.length)
+      throw new Error("boolean: result has no faces (empty result)");
+    const builder = new oc.BRep_Builder();
+    const compound = new oc.TopoDS_Compound();
+    builder.MakeCompound(compound);
+    for (const f of faceShapes) builder.Add(compound, f);
+    resultShape = compound;
+  }
+
+  const solidCount = collectSubShapes(
+    oc,
+    resultShape,
+    oc.TopAbs_ShapeEnum.TopAbs_SOLID as typeof oc.TopAbs_ShapeEnum,
+  ).length;
+  if (
+    payload.options?.makeSolid !== false &&
+    payload.operation !== "union" &&
+    solidCount === 0
+  ) {
+    throw new Error(
+      "boolean: empty or non-manifold result (no solid produced)",
+    );
+  }
+
   const { positionOffset, ...rest } = postProcessShape(oc, resultShape);
   return { ...rest, position: positionOffset, removedNodeIds: [] };
+}
+
+export function handleInterference(
+  oc: OpenCascadeInstance,
+  payload: InterferenceRequest["payload"],
+): WorkerInterferenceResult {
+  const a = buildWorldShape(
+    oc,
+    payload.a.brepJson,
+    payload.a.position,
+    payload.a.occBrep,
+    payload.a.rotation,
+  );
+  const b = buildWorldShape(
+    oc,
+    payload.b.brepJson,
+    payload.b.position,
+    payload.b.occBrep,
+    payload.b.rotation,
+  );
+  let common: TopoDS_Shape | null = null;
+  try {
+    common = booleanIntersectionHelper(oc, a, b);
+    const solids = collectSubShapes(
+      oc,
+      common,
+      oc.TopAbs_ShapeEnum.TopAbs_SOLID as typeof oc.TopAbs_ShapeEnum,
+    );
+    if (!solids.length) return { volume: 0 };
+    const props = new oc.GProp_GProps_1();
+    try {
+      oc.BRepGProp.VolumeProperties_2(common, props, 1e-7, true, false);
+      return { volume: Math.abs(props.Mass()) };
+    } finally {
+      props.delete();
+    }
+  } catch {
+    // Empty common results are reported by OCC as a failed boolean. A zero
+    // volume is the useful answer for an interference report, not an error.
+    return { volume: 0 };
+  } finally {
+    common?.delete();
+    a.delete();
+    b.delete();
+  }
 }
 
 export function handleEdgeAnalysis(
@@ -515,6 +831,179 @@ interface SketchPrimitiveLike {
   origin?: boolean;
 }
 
+interface SketchLoop {
+  wire: TopoDS_Wire;
+  face: TopoDS_Face;
+  area: number;
+  center: { x: number; y: number; z: number };
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+}
+
+/**
+ * Build one or more planar faces from sketch edges, preserving containment:
+ * a loop inside another becomes an inner wire (hole), while disjoint loops
+ * become separate faces in a compound.
+ */
+function buildSketchProfileShape(
+  oc: OpenCascadeInstance,
+  circleEdges: TopoDS_Edge[],
+  otherEdges: TopoDS_Edge[],
+): TopoDS_Shape | null {
+  const edges = [...circleEdges, ...otherEdges];
+  if (!edges.length) return null;
+
+  const builder = new oc.BRep_Builder();
+  const edgeCompound = new oc.TopoDS_Compound();
+  builder.MakeCompound(edgeCompound);
+  for (const edge of edges) builder.Add(edgeCompound, edge);
+  const wireCompound = new oc.TopoDS_Compound();
+  builder.MakeCompound(wireCompound);
+  const wireStatus = oc.BOPAlgo_Tools.EdgesToWires(
+    edgeCompound,
+    wireCompound,
+    false,
+    EDGES_TO_WIRES_TOL,
+  );
+  const wires: TopoDS_Wire[] = [];
+  if (wireStatus === 0) {
+    for (const shape of iterSubShapes(
+      oc,
+      wireCompound,
+      oc.TopAbs_ShapeEnum.TopAbs_WIRE as typeof oc.TopAbs_ShapeEnum,
+    ))
+      wires.push(asWire(oc, shape));
+  }
+
+  const loops: SketchLoop[] = [];
+  for (const wire of wires) {
+    try {
+      const face = makePlanarFace(oc, wire);
+      const props = new oc.GProp_GProps_1();
+      let area = 0;
+      let center = { x: 0, y: 0, z: 0 };
+      try {
+        oc.BRepGProp.SurfaceProperties_2(face, props, 1e-7, false);
+        area = Math.abs(props.Mass());
+        const c = props.CentreOfMass();
+        center = { x: c.X(), y: c.Y(), z: c.Z() };
+      } finally {
+        props.delete();
+      }
+      if (!(area > 1e-12)) continue;
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+      for (const v of iterSubShapes(
+        oc,
+        wire,
+        oc.TopAbs_ShapeEnum.TopAbs_VERTEX as typeof oc.TopAbs_ShapeEnum,
+      )) {
+        const p = oc.BRep_Tool.Pnt(oc.TopoDS.Vertex_1(v));
+        minX = Math.min(minX, p.X());
+        minY = Math.min(minY, p.Y());
+        maxX = Math.max(maxX, p.X());
+        maxY = Math.max(maxY, p.Y());
+        p.delete();
+      }
+      loops.push({ wire, face, area, center, minX, minY, maxX, maxY });
+    } catch {
+      // An open or degenerate chain is handled by the caller's named error.
+    }
+  }
+  if (!loops.length) return null;
+
+  const contains = (outer: SketchLoop, inner: SketchLoop): boolean => {
+    if (!(outer.area > inner.area + 1e-12)) return false;
+    const eps = 1e-6;
+    if (
+      inner.minX < outer.minX - eps ||
+      inner.minY < outer.minY - eps ||
+      inner.maxX > outer.maxX + eps ||
+      inner.maxY > outer.maxY + eps
+    )
+      return false;
+    const point = new oc.gp_Pnt_3(
+      inner.center.x,
+      inner.center.y,
+      inner.center.z,
+    );
+    const classifier = new oc.BRepClass_FaceClassifier_4(
+      outer.face,
+      point,
+      1e-7,
+      true,
+      0,
+    );
+    try {
+      const state = classifier.State();
+      return (
+        state === oc.TopAbs_State.TopAbs_IN ||
+        state === oc.TopAbs_State.TopAbs_ON
+      );
+    } finally {
+      classifier.delete();
+      point.delete();
+    }
+  };
+
+  // Parent = the smallest enclosing loop. Depth parity decides material: even
+  // depths are outer faces, odd depths are holes, depth-2 islands are new outer
+  // faces, and so on.
+  const parent: Array<number | null> = loops.map(() => null);
+  for (let i = 0; i < loops.length; i++) {
+    let best = -1;
+    for (let j = 0; j < loops.length; j++) {
+      if (i === j || !contains(loops[j]!, loops[i]!)) continue;
+      if (best < 0 || loops[j]!.area < loops[best]!.area) best = j;
+    }
+    parent[i] = best >= 0 ? best : null;
+  }
+  const depthOf = (i: number): number => {
+    let depth = 0;
+    let p = parent[i];
+    const seen = new Set<number>();
+    while (p !== null && p !== undefined && !seen.has(p)) {
+      seen.add(p);
+      depth++;
+      p = parent[p] ?? null;
+    }
+    return depth;
+  };
+
+  const faces: TopoDS_Face[] = [];
+  for (let i = 0; i < loops.length; i++) {
+    if (depthOf(i) % 2 !== 0) continue;
+    try {
+      const mf = new oc.BRepBuilderAPI_MakeFace_15(loops[i]!.wire, true);
+      for (let j = 0; j < loops.length; j++) {
+        // EdgesToWires does not orient holes against their parent, and
+        // MakeFace::Add keeps the wire orientation it receives. Reverse a
+        // direct child so it bounds a void instead of filling a second region.
+        if (parent[j] === i) mf.Add(asWire(oc, loops[j]!.wire.Reversed()));
+      }
+      if (mf.IsDone()) faces.push(mf.Face());
+      mf.delete();
+    } catch {
+      // Leave the loop out; the caller reports a profile error if nothing
+      // usable remains.
+    }
+  }
+
+  builder.delete();
+  if (!faces.length) return null;
+  if (faces.length === 1) return faces[0]!;
+  const out = new oc.TopoDS_Compound();
+  const outBuilder = new oc.BRep_Builder();
+  outBuilder.MakeCompound(out);
+  for (const face of faces) outBuilder.Add(out, face);
+  outBuilder.delete();
+  return out;
+}
+
 export function handleSketchToBrep(
   oc: OpenCascadeInstance,
   payload: SketchToBrepRequest["payload"],
@@ -530,41 +1019,27 @@ export function handleSketchToBrep(
     pointMap,
   );
 
-  const faces: TopoDS_Shape[] = [];
-  for (const edge of circleEdges) {
-    const f = tryMakeFaceFromEdges(oc, [edge]);
-    if (f) faces.push(f);
-  }
-  if (otherEdges.length > 0) {
-    const f = tryMakeFaceFromEdges(oc, otherEdges);
-    if (f) faces.push(f);
-  }
-
-  if (faces.length === 0)
-    return { brepJson: { vertices: [], edges: [], faces: [] } };
-
-  // Union faces
-  let resultShape = faces[0]!;
-  for (let i = 1; i < faces.length; i++) {
-    try {
-      const next = faces[i]!;
-      resultShape = withProgressRange(oc, (pr) => {
-        const fuser = new oc.BRepAlgoAPI_Fuse_3(resultShape, next, pr);
-        const fused = fuser.IsDone() ? fuser.Shape() : resultShape;
-        fuser.delete();
-        return fused;
-      });
-    } catch (e) {
-      // A failed fuse leaves resultShape as the previous accumulator, so
-      // continuing keeps the loft mostly intact. Log so a silent topological
-      // bug doesn't hide here.
-      debugLog(`[loft] face #${i} fuse failed, skipping:`, e);
+  let resultShape = buildSketchProfileShape(oc, circleEdges, otherEdges);
+  if (!resultShape) {
+    // Fallback for a single closed chain, including a circle edge. Multi-loop
+    // nesting is handled above; this keeps the historical open/degenerate path.
+    resultShape = tryMakeFaceFromEdges(oc, [...circleEdges, ...otherEdges]);
+    if (!resultShape) {
+      resultShape =
+        circleEdges.length === 1 ? tryMakeFaceFromEdges(oc, circleEdges) : null;
     }
+    if (!resultShape)
+      return { brepJson: { vertices: [], edges: [], faces: [] } };
   }
 
   resultShape = transformShapeToPlaneHelper(oc, resultShape, payload.plane);
   const { brepJson } = ocShapeToBRepHelper(oc, resultShape, false);
-  return { brepJson };
+  // Preserve the exact OCC face, including inner wires. The JSON is a triangle
+  // soup and cannot distinguish a hole from a filled region on its own.
+  return {
+    brepJson,
+    occBrep: tryOptional(() => serializeShapeHelper(oc, resultShape)),
+  };
 }
 
 export function handleSketchToProfiles(
@@ -698,12 +1173,23 @@ export function handleImportFile(
   oc: OpenCascadeInstance,
   payload: ImportFileRequest["payload"],
 ): WorkerImportResult {
-  const shape =
-    payload.format === "step"
-      ? readSTEPHelper(oc, payload.fileBytes)
-      : readSTLHelper(oc, payload.fileBytes);
-
   const elements: WorkerImportResult["elements"] = [];
+  if (payload.format === "step") {
+    for (const imported of readSTEPCAFHelper(oc, payload.fileBytes)) {
+      for (const decomposed of decomposeShapeForImport(oc, imported.shape)) {
+        elements.push({
+          ...decomposed,
+          ...(imported.name ? { name: imported.name } : {}),
+          ...(imported.color ? { color: imported.color } : {}),
+        });
+      }
+    }
+    return { elements };
+  }
+  const shape =
+    payload.format === "iges"
+      ? readIGESHelper(oc, payload.fileBytes)
+      : readSTLHelper(oc, payload.fileBytes);
   for (const decomposed of decomposeShapeForImport(oc, shape)) {
     elements.push(decomposed);
   }
@@ -737,7 +1223,8 @@ function decomposeShapeForImport(
         it2.Next();
       }
       it2.delete();
-      if (results.length === 0) results.push(decomposeChildForImport(oc, shape));
+      if (results.length === 0)
+        results.push(decomposeChildForImport(oc, shape));
     }
   } else {
     results.push(decomposeChildForImport(oc, shape));
@@ -781,13 +1268,25 @@ export function handleExportFile(
   oc: OpenCascadeInstance,
   payload: ExportFileRequest["payload"],
 ): WorkerExportResult {
-  if (payload.format === "step") {
-    // STEP: one Transfer call per element so each becomes a labelled root
-    // in the output file (downstream tools show them as separate bodies).
+  if (payload.format === "step" || payload.format === "iges") {
+    // STEP/IGES: one root per element so downstream tools show separate
+    // bodies. STEP gets one Transfer per shape; IGES gets one AddShape each.
     const shapes = payload.elements.map((el) =>
       buildWorldShape(oc, el.brepJson, el.position, el.occBrep, el.rotation),
     );
-    return { fileBytes: writeSTEPHelper(oc, shapes) };
+    return {
+      fileBytes:
+        payload.format === "step"
+          ? writeSTEPHelper(
+              oc,
+              shapes,
+              payload.elements.map((element) => ({
+                ...(element.name ? { name: element.name } : {}),
+                ...(element.color ? { color: element.color } : {}),
+              })),
+            )
+          : writeIGESHelper(oc, shapes),
+    };
   }
 
   const builder = new oc.BRep_Builder();
@@ -886,15 +1385,44 @@ function buildWorldShape(
 
 // ── Parity ops: shell, draft, pattern, hole ────────────────────────────────
 
-function facesOf(
-  oc: OpenCascadeInstance,
-  shape: TopoDS_Shape,
-): TopoDS_Face[] {
+function facesOf(oc: OpenCascadeInstance, shape: TopoDS_Shape): TopoDS_Face[] {
   return collectSubShapes(
     oc,
     shape,
     oc.TopAbs_ShapeEnum.TopAbs_FACE as typeof oc.TopAbs_ShapeEnum,
   ).map((sh) => asFace(oc, sh));
+}
+
+function copyResultShape(
+  oc: OpenCascadeInstance,
+  shape: TopoDS_Shape,
+): TopoDS_Shape {
+  const identity = new oc.gp_Trsf_1();
+  try {
+    return applyTransform(oc, shape, identity, true);
+  } finally {
+    identity.delete();
+  }
+}
+
+/** A sewn free face is not wrapped in a shell; make the container explicit. */
+function shellFromFaceList(
+  oc: OpenCascadeInstance,
+  faces: TopoDS_Face[],
+): TopoDS_Shape {
+  const builder = new oc.BRep_Builder();
+  const shell = new oc.TopoDS_Shell();
+  try {
+    builder.MakeShell(shell);
+    for (const face of faces) builder.Add(shell, face);
+    if (!faces.length) throw new Error("sew: result has no faces");
+    return shell;
+  } catch (error) {
+    shell.delete();
+    throw error;
+  } finally {
+    builder.delete();
+  }
 }
 
 function finishWorldResult(
@@ -973,14 +1501,109 @@ export function handleShell(
       );
   }
 
+  if (payload.curvedCap) {
+    if (payload.keepType === "KEEP_CORE")
+      throw new Error(
+        "shell: curved caps do not support KEEP_CORE; use planar caps or KEEP_SHELL",
+      );
+    if ((payload.thicknesses?.length ?? 0) > 1)
+      throw new Error(
+        "shell: curved caps support one wall thickness, not per-face thicknesses",
+      );
+    const thickness = payload.thicknesses?.[0] ?? payload.thickness;
+    if (!(thickness > 0))
+      throw new Error("shell: curved-cap thickness must be positive");
+    let built: TopoDS_Shape | null = null;
+    // Fast path: build the open shell (removed faces omitted) and thicken it
+    // with the simple offset algorithm. This avoids the expensive face
+    // intersection pass in MakeThickSolidByJoin for curved caps.
+    try {
+      built = withOccScope((track) => {
+        const shellBuilder = track(new oc.BRep_Builder());
+        const open = track(new oc.TopoDS_Shell());
+        shellBuilder.MakeShell(open);
+        const removed = new Set(payload.faceIndices);
+        for (let i = 0; i < payload.brepJson.faces.length; i++) {
+          if (removed.has(i)) continue;
+          const f = liveFaceForJsonIndex(oc, faces, payload.brepJson, i);
+          if (f) shellBuilder.Add(open, f);
+        }
+        for (const sign of [-1, 1]) {
+          const simple = track(new oc.BRepOffsetAPI_MakeThickSolid());
+          simple.MakeThickSolidBySimple(open, sign * thickness);
+          withProgressRange(oc, (pr) => simple.Build(pr));
+          if (simple.IsDone()) return simple.Shape();
+        }
+        return null;
+      });
+    } catch {
+      built = null;
+    }
+    if (!built) {
+      for (const sign of [-1, 1]) {
+        try {
+          built = withOccScope((track) => {
+            const closing = track(new oc.TopTools_ListOfShape_1());
+            for (const idx of payload.faceIndices) {
+              const face = liveFaceForJsonIndex(
+                oc,
+                faces,
+                payload.brepJson,
+                idx,
+              );
+              if (!face) throw new Error(`shell: face ${idx} not found`);
+              closing.Append_1(face);
+            }
+            const thickSolid = track(new oc.BRepOffsetAPI_MakeThickSolid());
+            withProgressRange(oc, (pr) =>
+              thickSolid.MakeThickSolidByJoin(
+                worldShape,
+                closing,
+                sign * thickness,
+                1e-3,
+                oc.BRepOffset_Mode.BRepOffset_Skin as typeof oc.BRepOffset_Mode,
+                false,
+                false,
+                oc.GeomAbs_JoinType.GeomAbs_Arc as typeof oc.GeomAbs_JoinType,
+                false,
+                pr,
+              ),
+            );
+            if (!thickSolid.IsDone()) return null;
+            return thickSolid.Shape();
+          });
+        } catch {
+          built = null;
+        }
+        if (built) break;
+      }
+    }
+    if (!built)
+      throw new Error(
+        "shell: curved-cap thick-solid failed (try a smaller thickness or planar caps)",
+      );
+    const result = finishWorldResult(oc, built, payload);
+    built.delete();
+    worldShape.delete();
+    return result;
+  }
+
   const jsonVerts = payload.brepJson.vertices;
   let diag = 0;
   if (jsonVerts.length) {
     let mn = { ...jsonVerts[0]! };
     let mx = { ...jsonVerts[0]! };
     for (const v of jsonVerts) {
-      mn = { x: Math.min(mn.x, v.x), y: Math.min(mn.y, v.y), z: Math.min(mn.z, v.z) };
-      mx = { x: Math.max(mx.x, v.x), y: Math.max(mx.y, v.y), z: Math.max(mx.z, v.z) };
+      mn = {
+        x: Math.min(mn.x, v.x),
+        y: Math.min(mn.y, v.y),
+        z: Math.min(mn.z, v.z),
+      };
+      mx = {
+        x: Math.max(mx.x, v.x),
+        y: Math.max(mx.y, v.y),
+        z: Math.max(mx.z, v.z),
+      };
     }
     diag = Math.hypot(mx.x - mn.x, mx.y - mn.y, mx.z - mn.z);
   }
@@ -997,12 +1620,19 @@ export function handleShell(
 
   let host = worldShape;
   let owned = false;
+  const cores: TopoDS_Shape[] = [];
   try {
-    for (const idx of payload.faceIndices) {
+    for (let k = 0; k < payload.faceIndices.length; k++) {
+      const idx = payload.faceIndices[k]!;
+      const wall = payload.thicknesses?.[k] ?? payload.thickness;
       const face = liveFaceForJsonIndex(oc, faces, payload.brepJson, idx)!;
       const cut = withOccScope((track) => {
         const wire = track(
-          (oc as unknown as { BRepTools: { OuterWire: (f: TopoDS_Face) => TopoDS_Wire } }).BRepTools.OuterWire(face),
+          (
+            oc as unknown as {
+              BRepTools: { OuterWire: (f: TopoDS_Face) => TopoDS_Wire };
+            }
+          ).BRepTools.OuterWire(face),
         );
         if (!wire) throw new Error(`shell: face ${idx} has no outer wire`);
         const jsonFace = payload.brepJson.faces[idx];
@@ -1031,14 +1661,14 @@ export function handleShell(
         offBuilder.AddWire(wire);
         // Wire orientation is not guaranteed: the inward offset may be either
         // sign. Try one, fall back to the other.
-        offBuilder.Perform(-payload.thickness, 0);
+        offBuilder.Perform(-wall, 0);
         if (!offBuilder.IsDone()) {
           offBuilder.Init_2(
             oc.GeomAbs_JoinType.GeomAbs_Arc as typeof oc.GeomAbs_JoinType,
             false,
           );
           offBuilder.AddWire(wire);
-          offBuilder.Perform(payload.thickness, 0);
+          offBuilder.Perform(wall, 0);
         }
         if (!offBuilder.IsDone())
           throw new Error(
@@ -1051,21 +1681,34 @@ export function handleShell(
           y: -outDir.y * 1,
           z: -outDir.z * 1,
         });
-        const prism = extrudeShapeHelper(
-          oc,
-          pushed,
-          diag + 2,
-          1,
-          outDir,
-        );
+        const prism = extrudeShapeHelper(oc, pushed, diag + 2, 1, outDir);
         pushed.delete();
         return prism;
       });
-      const next = booleanDifferenceHelper(oc, host, cut);
-      cut.delete();
-      if (owned) host.delete();
-      host = next;
-      owned = true;
+      if (payload.keepType === "KEEP_CORE") {
+        cores.push(cut);
+      } else {
+        const next = booleanDifferenceHelper(oc, host, cut);
+        cut.delete();
+        if (owned) host.delete();
+        host = next;
+        owned = true;
+      }
+    }
+    if (payload.keepType === "KEEP_CORE") {
+      if (!cores.length)
+        throw new Error("shell: keep-core needs at least one removed face");
+      let core = cores[0]!;
+      for (let i = 1; i < cores.length; i++) {
+        const next = booleanUnionHelper(oc, core, cores[i]!);
+        if (i > 1) core.delete();
+        core = next;
+        cores[i]!.delete();
+      }
+      const result = finishWorldResult(oc, core, payload);
+      core.delete();
+      worldShape.delete();
+      return result;
     }
     const result = finishWorldResult(oc, host, payload);
     if (owned) host.delete();
@@ -1096,6 +1739,32 @@ export function handleDraft(
       );
   }
   const drafted = withOccScope((track) => {
+    if (payload.mode === "PARTING" && !payload.partingLine)
+      throw new Error("draft: parting mode needs a parting edge");
+    if (payload.partingLine) {
+      const edge = payload.partingLine;
+      const dx = edge.end.x - edge.start.x;
+      const dy = edge.end.y - edge.start.y;
+      const dz = edge.end.z - edge.start.z;
+      const dl = Math.hypot(dx, dy, dz);
+      const nl = Math.hypot(
+        payload.neutralNormal.x,
+        payload.neutralNormal.y,
+        payload.neutralNormal.z,
+      );
+      if (!(dl > 1e-12) || !(nl > 1e-12))
+        throw new Error("draft: parting edge or neutral normal is degenerate");
+      const dot =
+        (dx * payload.neutralNormal.x +
+          dy * payload.neutralNormal.y +
+          dz * payload.neutralNormal.z) /
+        (dl * nl);
+      if (Math.abs(dot) > 1e-5)
+        throw new Error(
+          "draft: parting edge must lie in the neutral plane (perpendicular to its normal)",
+        );
+    }
+    const np = payload.partingLine?.start ?? payload.neutralPoint;
     const dir = track(
       makeDir(
         oc,
@@ -1104,33 +1773,53 @@ export function handleDraft(
         payload.neutralNormal.z,
       ),
     );
-    const pln = track(
-      new oc.gp_Pln_3(
-        makePoint(
-          oc,
-          payload.neutralPoint.x,
-          payload.neutralPoint.y,
-          payload.neutralPoint.z,
-        ),
-        dir,
-      ),
-    );
+    const pln = track(new oc.gp_Pln_3(makePoint(oc, np.x, np.y, np.z), dir));
     const draft = track(new oc.BRepOffsetAPI_DraftAngle_1());
     draft.Init(worldShape);
     const angle = (payload.angleDeg * Math.PI) / 180;
+    let added = 0;
     for (const i of payload.faceIndices) {
-      draft.Add(liveFaceForJsonIndex(oc, faces, payload.brepJson, i)!, dir, angle, pln, false);
+      const face = liveFaceForJsonIndex(oc, faces, payload.brepJson, i)!;
+      let addPlane = pln;
+      let addAngle = angle;
+      if (payload.mode === "STEP" || payload.mode === "PARTING") {
+        const props = track(new oc.GProp_GProps_1());
+        oc.BRepGProp.SurfaceProperties_2(face, props, 1e-7, false);
+        const c = track(props.CentreOfMass());
+        const side =
+          (c.X() - np.x) * payload.neutralNormal.x +
+          (c.Y() - np.y) * payload.neutralNormal.y +
+          (c.Z() - np.z) * payload.neutralNormal.z;
+        if (payload.mode === "STEP" && side < 0) continue;
+        if (payload.mode === "PARTING") {
+          // One neutral plane for every face. The side only flips the draft
+          // direction; it must not move the neutral plane per face.
+          addPlane = pln;
+          addAngle = side >= 0 ? angle : -angle;
+        }
+      }
+      try {
+        draft.Add(face, dir, addAngle, addPlane, false);
+      } catch (e) {
+        throw new Error(
+          `draft: face ${i} failed in ${payload.mode ?? "NEUTRAL"} mode: ${
+            e instanceof Error ? e.message : String(e)
+          }`,
+        );
+      }
       if (!draft.AddDone()) {
         const bad = draft.ProblematicShape();
         try {
           throw new Error(
-            `draft: could not draft face ${i} (status ${draft.Status()})`,
+            `draft: face ${i} rejected in ${payload.mode ?? "NEUTRAL"} mode (status ${draft.Status()})`,
           );
         } finally {
           bad.delete();
         }
       }
+      added++;
     }
+    if (!added) throw new Error("draft: no faces selected for this mode");
     withProgressRange(oc, (pr) => draft.Build(pr));
     if (!draft.IsDone()) throw new Error("draft: build did not complete");
     draft.CorrectWires();
@@ -1170,7 +1859,11 @@ function sampleCurvePath(
   const len = segLen || 1;
   return {
     point,
-    tangent: { x: (b.x - a.x) / len, y: (b.y - a.y) / len, z: (b.z - a.z) / len },
+    tangent: {
+      x: (b.x - a.x) / len,
+      y: (b.y - a.y) / len,
+      z: (b.z - a.z) / len,
+    },
   };
 }
 
@@ -1186,9 +1879,65 @@ export function handlePattern(
     payload.occBrep,
     payload.rotation,
   );
-  const parts: TopoDS_Shape[] = [worldShape];
+  const faceSelection = payload.faceIndices ?? [];
+  if (payload.kind === "face" && !faceSelection.length)
+    throw new Error("pattern: face mode needs selected faces");
+  const skip = new Set(payload.skip ?? []);
+  const worldFaces = payload.kind === "face" ? facesOf(oc, worldShape) : [];
+  const selectedFaces =
+    payload.kind === "face"
+      ? faceSelection.map((i) => {
+          if (!payload.brepJson.faces[i])
+            throw new Error(
+              `pattern: face index ${i} out of range (${payload.brepJson.faces.length} faces)`,
+            );
+          const f = liveFaceForJsonIndex(oc, worldFaces, payload.brepJson, i);
+          if (!f) throw new Error(`pattern: face ${i} has no live geometry`);
+          return f;
+        })
+      : [];
+  const parts: TopoDS_Shape[] = [];
   try {
+    if (payload.kind === "face") {
+      parts.push(...selectedFaces);
+      for (let k = 1; k < payload.count; k++) {
+        if (skip.has(k)) continue;
+        for (const face of selectedFaces) {
+          const moved = withOccScope((track) => {
+            const tr = track(new oc.gp_Trsf_1());
+            if (payload.kind === "circular") {
+              // unreachable for face mode, retained for the discriminant
+            }
+            if (!payload.translation)
+              throw new Error("pattern: face needs a translation");
+            tr.SetTranslation_1(
+              makeVec(
+                oc,
+                payload.translation.x * k,
+                payload.translation.y * k,
+                payload.translation.z * k,
+              ),
+            );
+            // Do not track the result: this scope deletes tracked shapes, and
+            // the compound below still needs each moved face.
+            return applyTransform(oc, face, tr, true);
+          });
+          parts.push(moved);
+        }
+      }
+      if (payload.separate) {
+        const results = parts.map((p) => finishWorldResult(oc, p, payload));
+        return { results } as PatternPiecesResult;
+      }
+      const builder = new oc.BRep_Builder();
+      const compound = new oc.TopoDS_Compound();
+      builder.MakeCompound(compound);
+      for (const p of parts) builder.Add(compound, p);
+      return finishWorldResult(oc, compound, payload);
+    }
+    parts.push(worldShape);
     for (let k = 1; k < payload.count; k++) {
+      if (skip.has(k)) continue;
       const moved = withOccScope((track) => {
         if (payload.kind === "circular") {
           if (!payload.axisOrigin || !payload.axisDir || !payload.angleRad)
@@ -1253,12 +2002,7 @@ export function handlePattern(
           );
           const tr = track(new oc.gp_Trsf_1());
           tr.SetTranslation_1(
-            makeVec(
-              oc,
-              point.x - base.x,
-              point.y - base.y,
-              point.z - base.z,
-            ),
+            makeVec(oc, point.x - base.x, point.y - base.y, point.z - base.z),
           );
           let moved = applyTransform(oc, worldShape, tr, true);
           if (payload.align) {
@@ -1269,11 +2013,17 @@ export function handlePattern(
             const sin = Math.hypot(ax, ay, az);
             const dot = Math.max(
               -1,
-              Math.min(1, start.x * tangent.x + start.y * tangent.y + start.z * tangent.z),
+              Math.min(
+                1,
+                start.x * tangent.x + start.y * tangent.y + start.z * tangent.z,
+              ),
             );
             if (sin > 1e-9) {
               const quat = track(
-                new oc.gp_Quaternion_5(makeVec(oc, ax / sin, ay / sin, az / sin), Math.atan2(sin, dot)),
+                new oc.gp_Quaternion_5(
+                  makeVec(oc, ax / sin, ay / sin, az / sin),
+                  Math.atan2(sin, dot),
+                ),
               );
               const rotT = track(new oc.gp_Trsf_1());
               rotT.SetRotation_2(quat);
@@ -1292,7 +2042,8 @@ export function handlePattern(
           }
           return moved;
         }
-        if (!payload.translation) throw new Error("pattern: linear needs translation");
+        if (!payload.translation)
+          throw new Error("pattern: linear/body needs translation");
         const tr = track(new oc.gp_Trsf_1());
         tr.SetTranslation_1(
           makeVec(
@@ -1384,14 +2135,33 @@ export function handleThicken(
           fc.y += v.y / jsonFace.vertices.length;
           fc.z += v.z / jsonFace.vertices.length;
         }
-        const raw = {
-          x: fc.x - solidCenter.x,
-          y: fc.y - solidCenter.y,
-          z: fc.z - solidCenter.z,
-        };
-        const len = Math.hypot(raw.x, raw.y, raw.z);
-        if (len < 1e-9) throw new Error(`thicken: degenerate face ${idx}`);
-        const nrm = { x: raw.x / len, y: raw.y / len, z: raw.z / len };
+        const surf = track(new oc.BRepAdaptor_Surface_2(face, true));
+        let nrm: { x: number; y: number; z: number };
+        if (surf.GetType() === oc.GeomAbs_SurfaceType.GeomAbs_Plane) {
+          // A standalone surface has no body center to orient against; use the
+          // plane normal so the slab is built through the face, not in-plane.
+          const plane = track(surf.Plane());
+          const axis = track(plane.Position());
+          const direction = axis.Direction();
+          const sign =
+            face.Orientation_1() === oc.TopAbs_Orientation.TopAbs_REVERSED
+              ? -1
+              : 1;
+          nrm = {
+            x: direction.X() * sign,
+            y: direction.Y() * sign,
+            z: direction.Z() * sign,
+          };
+        } else {
+          const raw = {
+            x: fc.x - solidCenter.x,
+            y: fc.y - solidCenter.y,
+            z: fc.z - solidCenter.z,
+          };
+          const len = Math.hypot(raw.x, raw.y, raw.z);
+          if (len < 1e-9) throw new Error(`thicken: degenerate face ${idx}`);
+          nrm = { x: raw.x / len, y: raw.y / len, z: raw.z / len };
+        }
         const half = payload.thickness / 2;
         const mkSlab = (sign: number) => {
           const tr = track(new oc.gp_Trsf_1());
@@ -1525,57 +2295,20 @@ export function handleSurfaceOp(
       if (payload.kind === "ruled") {
         const idxs = payload.edgeIndices;
         const edges: TopoDS_Edge[] = [];
-        const collect = (i: number, edgeMap: { size: number; edgeAt: (n: number) => TopoDS_Edge }) => {
+        const collect = (
+          i: number,
+          edgeMap: { size: number; edgeAt: (n: number) => TopoDS_Edge },
+        ) => {
           if (i < 1 || i > edgeMap.size)
             throw new Error(
               `surfaceOp ${payload.kind}: edge index ${i} out of range (${edgeMap.size})`,
             );
           edges.push(edgeMap.edgeAt(i));
         };
-        if (
-          (payload.kind === "fill" ||
-            payload.kind === "boundary" ||
-            payload.kind === "constrained") &&
-          (!idxs || !idxs.length)
-        ) {
-          if (payload.faceIndex === undefined)
-            throw new Error(
-              `surfaceOp ${payload.kind}: needs edgeIndices or faceIndex`,
-            );
-          const faces = facesOf(oc, worldShape);
-          if (!payload.brepJson.faces[payload.faceIndex])
-            throw new Error(
-              `surfaceOp ${payload.kind}: face index ${payload.faceIndex} out of range (${payload.brepJson.faces.length} faces)`,
-            );
-          const face = liveFaceForJsonIndex(
-            oc,
-            faces,
-            payload.brepJson,
-            payload.faceIndex,
-          );
-          if (!face) throw new Error(`surfaceOp ${payload.kind}: no live face`);
-          const BRepTools = (
-            oc as unknown as {
-              BRepTools: { OuterWire: (f: TopoDS_Face) => TopoDS_Wire };
-            }
-          ).BRepTools;
-          const w = asWire(
-            oc,
-            BRepTools.OuterWire(face) as unknown as TopoDS_Shape,
-          );
-          const wire = track(w);
-          for (const sh of iterSubShapes(
-            oc,
-            wire,
-            oc.TopAbs_ShapeEnum.TopAbs_EDGE as typeof oc.TopAbs_ShapeEnum,
-          ))
-            edges.push(asEdge(oc, sh));
-        } else {
-          if (!idxs || idxs.length < 2)
-            throw new Error(`surfaceOp ${payload.kind}: needs >= 2 edges`);
-          const edgeMap = track(mapEdgesIndexed(oc, worldShape));
-          for (const i of idxs) collect(i, edgeMap);
-        }
+        if (!idxs || idxs.length < 2)
+          throw new Error(`surfaceOp ${payload.kind}: needs >= 2 edges`);
+        const edgeMap = track(mapEdgesIndexed(oc, worldShape));
+        for (const i of idxs) collect(i, edgeMap);
         const w1 = track(makeWireFromEdge(oc, edges[0]!));
         const w2 = track(makeWireFromEdge(oc, edges[1]!));
         const ts = track(new oc.BRepOffsetAPI_ThruSections(false, true, 1e-6));
@@ -1620,7 +2353,10 @@ export function handleSurfaceOp(
       // fill / boundary / constrained — MakeFilling patch across boundary edges
       const idxs = payload.edgeIndices;
       const edges: TopoDS_Edge[] = [];
-      const collect = (i: number, edgeMap: { size: number; edgeAt: (n: number) => TopoDS_Edge }) => {
+      const collect = (
+        i: number,
+        edgeMap: { size: number; edgeAt: (n: number) => TopoDS_Edge },
+      ) => {
         if (i < 1 || i > edgeMap.size)
           throw new Error(
             `surfaceOp ${payload.kind}: edge index ${i} out of range (${edgeMap.size})`,
@@ -1630,7 +2366,9 @@ export function handleSurfaceOp(
       const filling = new Set(["fill", "boundary", "constrained"]);
       if (filling.has(payload.kind) && (!idxs || !idxs.length)) {
         if (payload.faceIndex === undefined)
-          throw new Error(`surfaceOp ${payload.kind}: needs edgeIndices or faceIndex`);
+          throw new Error(
+            `surfaceOp ${payload.kind}: needs edgeIndices or faceIndex`,
+          );
         const faces = facesOf(oc, worldShape);
         if (!payload.brepJson.faces[payload.faceIndex])
           throw new Error(
@@ -1688,8 +2426,7 @@ export function handleSurfaceOp(
       if (payload.kind === "constrained") {
         const pts = payload.points;
         if (pts?.length) {
-          for (const p of pts)
-            mf.Add_4(new oc.gp_Pnt_3(p.x, p.y, p.z));
+          for (const p of pts) mf.Add_4(new oc.gp_Pnt_3(p.x, p.y, p.z));
         }
       }
       withProgressRange(oc, (pr) => mf.Build(pr));
@@ -1720,8 +2457,7 @@ function planeToolFace(
   n: Vec3,
   margin = 1,
 ): TopoDS_Face {
-  const ref =
-    Math.abs(n.z) < 0.9 ? { x: 0, y: 0, z: 1 } : { x: 1, y: 0, z: 0 };
+  const ref = Math.abs(n.z) < 0.9 ? { x: 0, y: 0, z: 1 } : { x: 1, y: 0, z: 0 };
   let u = {
     x: n.y * ref.z - n.z * ref.y,
     y: n.z * ref.x - n.x * ref.z,
@@ -1861,13 +2597,11 @@ export function handleMoveFace(
       const wire = track(BRepTools.OuterWire(face));
       if (!wire) throw new Error("moveFace: face has no outer wire");
       const capFace = track(makePlanarFace(oc, asWire(oc, wire)));
-      const prism = extrudeShapeHelper(
-        oc,
-        capFace,
-        payload.distance,
-        1,
-        { x: n.x, y: n.y, z: n.z },
-      );
+      const prism = extrudeShapeHelper(oc, capFace, payload.distance, 1, {
+        x: n.x,
+        y: n.y,
+        z: n.z,
+      });
       const fused = booleanUnionHelper(oc, worldShape, prism);
       prism.delete();
       return fused;
@@ -1968,10 +2702,10 @@ export function handleHem(
 }
 
 /*
- * wrap v1 (curve mode): map unfolded (arcLength, height) polylines onto a
- * cylinder as TRUE on-surface edges via 2D pcurves (Geom2d_Line on
- * Geom_CylindricalSurface through the Handle reset() upcast; MakeEdge_30).
- * Cut/emboss modes need on-surface booleans — queued after the helix rebuild.
+ * wrap: CURVE maps unfolded (arcLength, height) polylines onto a cylinder as
+ * true on-surface edges. CUT/EMBOSS sweep a circular bead along the wrapped
+ * path and difference/union it with the target body. This is a bead/groove
+ * wrap, not a filled region emboss; a closed polyline produces a closed bead.
  */
 export function handleWrapCurves(
   oc: OpenCascadeInstance,
@@ -1986,6 +2720,11 @@ export function handleWrapCurves(
     (pl) => Array.isArray(pl) && pl.length >= 2,
   );
   if (!polys.length) throw new Error("wrap: no polylines");
+  const operation = payload.operation ?? "CURVE";
+  const depth = payload.depth ?? 0.0005;
+  const width = payload.width ?? 0.001;
+  if (operation !== "CURVE" && (!(depth > 0) || !(width > 0)))
+    throw new Error("wrap: cut/emboss depth and width must be > 0");
   const worldShape = buildWorldShape(
     oc,
     payload.brepJson,
@@ -2000,7 +2739,9 @@ export function handleWrapCurves(
       const r1 = Math.abs(A.z) < 0.9 ? 0 : 0;
       const r2 = Math.abs(A.z) < 0.9 ? 1 : 0;
       void r1;
-      const refx = r0, refy = r1, refz = r2;
+      const refx = r0,
+        refy = r1,
+        refz = r2;
       let Xd = {
         x: A.y * refz - A.z * refy,
         y: A.z * refx - A.x * refz,
@@ -2029,15 +2770,24 @@ export function handleWrapCurves(
         y: A.z * Xd.x - A.x * Xd.z,
         z: A.x * Xd.y - A.y * Xd.x,
       };
-      const atUV = (th: number, hh: number) =>
-        new oc.gp_Pnt_3(
-          o.x + A.x * hh + (Xd.x * Math.cos(th) + Yd.x * Math.sin(th)) * R,
-          o.y + A.y * hh + (Xd.y * Math.cos(th) + Yd.y * Math.sin(th)) * R,
-          o.z + A.z * hh + (Xd.z * Math.cos(th) + Yd.z * Math.sin(th)) * R,
-        );
+      const atUV3 = (th: number, hh: number) => {
+        const c = Math.cos(th),
+          s = Math.sin(th);
+        return {
+          x: o.x + A.x * hh + (Xd.x * c + Yd.x * s) * R,
+          y: o.y + A.y * hh + (Xd.y * c + Yd.y * s) * R,
+          z: o.z + A.z * hh + (Xd.z * c + Yd.z * s) * R,
+        };
+      };
+      const atUV = (th: number, hh: number) => {
+        const q = atUV3(th, hh);
+        return new oc.gp_Pnt_3(q.x, q.y, q.z);
+      };
+      const ridges: TopoDS_Shape[] = [];
       let edges = 0;
       for (const pl of polys) {
         const pts3: Array<never> = [];
+        const plain: Array<{ x: number; y: number; z: number }> = [];
         for (let i = 0; i + 1 < pl.length; i++) {
           const rowA = pl[i] ?? [0, 0];
           const rowB = pl[i + 1] ?? [0, 0];
@@ -2047,18 +2797,25 @@ export function handleWrapCurves(
             vB = Number(rowB[1] ?? 0);
           const thA = sA / R,
             thB = sB / R;
-          const steps = Math.max(2, Math.round(16 * Math.hypot(sB - sA, (vB - vA) * R) / (2 * Math.PI * R)));
+          const steps = Math.max(
+            2,
+            Math.round(
+              (16 * Math.hypot(sB - sA, (vB - vA) * R)) / (2 * Math.PI * R),
+            ),
+          );
           for (let j = 0; j < steps; j++) {
             const f = j / steps;
-            pts3.push(
-              track(atUV(thA + (thB - thA) * f, vA + (vB - vA) * f)) as never,
-            );
+            const th = thA + (thB - thA) * f;
+            const hh = vA + (vB - vA) * f;
+            plain.push(atUV3(th, hh));
+            pts3.push(track(atUV(th, hh)) as never);
           }
         }
         const last = pl[pl.length - 1] ?? [0, 0];
-        pts3.push(
-          track(atUV(Number(last[0] ?? 0) / R, Number(last[1] ?? 0))) as never,
-        );
+        const lastTh = Number(last[0] ?? 0) / R;
+        const lastH = Number(last[1] ?? 0);
+        plain.push(atUV3(lastTh, lastH));
+        pts3.push(track(atUV(lastTh, lastH)) as never);
         if (pts3.length < 3) continue;
         const arr = new oc.TColgp_Array1OfPnt_2(1, pts3.length);
         pts3.forEach((q, idx) => {
@@ -2073,7 +2830,8 @@ export function handleWrapCurves(
           1e-6,
         );
         const ch = new oc.Handle_Geom_Curve_1();
-        let eb: InstanceType<typeof oc.BRepBuilderAPI_MakeEdge_24> | null = null;
+        let eb: InstanceType<typeof oc.BRepBuilderAPI_MakeEdge_24> | null =
+          null;
         let w: ReturnType<typeof makeWireFromEdge> | null = null;
         try {
           if (!fitter.IsDone()) throw new Error("wrap: polyline fit failed");
@@ -2090,18 +2848,260 @@ export function handleWrapCurves(
           fitter.delete();
           arr.delete();
         }
+        if (operation === "CURVE" || plain.length < 2) continue;
+        const firstRow = pl[0] ?? [0, 0];
+        const lastRow = pl[pl.length - 1] ?? [0, 0];
+        const closed =
+          Math.hypot(
+            Number(firstRow[0] ?? 0) - Number(lastRow[0] ?? 0),
+            Number(firstRow[1] ?? 0) - Number(lastRow[1] ?? 0),
+          ) < 1e-6;
+        if (closed) {
+          // A closed polyline is a filled region, not a bead path: make a face
+          // on the cylinder from its exact 2D pcurve and thicken that face.
+          try {
+            const rows = pl.slice();
+            if (
+              rows.length < 3 ||
+              Math.abs(
+                Number(rows[0]?.[0] ?? 0) -
+                  Number(rows[rows.length - 1]?.[0] ?? 0),
+              ) > 1e-9 ||
+              Math.abs(
+                Number(rows[0]?.[1] ?? 0) -
+                  Number(rows[rows.length - 1]?.[1] ?? 0),
+              ) > 1e-9
+            ) {
+              rows.push(firstRow);
+            }
+            if (rows.length < 3) throw new Error("region needs three points");
+            const arr2 = new oc.TColgp_Array1OfPnt2d_2(1, rows.length);
+            rows.forEach((row, idx) => {
+              arr2.SetValue(
+                idx + 1,
+                new oc.gp_Pnt2d_3(Number(row[0] ?? 0) / R, Number(row[1] ?? 0)),
+              );
+            });
+            const fit2 = new oc.Geom2dAPI_PointsToBSpline_2(
+              arr2,
+              1,
+              6,
+              oc.GeomAbs_Shape.GeomAbs_C2 as typeof oc.GeomAbs_Shape,
+              1e-6,
+            );
+            if (!fit2.IsDone()) throw new Error("pcurve fit failed");
+            const h2 = fit2.Curve();
+            const eb2 = new oc.BRepBuilderAPI_MakeEdge_30(
+              h2 as never,
+              surfH as never,
+            );
+            if (!eb2.IsDone()) throw new Error("pcurve edge failed");
+            const w2 = makeWireFromEdge(oc, eb2.Edge());
+            const fm = new oc.BRepBuilderAPI_MakeFace_21(
+              surfH as never,
+              w2,
+              true,
+            );
+            if (!fm.IsDone()) throw new Error("region face failed");
+            let region: TopoDS_Shape | null = null;
+            for (const off of [
+              operation === "EMBOSS" ? depth : -depth,
+              operation === "EMBOSS" ? -depth : depth,
+            ]) {
+              const thick = new oc.BRepOffsetAPI_MakeThickSolid();
+              thick.MakeThickSolidBySimple(fm.Face(), off);
+              withProgressRange(oc, (pr) => thick.Build(pr));
+              if (thick.IsDone()) {
+                region = thick.Shape();
+                thick.delete();
+                break;
+              }
+              thick.delete();
+            }
+            if (!region) throw new Error("region thicken failed");
+            ridges.push(region);
+            w2.delete();
+            eb2.delete();
+            fm.delete();
+            fit2.delete();
+            arr2.delete();
+          } catch (e) {
+            throw new Error(
+              `wrap: ${operation.toLowerCase()} region failed: ${
+                e instanceof Error ? e.message : String(e)
+              }`,
+            );
+          }
+          continue;
+        }
+        const pathWire = buildWireFromPointsHelper(oc, plain);
+        if (!pathWire) throw new Error("wrap: path wire failed");
+        const p0 = plain[0]!;
+        const p1 = plain[1]!;
+        const tx = p1.x - p0.x,
+          ty = p1.y - p0.y,
+          tz = p1.z - p0.z;
+        const tl = Math.hypot(tx, ty, tz);
+        if (!(tl > 1e-12)) continue;
+        const relx = p0.x - o.x,
+          rely = p0.y - o.y,
+          relz = p0.z - o.z;
+        const axial = relx * A.x + rely * A.y + relz * A.z;
+        const rx = relx - A.x * axial,
+          ry = rely - A.y * axial,
+          rz = relz - A.z * axial;
+        const rl = Math.hypot(rx, ry, rz);
+        if (!(rl > 1e-12)) continue;
+        const sign = operation === "EMBOSS" ? 0.5 : -0.5;
+        const cx = p0.x + (rx / rl) * depth * sign;
+        const cy = p0.y + (ry / rl) * depth * sign;
+        const cz = p0.z + (rz / rl) * depth * sign;
+        try {
+          const ax = track(
+            makeAxis2(
+              oc,
+              track(makePoint(oc, cx, cy, cz)),
+              track(makeDir(oc, tx / tl, ty / tl, tz / tl)),
+            ),
+          );
+          const circ = track(makeCircle(oc, ax, Math.max(width * 0.5, 1e-4)));
+          const edgeBuilder = track(new oc.BRepBuilderAPI_MakeEdge_8(circ));
+          if (!edgeBuilder.IsDone())
+            throw new Error("wrap: bead profile edge failed");
+          const profileWire = track(makeWireFromEdge(oc, edgeBuilder.Edge()));
+          const profileFace = track(makePlanarFace(oc, profileWire));
+          ridges.push(
+            sweepShapeAdvancedHelper(oc, profileFace, pathWire, {
+              orientation: "perpendicular",
+              cornerMode: "round",
+            }),
+          );
+        } catch (e) {
+          throw new Error(
+            `wrap: ${operation.toLowerCase()} bead sweep failed: ${
+              e instanceof Error ? e.message : String(e)
+            }`,
+          );
+        }
       }
-      if (!edges) throw new Error("wrap: no edges produced");
-      return comp;
+      if (operation === "CURVE") {
+        if (!edges) throw new Error("wrap: no edges produced");
+        return { shape: comp as TopoDS_Shape, ridges: [] as TopoDS_Shape[] };
+      }
+      if (!ridges.length) throw new Error("wrap: no bead paths produced");
+      return { shape: comp as TopoDS_Shape, ridges };
     });
+    let result = operation === "CURVE" ? built.shape : worldShape;
+    let owned = false;
     try {
-      return finishWorldResult(oc, built, payload);
+      if (operation !== "CURVE") {
+        for (const ridge of built.ridges) {
+          const next =
+            operation === "EMBOSS"
+              ? booleanUnionHelper(oc, result, ridge)
+              : booleanDifferenceHelper(oc, result, ridge);
+          if (owned) result.delete();
+          result = next;
+          owned = true;
+        }
+      }
+      return finishWorldResult(oc, result, payload);
     } finally {
-      built.delete();
+      if (owned) result.delete();
+      built.shape.delete();
+      for (const r of built.ridges) r.delete();
     }
   } finally {
     worldShape.delete();
   }
+}
+
+/*
+ * A 45-degree end chamfer is the corner material outside a cone. Build that
+ * corner as a revolved triangle and cut it from the threaded body. External
+ * threads remove the crest corner; internal threads open the hole mouth.
+ */
+function buildThreadEndChamferCutter(
+  oc: OpenCascadeInstance,
+  payload: ThreadRequest["payload"],
+  axis: { x: number; y: number; z: number },
+  atEnd: boolean,
+): TopoDS_Shape | null {
+  const c = payload.endChamfer ?? 0;
+  if (!(c > 0) || payload.height <= 2 * c) return null;
+  const h0 = atEnd ? payload.height : 0;
+  const rAt = payload.radius + (payload.taperPerLength ?? 0) * h0;
+  if (!(rAt > 2 * c)) return null;
+  const inward = atEnd ? -1 : 1;
+  const outer = payload.kind === "external" ? rAt + c * 0.25 : rAt + c;
+  const inner = payload.kind === "external" ? rAt - c : rAt;
+  const ux0 =
+    Math.abs(axis.z) < 0.9 ? { x: 0, y: 0, z: 1 } : { x: 1, y: 0, z: 0 };
+  const ux = axis.y * ux0.z - axis.z * ux0.y;
+  const uy = axis.z * ux0.x - axis.x * ux0.z;
+  const uz = axis.x * ux0.y - axis.y * ux0.x;
+  const ul = Math.hypot(ux, uy, uz) || 1;
+  const u = { x: ux / ul, y: uy / ul, z: uz / ul };
+  const o = payload.origin;
+  const local = [
+    [outer, h0],
+    [inner, h0],
+    [inner, h0 + inward * c],
+  ] as const;
+  return withOccScope((track) => {
+    const pts = local.map(([r, h]) =>
+      track(
+        makePoint(
+          oc,
+          o.x + u.x * r + axis.x * h,
+          o.y + u.y * r + axis.y * h,
+          o.z + u.z * r + axis.z * h,
+        ),
+      ),
+    );
+    const edges = pts.map((p, i) =>
+      track(makeEdgeFromPoints(oc, p, pts[(i + 1) % 3]!)),
+    );
+    const wire = track(makeWireFromEdges(oc, edges));
+    const face = track(makePlanarFace(oc, wire));
+    const loc = track(makePoint(oc, o.x, o.y, o.z));
+    const dir = track(makeDir(oc, axis.x, axis.y, axis.z));
+    const ax = track(makeAxis1(oc, loc, dir));
+    const revol = track(new oc.BRepPrimAPI_MakeRevol_2(face, ax, true));
+    withProgressRange(oc, (pr) => revol.Build(pr));
+    if (!revol.IsDone()) throw new Error("thread: end chamfer revolve failed");
+    return revol.Shape();
+  });
+}
+
+function applyThreadEndChamfers(
+  oc: OpenCascadeInstance,
+  shape: TopoDS_Shape,
+  payload: ThreadRequest["payload"],
+  axis: { x: number; y: number; z: number },
+): TopoDS_Shape {
+  let host = shape;
+  let owned = false;
+  for (const atEnd of [false, true]) {
+    const cutter = buildThreadEndChamferCutter(oc, payload, axis, atEnd);
+    if (!cutter) continue;
+    try {
+      const next = booleanDifferenceHelper(oc, host, cutter);
+      if (owned) host.delete();
+      host = next;
+      owned = true;
+    } catch (e) {
+      if (owned) host.delete();
+      throw new Error(
+        `thread: ${atEnd ? "end" : "start"} chamfer cut failed: ${
+          e instanceof Error ? e.message : String(e)
+        }`,
+      );
+    } finally {
+      cutter.delete();
+    }
+  }
+  return host;
 }
 
 export function handleThread(
@@ -2112,9 +3112,12 @@ export function handleThread(
   const nLen = Math.hypot(nr.x, nr.y, nr.z);
   if (!(nLen > 1e-12)) throw new Error("thread: axisDir is zero");
   const n = { x: nr.x / nLen, y: nr.y / nLen, z: nr.z / nLen };
-  const { radius: R0, pitch, height, depth } = payload;
-  if (!(pitch > 0 && R0 > 0 && height > 0 && depth > 0))
+  const { radius: R0, pitch, height, depth: rawDepth } = payload;
+  if (!(pitch > 0 && R0 > 0 && height > 0 && rawDepth > 0))
     throw new Error("thread: radius/pitch/height/depth must be > 0");
+  // Cosmetic threads are a shallow visual representation; the pitch table is
+  // unchanged, but the cut never becomes a structural thread.
+  const depth = payload.cosmetic ? Math.min(rawDepth, pitch * 0.06) : rawDepth;
   const taper = payload.taperPerLength ?? 0;
   const sgn = payload.kind === "external" ? 1 : -1;
   const worldShape = buildWorldShape(
@@ -2125,7 +3128,88 @@ export function handleThread(
     payload.rotation,
   );
   try {
-    const built = withOccScope((track) => {
+    if (payload.helical) {
+      const ridge = withOccScope((track) => {
+        const o = payload.origin;
+        const ux0 =
+          Math.abs(n.z) < 0.9 ? { x: 0, y: 0, z: 1 } : { x: 1, y: 0, z: 0 };
+        const cross = (a: Vec3, b: Vec3): Vec3 => ({
+          x: a.y * b.z - a.z * b.y,
+          y: a.z * b.x - a.x * b.z,
+          z: a.x * b.y - a.y * b.x,
+        });
+        const norm = (a: Vec3): Vec3 => {
+          const l = Math.hypot(a.x, a.y, a.z) || 1;
+          return { x: a.x / l, y: a.y / l, z: a.z / l };
+        };
+        const u = norm(cross(n, ux0));
+        const v = norm(cross(n, u));
+        const steps = Math.max(32, Math.ceil((height / pitch) * 24));
+        const pts: Vec3[] = [];
+        for (let i = 0; i <= steps; i++) {
+          const h = (height * i) / steps;
+          const ang = (2 * Math.PI * h) / pitch;
+          const r = R0 + taper * h;
+          pts.push({
+            x:
+              o.x + n.x * h + u.x * r * Math.cos(ang) + v.x * r * Math.sin(ang),
+            y:
+              o.y + n.y * h + u.y * r * Math.cos(ang) + v.y * r * Math.sin(ang),
+            z:
+              o.z + n.z * h + u.z * r * Math.cos(ang) + v.z * r * Math.sin(ang),
+          });
+        }
+        const pathWire = buildWireFromPointsHelper(oc, pts);
+        if (!pathWire) throw new Error("thread: helix path wire failed");
+        const tangent = norm({
+          x: pts[1]!.x - pts[0]!.x,
+          y: pts[1]!.y - pts[0]!.y,
+          z: pts[1]!.z - pts[0]!.z,
+        });
+        const ax = track(
+          makeAxis2(
+            oc,
+            track(makePoint(oc, pts[0]!.x, pts[0]!.y, pts[0]!.z)),
+            track(makeDir(oc, tangent.x, tangent.y, tangent.z)),
+          ),
+        );
+        const profileRad = Math.max(depth * 0.5, 1e-4);
+        const circ = track(makeCircle(oc, ax, profileRad));
+        const edgeBuilder = track(new oc.BRepBuilderAPI_MakeEdge_8(circ));
+        if (!edgeBuilder.IsDone())
+          throw new Error("thread: helix profile edge failed");
+        const profileWire = track(makeWireFromEdge(oc, edgeBuilder.Edge()));
+        const profileFace = track(makePlanarFace(oc, profileWire));
+        return sweepShapeAdvancedHelper(oc, profileFace, pathWire, {
+          orientation: "perpendicular",
+          cornerMode: "round",
+        });
+      });
+      try {
+        let merged =
+          payload.kind === "external"
+            ? booleanUnionHelper(oc, worldShape, ridge)
+            : booleanDifferenceHelper(oc, worldShape, ridge);
+        ridge.delete();
+        try {
+          const chamfered = applyThreadEndChamfers(oc, merged, payload, n);
+          if (chamfered !== merged) merged.delete();
+          merged = chamfered;
+          return finishWorldResult(oc, merged, payload);
+        } finally {
+          merged.delete();
+        }
+      } catch (e) {
+        ridge.delete();
+        throw new Error(
+          `thread: helical sweep failed: ${
+            e instanceof Error ? e.message : String(e)
+          }`,
+        );
+      }
+    }
+
+    let built = withOccScope((track) => {
       const o = payload.origin;
       const grooves = Math.max(1, Math.round(height / pitch));
       const aList = track(new oc.TopTools_ListOfShape_1());
@@ -2135,7 +3219,9 @@ export function handleThread(
         const h = (i + 0.5) * pitch;
         const rAt = R0 + taper * h;
         const ringR = Math.max(rAt, depth * 1.05);
-        const c = track(new oc.gp_Pnt_3(o.x + n.x * h, o.y + n.y * h, o.z + n.z * h));
+        const c = track(
+          new oc.gp_Pnt_3(o.x + n.x * h, o.y + n.y * h, o.z + n.z * h),
+        );
         const d = track(makeDir(oc, n.x, n.y, n.z));
         const ax = track(new oc.gp_Ax2_3(c, d));
         const mkT = track(
@@ -2162,6 +3248,9 @@ export function handleThread(
       return op.Shape();
     });
     try {
+      const chamfered = applyThreadEndChamfers(oc, built, payload, n);
+      if (chamfered !== built) built.delete();
+      built = chamfered;
       return finishWorldResult(oc, built, payload);
     } finally {
       built.delete();
@@ -2192,7 +3281,8 @@ function extentOnAxis(verts: Float32Array, axis: V3): number {
   let mn = Infinity;
   let mx = -Infinity;
   for (let i = 0; i + 2 < verts.length; i += 3) {
-    const d = axis[0] * verts[i]! + axis[1] * verts[i + 1]! + axis[2] * verts[i + 2]!;
+    const d =
+      axis[0] * verts[i]! + axis[1] * verts[i + 1]! + axis[2] * verts[i + 2]!;
     if (d < mn) mn = d;
     if (d > mx) mx = d;
   }
@@ -2210,10 +3300,16 @@ function flangePlateBox(
   depth: number,
 ): TopoDS_Shape {
   const pts = corners.map((c) => track(makePoint(oc, c[0], c[1], c[2])));
-  const edges = pts.map((p, i) => track(makeEdgeFromPoints(oc, p, pts[(i + 1) % 4]!)));
+  const edges = pts.map((p, i) =>
+    track(makeEdgeFromPoints(oc, p, pts[(i + 1) % 4]!)),
+  );
   const wire = track(makeWireFromEdges(oc, edges));
   const face = track(makePlanarFace(oc, wire));
-  return extrudeShapeHelper(oc, face, depth, 1, { x: dir[0], y: dir[1], z: dir[2] });
+  return extrudeShapeHelper(oc, face, depth, 1, {
+    x: dir[0],
+    y: dir[1],
+    z: dir[2],
+  });
 }
 
 /*
@@ -2231,7 +3327,11 @@ export function handleFlange(
   oc: OpenCascadeInstance,
   payload: FlangeRequest["payload"],
 ): WorkerGeometryResult {
-  const rawL: V3 = [payload.bendLineDir.x, payload.bendLineDir.y, payload.bendLineDir.z];
+  const rawL: V3 = [
+    payload.bendLineDir.x,
+    payload.bendLineDir.y,
+    payload.bendLineDir.z,
+  ];
   if (!(fLen(rawL) > 1e-12)) throw new Error("flange: bendLineDir is zero");
   const L = fNorm(rawL);
   const O: V3 = [payload.origin.x, payload.origin.y, payload.origin.z];
@@ -2298,13 +3398,9 @@ export function handleFlange(
         const legPlate = track(
           flangePlateBox(oc, track, [q0, q1, q2, q3], L, width),
         );
-        const rotated = track(
-          applyTransform(oc, legPlate, trsfLeg, true),
-        );
+        const rotated = track(applyTransform(oc, legPlate, trsfLeg, true));
         const steps = Math.max(3, Math.round((th / (Math.PI / 2)) * 6));
-        const ts = track(
-          new oc.BRepOffsetAPI_ThruSections(true, true, 1e-6),
-        );
+        const ts = track(new oc.BRepOffsetAPI_ThruSections(true, true, 1e-6));
         for (let j = 0; j <= steps; j++) {
           const psi = (j / steps) * payload.angle;
           const uB = Math.sin(psi),
@@ -2411,7 +3507,8 @@ export function handleSection(
         oc.TopAbs_ShapeEnum.TopAbs_EDGE as typeof oc.TopAbs_ShapeEnum,
       );
       edges.forEach((e) => e.delete());
-      if (!edges.length) throw new Error("section: plane does not cut the body");
+      if (!edges.length)
+        throw new Error("section: plane does not cut the body");
       return sec.Shape();
     });
     try {
@@ -2426,9 +3523,8 @@ export function handleSection(
 
 /*
  * Split by an infinite plane: BRepAlgoAPI_Splitter with a large planar tool
- * face; keeps the smallest piece whose bbox center lies on the positive side
- * of the plane. Multi-body outputs (returning both halves) are deferred to
- * the body-list tier.
+ * face. positive/negative keep one half; both returns both halves as separate
+ * bodies. A plane that misses the body is rejected by the handlers below.
  */
 export function handleSplit(
   oc: OpenCascadeInstance,
@@ -2439,8 +3535,7 @@ export function handleSplit(
   const nLen = Math.hypot(nr.x, nr.y, nr.z);
   if (!(nLen > 1e-12)) throw new Error("split: planeNormal is zero");
   const n = { x: nr.x / nLen, y: nr.y / nLen, z: nr.z / nLen };
-  const ref =
-    Math.abs(n.z) < 0.9 ? { x: 0, y: 0, z: 1 } : { x: 1, y: 0, z: 0 };
+  const ref = Math.abs(n.z) < 0.9 ? { x: 0, y: 0, z: 1 } : { x: 1, y: 0, z: 0 };
   let u = {
     x: n.y * ref.z - n.z * ref.y,
     y: n.z * ref.x - n.x * ref.z,
@@ -2496,12 +3591,23 @@ export function handleSplit(
         return track(eb.Edge());
       });
       const wire = track(makeWireFromEdges(oc, edges));
-      const face = track(makePlanarFace(oc, wire));
+      const planeFace = track(makePlanarFace(oc, wire));
+      let toolShape: TopoDS_Shape = planeFace;
+      if (payload.splitBy === "surface") {
+        if (!payload.toolBrepJson)
+          throw new Error("split: surface mode needs a tool body");
+        toolShape = buildWorldShape(
+          oc,
+          payload.toolBrepJson,
+          payload.toolPosition ?? { x: 0, y: 0, z: 0 },
+          payload.toolOccBrep,
+        );
+      }
       const splitter = track(new oc.BRepAlgoAPI_Splitter_1());
       const argsList = track(new oc.TopTools_ListOfShape_1());
       argsList.Append_1(worldShape);
       const toolsList = track(new oc.TopTools_ListOfShape_1());
-      toolsList.Append_1(face);
+      toolsList.Append_1(toolShape);
       splitter.SetArguments(argsList);
       splitter.SetTools(toolsList);
       withProgressRange(oc, (pr) => splitter.Build(pr));
@@ -2530,6 +3636,22 @@ export function handleSplit(
         }
         return Math.hypot(mxX - mnX, mxY - mnY, mxZ - mnZ);
       };
+      if (payload.splitBy === "surface") {
+        const sorted = [...solids].sort((a, b) => sizeOf(b) - sizeOf(a));
+        if (payload.keep === "both") {
+          if (sorted.length < 2) {
+            for (const s of sorted) s.delete();
+            throw new Error("split: surface does not divide the body");
+          }
+          const [a, b, ...rest] = sorted;
+          for (const s of rest) s.delete();
+          return [a!, b!];
+        }
+        if (!sorted.length) throw new Error("split: surface missed the body");
+        const [best, ...rest] = sorted;
+        for (const s of rest) s.delete();
+        return best!;
+      }
       const wantPos = payload.keep !== "negative";
       const wantNeg = payload.keep === "negative" || payload.keep === "both";
       let pos: TopoDS_Shape | null = null;
@@ -2592,6 +3714,117 @@ export function handleSplit(
   }
 }
 
+/*
+ * Knit/stitch: sew every face of every source body into one shell, then
+ * optionally turn the closed shell into a solid. The sewing tolerance is in
+ * document units and is the knob that closes small gaps between patches.
+ */
+export function handleSew(
+  oc: OpenCascadeInstance,
+  payload: SewRequest["payload"],
+): WorkerSewResult {
+  if (!payload.sources.length)
+    throw new Error("sew: at least one source body is required");
+  if (payload.sources.length < 2 && !payload.makeSolid && !payload.extractShell)
+    throw new Error("sew: knitting needs at least two source bodies");
+  const tolerance = payload.tolerance ?? 1e-6;
+  if (!(tolerance > 0)) throw new Error("sew: tolerance must be > 0");
+  const shapes = payload.sources.map((source) =>
+    buildWorldShape(
+      oc,
+      source.brepJson,
+      source.position,
+      source.occBrep,
+      source.rotation,
+    ),
+  );
+  try {
+    let unstitchedEdges = 0;
+    let shellCount = 0;
+    const sewn = withOccScope((track) => {
+      const sewing = track(
+        new oc.BRepBuilderAPI_Sewing(
+          tolerance,
+          payload.mergeFaces !== false,
+          payload.sewFreeEdges !== false,
+          payload.sewSharedEdges !== false,
+          false,
+        ),
+      );
+      const addedFaces: TopoDS_Face[] = [];
+      for (let i = 0; i < shapes.length; i++) {
+        const source = payload.sources[i]!;
+        const sourceFaces = facesOf(oc, shapes[i]!);
+        if (!source.faceIndices?.length) {
+          for (const face of sourceFaces) {
+            sewing.Add(face);
+            addedFaces.push(face);
+          }
+          continue;
+        }
+        for (const index of source.faceIndices) {
+          if (!source.brepJson.faces[index])
+            throw new Error(
+              `sew: face index ${index} out of range (${source.brepJson.faces.length} faces)`,
+            );
+          const face = liveFaceForJsonIndex(
+            oc,
+            sourceFaces,
+            source.brepJson,
+            index,
+          );
+          if (!face) throw new Error(`sew: face index ${index} did not map`);
+          sewing.Add(face);
+          addedFaces.push(face);
+        }
+      }
+      withProgressRange(oc, (pr) => sewing.Perform(pr));
+      unstitchedEdges =
+        (sewing as unknown as { NbFreeEdges?: () => number }).NbFreeEdges?.() ??
+        0;
+      const sewedShape = sewing.SewedShape();
+      const sewedFaces = facesOf(oc, sewedShape);
+      const shells = collectSubShapes(
+        oc,
+        sewedShape,
+        oc.TopAbs_ShapeEnum.TopAbs_SHELL as typeof oc.TopAbs_ShapeEnum,
+      );
+      shellCount = shells.length;
+      const shellShape = sewedFaces.length
+        ? shellCount === 1
+          ? shells[0]!
+          : shellCount > 0
+            ? sewedShape
+            : shellFromFaceList(oc, sewedFaces)
+        : shellFromFaceList(oc, addedFaces);
+      if (!shellCount) shellCount = 1;
+      if (!payload.makeSolid) return copyResultShape(oc, shellShape);
+      if (shellCount !== 1)
+        throw new Error(
+          `sew: solid conversion needs one closed shell, got ${shellCount}`,
+        );
+      const shell = asShell(oc, shellShape);
+      const maker = track(new oc.BRepBuilderAPI_MakeSolid_3(shell));
+      if (!maker.IsDone())
+        throw new Error("sew: shell is not closed, cannot make a solid");
+      const solid = maker.Solid();
+      try {
+        oc.BRepLib.OrientClosedSolid(solid);
+      } catch {
+        // Orientation is a repair pass; the sewn solid remains usable.
+      }
+      return copyResultShape(oc, solid);
+    });
+    const result = finishWorldResult(oc, sewn, {
+      position: { x: 0, y: 0, z: 0 },
+    });
+    sewn.delete();
+    return { ...result, unstitchedEdges, shellCount };
+  } finally {
+    for (const shape of shapes) shape.delete();
+  }
+}
+
 function fillCapFromBoundary(
   oc: OpenCascadeInstance,
   track: <T extends { delete(): void }>(obj: T) => T,
@@ -2629,6 +3862,156 @@ function fillCapFromBoundary(
   if (!mf.IsDone())
     throw new Error("deleteFace: fill cap failed (non-planar boundary)");
   return track(asFace(oc, mf.Shape()));
+}
+
+/*
+ * Extend-surface: build a ruled strip from each selected boundary edge to a
+ * translated copy, then sew the strips back onto the source face. This is the
+ * linear (G0) construction; natural/curvature-continuous extension is not
+ * approximated silently.
+ */
+export function handleSurfaceExtend(
+  oc: OpenCascadeInstance,
+  payload: SurfaceExtendRequest["payload"],
+): WorkerGeometryResult {
+  if (!(payload.distance > 0))
+    throw new Error("surfaceExtend: distance must be > 0");
+  if (!payload.edgeIndices.length)
+    throw new Error("surfaceExtend: no edges selected");
+  const mode = payload.mode ?? "linear";
+  if (mode !== "linear")
+    throw new Error(
+      `surfaceExtend: ${mode} extension is not implemented; use linear`,
+    );
+  const tolerance = payload.tolerance ?? 1e-6;
+  if (!(tolerance > 0)) throw new Error("surfaceExtend: tolerance must be > 0");
+  const worldShape = buildWorldShape(
+    oc,
+    payload.brepJson,
+    payload.position,
+    payload.occBrep,
+    payload.rotation,
+  );
+  try {
+    const built = withOccScope((track) => {
+      const faces = facesOf(oc, worldShape);
+      if (!faces.length) throw new Error("surfaceExtend: source has no faces");
+      const edgeMap = track(mapEdgesIndexed(oc, worldShape));
+      const strips: TopoDS_Shape[] = [];
+      for (const index of payload.edgeIndices) {
+        if (index < 1 || index > edgeMap.size)
+          throw new Error(
+            `surfaceExtend: edge index ${index} out of range (${edgeMap.size})`,
+          );
+        const edge = edgeMap.edgeAt(index);
+        let host: TopoDS_Face | null = null;
+        for (const candidate of faces) {
+          for (const sub of iterSubShapes(
+            oc,
+            candidate,
+            oc.TopAbs_ShapeEnum.TopAbs_EDGE as typeof oc.TopAbs_ShapeEnum,
+          )) {
+            if (asEdge(oc, sub).IsSame(edge)) {
+              host = candidate;
+              break;
+            }
+          }
+          if (host) break;
+        }
+        if (!host)
+          throw new Error(
+            `surfaceExtend: edge ${index} is not on a face of the source`,
+          );
+        const wire = track(makeWireFromEdge(oc, edge));
+        const curve = track(new oc.BRepAdaptor_Curve_2(edge));
+        const a = curve.Value(curve.FirstParameter());
+        const b = curve.Value(curve.LastParameter());
+        const ax = a.X(),
+          ay = a.Y(),
+          az = a.Z();
+        const bx = b.X(),
+          by = b.Y(),
+          bz = b.Z();
+        let tx = bx - ax,
+          ty = by - ay,
+          tz = bz - az;
+        const tl = Math.hypot(tx, ty, tz);
+        if (!(tl > 1e-12))
+          throw new Error(`surfaceExtend: edge ${index} has zero length`);
+        tx /= tl;
+        ty /= tl;
+        tz /= tl;
+        const mid = { x: (ax + bx) / 2, y: (ay + by) / 2, z: (az + bz) / 2 };
+        const center = computeBoundingBoxCenter(oc, host);
+        let ox = mid.x - center.x,
+          oy = mid.y - center.y,
+          oz = mid.z - center.z;
+        const along = ox * tx + oy * ty + oz * tz;
+        ox -= tx * along;
+        oy -= ty * along;
+        oz -= tz * along;
+        let ol = Math.hypot(ox, oy, oz);
+        if (!(ol > 1e-12)) {
+          // Degenerate face center: pick any vector perpendicular to the edge.
+          const gx = Math.abs(tx) < 0.9 ? 1 : 0;
+          const gy = gx === 0 ? 1 : 0;
+          ox = ty * 0 - tz * gy;
+          oy = tz * gx - tx * 0;
+          oz = tx * gy - ty * gx;
+          ol = Math.hypot(ox, oy, oz);
+        }
+        const tr = track(new oc.gp_Trsf_1());
+        tr.SetTranslation_1(
+          makeVec(
+            oc,
+            (ox / ol) * payload.distance,
+            (oy / ol) * payload.distance,
+            (oz / ol) * payload.distance,
+          ),
+        );
+        const moved = track(asWire(oc, applyTransform(oc, wire, tr, true)));
+        const ts = track(new oc.BRepOffsetAPI_ThruSections(false, true, 1e-6));
+        ts.AddWire(wire);
+        ts.AddWire(moved);
+        withProgressRange(oc, (pr) => ts.Build(pr));
+        if (!ts.IsDone())
+          throw new Error(`surfaceExtend: ruled strip failed on edge ${index}`);
+        strips.push(track(ts.Shape()));
+      }
+      const sewing = track(
+        new oc.BRepBuilderAPI_Sewing(tolerance, false, true, true, false),
+      );
+      for (const face of faces) sewing.Add(face);
+      for (const strip of strips)
+        for (const face of facesOf(oc, strip)) sewing.Add(face);
+      withProgressRange(oc, (pr) => sewing.Perform(pr));
+      const sewed = sewing.SewedShape();
+      const sewedFaces = facesOf(oc, sewed);
+      const shells = collectSubShapes(
+        oc,
+        sewed,
+        oc.TopAbs_ShapeEnum.TopAbs_SHELL as typeof oc.TopAbs_ShapeEnum,
+      );
+      return copyResultShape(
+        oc,
+        sewedFaces.length
+          ? shells.length
+            ? sewed
+            : shellFromFaceList(oc, sewedFaces)
+          : shellFromFaceList(oc, [
+              ...faces,
+              ...strips.flatMap((strip) => facesOf(oc, strip)),
+            ]),
+      );
+    });
+    try {
+      return finishWorldResult(oc, built, payload);
+    } finally {
+      built.delete();
+    }
+  } finally {
+    worldShape.delete();
+  }
 }
 
 /*
@@ -2696,12 +4079,148 @@ export function handleDeleteFace(
       throw new Error(
         "deleteFace: healed shell not closed (non-planar boundary?)",
       );
-    return fixShape(oc, mk.Solid());
+    let healedSolid: TopoDS_Shape = mk.Solid();
+    if (payload.mergeAdjacent !== false) {
+      try {
+        const Upgrade = (
+          oc as unknown as {
+            ShapeUpgrade_UnifySameDomain_2: new (
+              s: TopoDS_Shape,
+              edges: boolean,
+              faces: boolean,
+              bsplines: boolean,
+            ) => { Build(): void; Shape(): TopoDS_Shape; delete(): void };
+          }
+        ).ShapeUpgrade_UnifySameDomain_2;
+        const unify = track(new Upgrade(healedSolid, true, true, true));
+        unify.Build();
+        healedSolid = unify.Shape();
+      } catch {
+        // Unification is a cleanup pass; the healed solid is still valid if
+        // this OCC build does not expose ShapeUpgrade.
+      }
+    }
+    return fixShape(oc, healedSolid);
   });
   const result = finishWorldResult(oc, healed, payload);
   healed.delete();
   worldShape.delete();
   return result;
+}
+
+export function handleReplaceFace(
+  oc: OpenCascadeInstance,
+  payload: ReplaceFaceRequest["payload"],
+): WorkerGeometryResult {
+  if (!payload.faceIndices.length)
+    throw new Error("replaceFace: no faces selected");
+  const worldShape = buildWorldShape(
+    oc,
+    payload.brepJson,
+    payload.position,
+    payload.occBrep,
+    payload.rotation,
+  );
+  const replacementShape = buildWorldShape(
+    oc,
+    payload.replacementBrepJson,
+    payload.replacementPosition,
+    payload.replacementOccBrep,
+    payload.replacementRotation,
+  );
+  try {
+    const faces = facesOf(oc, worldShape);
+    const replacementFaces = facesOf(oc, replacementShape);
+    for (const i of payload.faceIndices) {
+      if (!payload.brepJson.faces[i])
+        throw new Error(
+          `replaceFace: face index ${i} out of range (${payload.brepJson.faces.length} faces)`,
+        );
+    }
+    const replacement =
+      replacementFaces[payload.replacementFaceIndex ?? 0] ??
+      replacementFaces[0];
+    if (!replacement)
+      throw new Error("replaceFace: replacement surface has no faces");
+    const targetFaces = new Set(
+      payload.faceIndices
+        .map((i) => liveFaceForJsonIndex(oc, faces, payload.brepJson, i))
+        .filter((face): face is TopoDS_Face => face !== null),
+    );
+    if (!targetFaces.size)
+      throw new Error("replaceFace: target face not resolved");
+    const replaced = withOccScope((track) => {
+      const sewing = track(
+        new oc.BRepBuilderAPI_Sewing(1e-6, true, true, true, false),
+      );
+      faces.forEach((face) => {
+        if (!targetFaces.has(face)) sewing.Add(face);
+      });
+      sewing.Add(replacement);
+      withProgressRange(oc, (pr) => sewing.Perform(pr));
+      const shell = track(asShell(oc, sewing.SewedShape()));
+      const mk = track(new oc.BRepBuilderAPI_MakeSolid_3(shell));
+      if (!mk.IsDone())
+        throw new Error("replaceFace: sewn shell is not closed");
+      return fixShape(oc, mk.Solid());
+    });
+    const result = finishWorldResult(oc, replaced, payload);
+    replaced.delete();
+    return result;
+  } finally {
+    worldShape.delete();
+    replacementShape.delete();
+  }
+}
+
+export function handleTransform(
+  oc: OpenCascadeInstance,
+  payload: TransformRequest["payload"],
+): WorkerGeometryResult {
+  const m = payload.matrix;
+  if (!Array.isArray(m) || m.length !== 16)
+    throw new Error("transform: matrix must have 16 elements");
+  for (const v of m) {
+    if (!Number.isFinite(v)) throw new Error("transform: matrix is not finite");
+  }
+  const worldShape = buildWorldShape(
+    oc,
+    payload.brepJson,
+    payload.position,
+    payload.occBrep,
+    payload.rotation,
+  );
+  try {
+    const moved = withOccScope((track) => {
+      const trsf = track(new oc.gp_Trsf_1());
+      // three.js Matrix4.elements is column-major; gp_Trsf.SetValues is the
+      // 3x4 row-major affine (rotation + translation).
+      trsf.SetValues(
+        m[0]!,
+        m[4]!,
+        m[8]!,
+        m[12]!,
+        m[1]!,
+        m[5]!,
+        m[9]!,
+        m[13]!,
+        m[2]!,
+        m[6]!,
+        m[10]!,
+        m[14]!,
+      );
+      // Do not track the result: withOccScope deletes tracked shapes when it
+      // returns, and the caller still needs `moved` for finishWorldResult.
+      return applyTransform(oc, worldShape, trsf, true);
+    });
+    try {
+      return finishWorldResult(oc, moved, payload);
+    } finally {
+      moved.delete();
+    }
+  } finally {
+    worldShape.delete();
+  }
 }
 
 export function handleHole(
@@ -2740,15 +4259,100 @@ export function handleHole(
             ),
           ),
         );
+        const height = payload.length + payload.overdrive;
+        if (payload.taperPerLength && payload.taperPerLength > 0) {
+          type ConeMaker = {
+            Build: (pr: import("opencascade.js").Message_ProgressRange) => void;
+            IsDone: () => boolean;
+            Shape: () => TopoDS_Shape;
+          };
+          const ctor = (
+            oc as unknown as {
+              BRepPrimAPI_MakeCone_1?: new (
+                ax: import("opencascade.js").gp_Ax2,
+                r1: number,
+                r2: number,
+                height: number,
+              ) => ConeMaker;
+            }
+          ).BRepPrimAPI_MakeCone_1;
+          if (!ctor)
+            throw new Error(
+              "hole: tapered hole needs BRepPrimAPI_MakeCone; this OCC build lacks it",
+            );
+          const r2 = Math.max(
+            payload.radius - payload.taperPerLength * height,
+            1e-5,
+          );
+          const cone = new ctor(ax, payload.radius, r2, height);
+          withProgressRange(oc, (pr) => cone.Build(pr));
+          if (!cone.IsDone()) throw new Error("hole: tapered drill failed");
+          return cone.Shape();
+        }
         const circ = track(makeCircle(oc, ax, payload.radius));
         const edgeBuilder = track(new oc.BRepBuilderAPI_MakeEdge_8(circ));
         if (!edgeBuilder.IsDone()) throw new Error("hole: circle edge failed");
         const wire = track(makeWireFromEdge(oc, edgeBuilder.Edge()));
         const face = track(makePlanarFace(oc, wire));
-        return extrudeShapeHelper(oc, face, payload.length + payload.overdrive, 1);
+        return extrudeShapeHelper(oc, face, height, 1);
       });
-      const cut = booleanDifferenceHelper(oc, host, drill);
+      let cut = booleanDifferenceHelper(oc, host, drill);
       drill.delete();
+      if (payload.holeType === "COUNTERSINK") {
+        const half = ((payload.countersinkAngleDeg ?? 90) * Math.PI) / 360;
+        const h = Math.max(
+          payload.radius / Math.tan(half),
+          payload.radius * 0.5,
+        );
+        const cone = withOccScope((track) => {
+          type ConeMaker = {
+            Build: (pr: import("opencascade.js").Message_ProgressRange) => void;
+            IsDone: () => boolean;
+            Shape: () => TopoDS_Shape;
+          };
+          const ctor = (
+            oc as unknown as {
+              BRepPrimAPI_MakeCone_1?: new (
+                ax: import("opencascade.js").gp_Ax2,
+                r1: number,
+                r2: number,
+                height: number,
+              ) => ConeMaker;
+            }
+          ).BRepPrimAPI_MakeCone_1;
+          if (!ctor)
+            throw new Error(
+              "hole: countersink needs BRepPrimAPI_MakeCone; this OCC build lacks it",
+            );
+          const ax = track(
+            makeAxis2(
+              oc,
+              track(makePoint(oc, center.x, center.y, center.z)),
+              track(
+                makeDir(
+                  oc,
+                  payload.axisDir.x,
+                  payload.axisDir.y,
+                  payload.axisDir.z,
+                ),
+              ),
+            ),
+          );
+          const cone = new ctor(
+            ax,
+            payload.radius + h * Math.tan(half),
+            payload.radius,
+            h,
+          );
+          withProgressRange(oc, (pr) => cone.Build(pr));
+          if (!cone.IsDone()) throw new Error("hole: countersink cone failed");
+          return cone.Shape();
+        });
+        const withCone = booleanDifferenceHelper(oc, cut, cone);
+        cone.delete();
+        cut.delete();
+        cut = withCone;
+      }
       if (owned) host.delete();
       host = cut;
       owned = true;

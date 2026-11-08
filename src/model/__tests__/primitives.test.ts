@@ -64,9 +64,12 @@ describe("primitive composite builders", () => {
     );
     expect(axis?.kind === "queryList" && axis.queries[0]?.entityTag).toBe("l1");
   });
-  it("torus circle profile offset by ring radius", () => {
+  it("torus profile uses two offset semicircles", () => {
     const [sk] = buildTorusNodes("Ft", "Torus", 0.06, 0.02);
-    expect(JSON.stringify(sk?.extensions)).toContain('"circle"');
+    const prims = JSON.stringify(sk?.extensions);
+    expect(prims).toContain('"arc"');
+    expect(prims).toContain('"p1"');
+    expect(prims).toContain('"p2"');
   });
   it("cone axis is hypotenuse-closing line l3", () => {
     const [, rv] = buildConeImport();

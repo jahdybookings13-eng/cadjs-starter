@@ -54,6 +54,16 @@ const AGENT_BY_KEY: Record<string, AgentId> = {
   reviewEnableResetPins: "pcb",
   reviewUnconnectedPins: "pcb",
   changeProperty: "pcb",
+  buildPcb: "pcb",
+  autoPlaceBoard: "pcb",
+  autorouteBoard: "pcb",
+  runPcbDrc: "pcb",
+  exportPcbFabrication: "pcb",
+  addSchematicSheet: "pcb",
+  addPcbPart: "pcb",
+  addPcbVia: "pcb",
+  checkPcbAssembly: "pcb",
+  createPcbDemo: "pcb",
   // mcad
   importPart: "mcad",
   exportAssembly: "mcad",
@@ -139,7 +149,7 @@ export interface SubAgent {
     action: PromptAction,
     args: Record<string, unknown>,
     ctx: FluxContext,
-  ) => ToolResult | null;
+  ) => ToolResult | null | Promise<ToolResult | null>;
   /** Handle a brain round-trip. The orchestrator feeds this the rendered prompt. */
   runBrain: (
     action: PromptAction,
@@ -159,6 +169,8 @@ export interface Orchestrator {
   registerAgent(agent: SubAgent): void;
   /** Set the provisioned brain (called once from settings). */
   setBrain(brain: BrainConfig): void;
+  /** Refresh the live project snapshot the next turn reads. */
+  setProjectContext(project: ProjectContext): void;
   /**
    * ONE user turn: render the prompt, route to the owning agent, execute
    * locally first, fall back to the brain, post each step as a TraceRow.
@@ -176,6 +188,7 @@ export function makeOrchestrator(
   const log = trace ?? makeTraceLog();
   const agents = new Map<AgentId, SubAgent>();
   let brain: BrainConfig = { provider: "local" };
+  let liveProject = project;
 
   const route = (action: PromptAction): SubAgent =>
     agents.get(agentForKey(action.key)) ??
@@ -199,6 +212,9 @@ export function makeOrchestrator(
     setBrain(b) {
       brain = b;
     },
+    setProjectContext(next) {
+      liveProject = next;
+    },
     async runTurn(actionKey, selection) {
       const action = getAction(actionKey);
       if (!action) {
@@ -208,7 +224,7 @@ export function makeOrchestrator(
         return { ok: false, error: `unknown action "${actionKey}"` };
       }
       const ctx: FluxContext = {
-        project,
+        project: liveProject,
         selection,
         brain,
       };
@@ -241,7 +257,7 @@ export function makeOrchestrator(
 
       const agent = route(action);
       // Local first — deterministic, no network.
-      const local = agent.runLocal(action, {}, ctx);
+      const local = await agent.runLocal(action, {}, ctx);
       if (local) {
         log.append({
           id: `tr_${(0x100000000 + log.rows.length + 1).toString(16)}`,

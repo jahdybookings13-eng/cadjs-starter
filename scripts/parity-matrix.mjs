@@ -20,6 +20,7 @@ const DOC = resolve(ROOT, "ONSHAPE_PARITY.md");
 const OWNERS = resolve(ROOT, "parity/owners.json");
 const OUT_JSON = resolve(ROOT, "parity/matrix.json");
 const OUT_MD = resolve(ROOT, "PARITY_STATUS.md");
+const CONTROLS = resolve(ROOT, "parity/controls.json");
 const CHECK = process.argv.includes("--check");
 
 const VALID = new Set(["SHIPPED", "PARTIAL", "MISSING", "STUDIO"]);
@@ -119,6 +120,29 @@ for (const [id, section] of sections) {
 const total = rows.length;
 const score = rows.reduce((sum, row) => sum + (WEIGHT[row.status] ?? 0), 0);
 const coverage = total ? score / total : 0;
+
+let controlEvidence = null;
+if (existsSync(CONTROLS)) {
+  try {
+    const controls = JSON.parse(readFileSync(CONTROLS, "utf8"));
+    const count = controls.summary?.controls;
+    const evidence = controls.summary?.evidence;
+    if (Number.isFinite(count) && count > 0 && evidence) {
+      controlEvidence = {
+        total: count,
+        direct: evidence.direct ?? 0,
+        label: evidence.label ?? 0,
+        any: evidence.any ?? 0,
+        missing: evidence.missing ?? 0,
+        directPct: `${(((evidence.direct ?? 0) / count) * 100).toFixed(1)}%`,
+        anyPct: `${(((evidence.any ?? 0) / count) * 100).toFixed(1)}%`,
+      };
+    }
+  } catch {
+    // The row report remains usable if the control inventory is malformed.
+  }
+}
+
 const summary = {
   generatedAt: new Date().toISOString(),
   rows: total,
@@ -126,6 +150,7 @@ const summary = {
   byStatus,
   rowCoverage: Number(coverage.toFixed(4)),
   rowCoveragePct: `${(coverage * 100).toFixed(1)}%`,
+  ...(controlEvidence ? { controlEvidence } : {}),
   errors,
 };
 
@@ -137,7 +162,10 @@ if (CHECK) {
   }
   console.log(
     `parity matrix: PASS — ${total} rows in ${sections.size} sections, ` +
-      `${summary.rowCoveragePct} row coverage`,
+      `${summary.rowCoveragePct} self-assessed row score (not parity)` +
+      (controlEvidence
+        ? `; direct control evidence ${controlEvidence.direct}/${controlEvidence.total} (${controlEvidence.directPct})`
+        : ""),
   );
   process.exit(0);
 }
@@ -159,15 +187,28 @@ const linesOut = [
   "## Summary",
   "",
   `- Capability rows: **${total}** across **${sections.size}** sections`,
-  `- Row coverage (SHIPPED=1, PARTIAL=0.5): **${summary.rowCoveragePct}**`,
+  `- Self-assessed row score (SHIPPED=1, PARTIAL=0.5; **not** functional parity): **${summary.rowCoveragePct}**`,
   `- SHIPPED: **${byStatus.SHIPPED ?? 0}**`,
   `- PARTIAL: **${byStatus.PARTIAL ?? 0}**`,
   `- MISSING: **${byStatus.MISSING ?? 0}**`,
   `- STUDIO: **${byStatus.STUDIO ?? 0}**`,
   "",
-  "> Row coverage is a tracking score, not functional depth. A `PARTIAL` row",
-  "> counts half even when only a fraction of the Onshape behaviour exists.",
+  "> The row score is hand-maintained tracking metadata, not measured parity. A",
+  "> `PARTIAL` row counts half even when only a fraction of the Onshape",
+  "> behaviour exists, and `SHIPPED` does not prove the required behaviour is",
+  "> complete. Hard control evidence is reported separately below.",
   "",
+  ...(controlEvidence
+    ? [
+        "## Hard evidence",
+        "",
+        `- Controls: **${controlEvidence.total}**`,
+        `- Direct test evidence: **${controlEvidence.direct}/${controlEvidence.total} (${controlEvidence.directPct})**`,
+        `- Any referenced evidence: **${controlEvidence.any}/${controlEvidence.total} (${controlEvidence.anyPct})**`,
+        `- No direct/label evidence: **${controlEvidence.missing}**`,
+        "",
+      ]
+    : []),
   "## Ownership",
   "",
   "| Section | Owner | Acceptance evidence |",

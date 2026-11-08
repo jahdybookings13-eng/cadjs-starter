@@ -15,6 +15,10 @@ import {
   MAX_UNDO_STEPS,
   MAX_SKETCH_UNDO_STEPS,
 } from "../../scene-operations/undo-types";
+import {
+  captureUndoExternalState,
+  restoreUndoExternalState,
+} from "../../scene-operations/undo-extras";
 
 /**
  * Owns the global undo/redo stacks plus the sketch-scoped undo/redo stacks.
@@ -31,6 +35,8 @@ export interface UndoStackApi {
   undoStack: UndoableSnapshot[];
   redoStack: UndoableSnapshot[];
   pushUndo: (actionName: string) => void;
+  /** Discard the newest entry, e.g. a dialog cancelling its own preview. */
+  dropLastUndo: () => void;
   undo: () => void;
   redo: () => void;
   canUndo: boolean;
@@ -97,6 +103,7 @@ export function buildUndoSnapshot(
     idCounter: deps.idCounterRef.current,
     featureTree: [...deps.featureTreeRef.current],
     sketches: [...deps.sketchesRef.current],
+    external: captureUndoExternalState(),
     actionName,
     timestamp: Date.now(),
   };
@@ -171,6 +178,7 @@ export function useUndoStack(deps: UseUndoStackDeps): UndoStackApi {
       setFeatureTree(snapshot.featureTree);
       setSketches(snapshot.sketches);
       setSelectedElements([]);
+      restoreUndoExternalState(snapshot.external);
     },
     [deps],
   );
@@ -189,6 +197,11 @@ export function useUndoStack(deps: UseUndoStackDeps): UndoStackApi {
     },
     [captureSnapshot, bumpVersion],
   );
+
+  const dropLastUndo = useCallback(() => {
+    undoStackRef.current = undoStackRef.current.slice(0, -1);
+    bumpVersion();
+  }, [bumpVersion]);
 
   const undo = useCallback(() => {
     if (deps.isOperationPendingRef.current) return;
@@ -298,6 +311,7 @@ export function useUndoStack(deps: UseUndoStackDeps): UndoStackApi {
     undoStack: undoStackRef.current,
     redoStack: redoStackRef.current,
     pushUndo,
+    dropLastUndo,
     undo,
     redo,
     canUndo,

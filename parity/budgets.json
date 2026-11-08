@@ -16,6 +16,14 @@
     "documentReloadMs": 15000,
     "regenerateBoxMs": 5000,
     "orbitFpsMin": 30,
-    "assemblyOpenMs": null
+    "assemblyOpenMs": null,
+    "studioRenderMs": 2000,
+    "studioSimMeshMs": 10000,
+    "studioSimStaticMs": 2000,
+    "studioSimModalMs": 3000,
+    "studioCamToolpathMs": 1000,
+    "studioCamSimulationMs": 1000,
+    "studioPcbBuildMs": 5000,
+    "studioUiStallMs": 500
   }
 }

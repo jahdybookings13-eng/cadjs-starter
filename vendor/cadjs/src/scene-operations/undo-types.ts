@@ -9,6 +9,8 @@ export interface UndoableSnapshot {
   idCounter: number;
   featureTree: FeatureNode[];
   sketches: Sketch[];
+  /** App-owned state captured through the undo-external adapter. */
+  external?: unknown;
   actionName: string;
   timestamp: number;
 }

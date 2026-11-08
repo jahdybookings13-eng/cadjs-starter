@@ -1,6 +1,6 @@
 export interface ImportAsset {
   assetId: string;
-  format: "stl" | "step";
+  format: "stl" | "step" | "iges" | "3mf";
   name: string;
   bytes: Uint8Array;
 }
@@ -9,7 +9,7 @@ const registry = new Map<string, ImportAsset>();
 
 export function registerImportAsset(
   assetId: string,
-  format: "stl" | "step",
+  format: "stl" | "step" | "iges" | "3mf",
   name: string,
   bytes: Uint8Array,
 ): ImportAsset {

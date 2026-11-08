@@ -68,6 +68,18 @@ interface ScadgenDbg {
     normal: [number, number, number],
     keep?: "positive" | "negative" | "both",
   ) => string;
+  splitSurface: (
+    fid: string,
+    toolFid: string,
+    keep?: "positive" | "negative" | "both",
+  ) => string;
+  facePattern: (
+    fid: string,
+    faceTags: string[],
+    count: number,
+    direction: [number, number, number],
+    spacing: number,
+  ) => string;
   delFace: (fid: string, tag: string) => string;
   moveFace: (fid: string, tag: string, d: number) => string;
   setAppearance: (
@@ -98,6 +110,20 @@ interface ScadgenDbg {
     axis: [number, number, number],
     spacing: number,
     count: number,
+  ) => string;
+  bodyPattern: (
+    fid: string,
+    count: number,
+    direction: [number, number, number],
+    spacing: number,
+  ) => string;
+  transform: (
+    fid: string,
+    type: "MOVE" | "ROTATE" | "COPY",
+    translation?: [number, number, number],
+    rotationAxis?: [number, number, number],
+    rotationAngle?: number,
+    copy?: boolean,
   ) => string;
   sketchOnDatum: (d: string, w: number, h: number, depth: number) => string;
   thread: (
@@ -545,6 +571,75 @@ test("feature-pattern clones a sketch+extrude chain into bodies", async ({
   expect(r.pat).toBe("OK");
   expect(r.n).toBe(2);
   expect(r.faces).toBeGreaterThan(3);
+});
+
+test("body pattern and transform/copy run on the real kernel", async ({
+  page,
+}) => {
+  await boot(page);
+  const r = await page.evaluate(async () => {
+    const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      .__cadDebug.scadgen;
+    const boxFid = s.box(2, 2, 1);
+    await s.idle();
+    const bodyPat = s.bodyPattern(boxFid, 3, [1, 0, 0], 0.01);
+    await s.idle();
+    const moved = s.transform(boxFid, "MOVE", [0, 0, 0.01]);
+    await s.idle();
+    const rotated = s.transform(boxFid, "ROTATE", [0, 0, 0], [0, 0, 1], 0.25);
+    await s.idle();
+    const copied = s.transform(boxFid, "COPY", [0, 0.02, 0]);
+    const st = await s.idle();
+    return {
+      bodyPat: st[bodyPat]?.status,
+      bodyDetail: st[bodyPat]?.detail,
+      bodyFaces: s.tags(bodyPat)?.faces,
+      moved: st[moved]?.status,
+      rotated: st[rotated]?.status,
+      copied: st[copied]?.status,
+      copiedFaces: s.tags(copied)?.faces,
+    };
+  });
+  expect(r.bodyPat).toBe("OK");
+  expect(r.bodyFaces ?? 0).toBeGreaterThanOrEqual(18);
+  expect(r.moved).toBe("OK");
+  expect(r.rotated).toBe("OK");
+  expect(r.copied).toBe("OK");
+  expect(r.copiedFaces ?? 0).toBeGreaterThanOrEqual(6);
+});
+
+test("face pattern and split-by-surface run on the real kernel", async ({
+  page,
+}) => {
+  await boot(page);
+  const r = await page.evaluate(async () => {
+    const s = (window as unknown as { __cadDebug: { scadgen: ScadgenDbg } })
+      .__cadDebug.scadgen;
+    const boxFid = s.box(0.02, 0.02, 0.01);
+    const tool = s.createPlane([0.01, 0, 0], [1, 0, 0], 0.1);
+    await s.idle();
+    const ft = s.ftags(boxFid) ?? [];
+    const facePat = s.facePattern(boxFid, [ft[0] ?? ""], 2, [1, 0, 0], 0.03);
+    await s.idle();
+    const surfaceSplit = s.splitSurface(boxFid, tool, "both");
+    const st = await s.idle();
+    const bad = s.splitSurface(boxFid, "missing_tool", "both");
+    const st2 = await s.idle();
+    return {
+      facePat: st[facePat]?.status,
+      faceDetail: st[facePat]?.detail,
+      faceCount: s.tags(facePat)?.faces ?? 0,
+      surfaceSplit: st[surfaceSplit]?.status,
+      surfaceDetail: st[surfaceSplit]?.detail,
+      splitBodies: s.bodiesOf(surfaceSplit).length,
+      bad: st2[bad]?.status,
+    };
+  });
+  expect(r.facePat).toBe("OK");
+  expect(r.faceCount).toBeGreaterThanOrEqual(2);
+  expect(r.surfaceSplit).toBe("OK");
+  expect(r.splitBodies).toBe(2);
+  expect(r.bad).toBe("ERROR");
 });
 
 test("sketch-on-datum places a pad on a datum plane", async ({ page }) => {

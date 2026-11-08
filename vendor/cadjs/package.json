@@ -62,6 +62,7 @@
   },
   "dependencies": {
     "@salusoft89/planegcs": "^1.1.7",
+    "fflate": "^0.8.3",
     "opencascade.js": "2.0.0-beta.b5ff984"
   },
   "peerDependencies": {

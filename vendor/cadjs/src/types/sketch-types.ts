@@ -642,7 +642,8 @@ export type BrowserItemType =
   | "operation"
   | "plane"
   | "axis"
-  | "origin-point";
+  | "origin-point"
+  | "folder";
 
 export interface BrowserSection {
   id: string;
@@ -665,4 +666,28 @@ export interface BrowserItem {
   sourceNodeId?: string | undefined;
   children?: BrowserItem[] | undefined;
   operationType?: OperationType | undefined;
+  /** scadgen history id when this row maps to a feature-history record. */
+  featureId?: string | undefined;
+  /** Executor status, plus the local ROLLED_BACK view state. */
+  featureStatus?: string | undefined;
+  /** Rebuild failure detail shown when the row is in ERROR. */
+  featureDetail?: string | undefined;
+  suppressed?: boolean | undefined;
+  featureIndex?: number | undefined;
+  featureCount?: number | undefined;
+  /** Persisted feature-tree folder on a history-backed row. */
+  featureFolder?: string | undefined;
+  /** Features that still reference this row and would be affected by delete. */
+  featureDependents?: { id: string; name: string }[] | undefined;
+  /** History-only row: no cadjs feature-tree node exists behind it. */
+  featureOnly?: boolean | undefined;
+  /** Body metadata (part membership, naming, material, visibility). */
+  bodyId?: string | undefined;
+  bodyName?: string | undefined;
+  bodyPartId?: string | undefined;
+  bodyPartName?: string | undefined;
+  bodyMaterial?: string | undefined;
+  bodyRemoved?: boolean | undefined;
+  bodyTransparent?: boolean | undefined;
+  bodyConsumedBy?: string | undefined;
 }

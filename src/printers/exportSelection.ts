@@ -2,9 +2,13 @@
 // clicked (desk) become one STL + a mm bounding box, ready for the
 // slicer daemon. Whole-scene export stays a separate hook.
 //
-// Units: 1 scene unit = 1 mm. `vertexPositions` are local to the element
-// (on the kernel side), so each vertex is offset by the element's world
-// translation before min/max.
+// Units: scene geometry is authored in metres, while slicers consume mm.
+// `vertexPositions` are local to the element (on the kernel side), so each
+// vertex is offset by the element's world translation before min/max.
+
+import type { Phase6BodyKind } from "../model/phase6";
+
+export const MM_PER_SCENE_UNIT = 1000;
 
 export interface SelectionSet {
   ids: string[];
@@ -19,6 +23,7 @@ export interface SelectionStl {
   /** Derived size [W,H,D] in mm (all zeros when no vertices exist). */
   sizeMM: [number, number, number];
   bodyCount: number;
+  bodyKind?: Phase6BodyKind;
 }
 
 interface ElementLike {
@@ -61,9 +66,9 @@ export function selectionBboxMM(
     const vp = e.vertexPositions;
     if (vp && vp.length >= 3) {
       for (let i = 0; i + 2 < vp.length; i += 3) {
-        const x = vp[i]! + pos.x;
-        const y = vp[i + 1]! + pos.y;
-        const z = vp[i + 2]! + pos.z;
+        const x = (vp[i]! + pos.x) * MM_PER_SCENE_UNIT;
+        const y = (vp[i + 1]! + pos.y) * MM_PER_SCENE_UNIT;
+        const z = (vp[i + 2]! + pos.z) * MM_PER_SCENE_UNIT;
         if (x < minX) minX = x;
         if (x > maxX) maxX = x;
         if (y < minY) minY = y;
@@ -73,12 +78,15 @@ export function selectionBboxMM(
         found = true;
       }
     } else {
-      if (pos.x < minX) minX = pos.x;
-      if (pos.x > maxX) maxX = pos.x;
-      if (pos.y < minY) minY = pos.y;
-      if (pos.y > maxY) maxY = pos.y;
-      if (pos.z < minZ) minZ = pos.z;
-      if (pos.z > maxZ) maxZ = pos.z;
+      const x = pos.x * MM_PER_SCENE_UNIT;
+      const y = pos.y * MM_PER_SCENE_UNIT;
+      const z = pos.z * MM_PER_SCENE_UNIT;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+      if (z < minZ) minZ = z;
+      if (z > maxZ) maxZ = z;
       found = true;
     }
   }
@@ -86,10 +94,22 @@ export function selectionBboxMM(
   return [minX, minY, minZ, maxX, maxY, maxZ];
 }
 
+/** Deterministic, filesystem-safe base name for an export. */
+function exportSlug(name: string | undefined): string {
+  const slug = (name ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 48);
+  return slug || "scene";
+}
+
 export async function exportSelectionStl(
   elements: unknown[],
   ids: string[],
   exportFn: (els: unknown[]) => Promise<Blob>,
+  name?: string,
+  bodyKind?: Phase6BodyKind,
 ): Promise<SelectionStl> {
   const sel = selectByNodeIds(elements, ids);
   if (sel.elements.length === 0)
@@ -101,16 +121,17 @@ export async function exportSelectionStl(
   const sizeMM: [number, number, number] = bbox
     ? [bbox[3] - bbox[0], bbox[4] - bbox[1], bbox[5] - bbox[2]]
     : [0, 0, 0];
-  const stamp = Date.now().toString(36);
+  const kindSuffix =
+    bodyKind && bodyKind !== "solid" ? `_${exportSlug(bodyKind)}` : "";
   return {
     stlBytes,
-    stlName:
-      sel.ids.length > 1
-        ? `scadgen_selection_${stamp}.stl`
-        : `scadgen_${stamp}.stl`,
+    stlName: `scadgen_${exportSlug(name)}${kindSuffix}${
+      sel.ids.length > 1 ? "_selection" : ""
+    }.stl`,
     bboxMM: bbox,
     sizeMM,
     bodyCount: sel.elements.length,
+    ...(bodyKind ? { bodyKind } : {}),
   };
 }
 

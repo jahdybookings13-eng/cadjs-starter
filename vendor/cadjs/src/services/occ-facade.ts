@@ -273,7 +273,8 @@ export function makeEdgeFromSpline(
       arr,
       Math.min(3, maxDegree),
       maxDegree,
-      oc.GeomAbs_Shape.GeomAbs_C1,
+      oc.GeomAbs_Shape
+        .GeomAbs_C1 as unknown as import("opencascade.js").GeomAbs_Shape,
       1e-6,
     );
     if (!fitter.IsDone()) throw new Error("PointsToBSpline failed");

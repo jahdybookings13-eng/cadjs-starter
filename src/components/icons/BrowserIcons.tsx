@@ -7,6 +7,7 @@ export type IconName =
   | "plane"
   | "axis"
   | "origin-point"
+  | "folder"
   | "union"
   | "difference"
   | "intersection"
@@ -53,6 +54,7 @@ const PATHS: Record<Exclude<IconName, "chevron">, ReactNode> = {
       <circle cx="8" cy="8" r="1" fill="currentColor" />
     </>
   ),
+  folder: <path d="M2 4.5h4l1.5 1.5H14v6.5H2V4.5z" strokeLinejoin="round" />,
   union: (
     <>
       <circle cx="6" cy="8" r="4" />

@@ -7,7 +7,8 @@
 // source: featureMap.ts ParamSpec, onshapeHistory.ts ScadgenFeatureNode.
 import { feature, type ParamSpec } from "./featureMap";
 import { collectVariables, type VariableDef } from "./variables";
-import type { ScadgenFeatureNode } from "./onshapeHistory";
+import { auditParameter, type ParamSupport } from "./paramSupport";
+import type { ScadgenFeatureNode, ScadgenParameter } from "./onshapeHistory";
 
 export type PanelRowKind =
   | "quantity"
@@ -35,6 +36,8 @@ export interface PanelRow {
   linkedVariable?: string;
   /** True when the node carries no explicit parameter for this spec. */
   usingDefault: boolean;
+  /** Kernel wiring verdict, when the feature type has been audited. */
+  support?: ParamSupport;
 }
 
 export interface ParamPanel {
@@ -78,11 +81,14 @@ function rowFromSpec(
     | "max"
     | "step"
     | "enumValues"
+    | "support"
   > = {
     parameterId: spec.parameterId,
     kind: spec.kind,
     label: spec.label,
   };
+  const support = auditParameter(node.featureType, spec.parameterId);
+  if (support) base.support = support;
   if (spec.units !== undefined) base.units = spec.units;
   if (spec.min !== undefined) base.min = spec.min;
   if (spec.max !== undefined) base.max = spec.max;
@@ -241,6 +247,15 @@ export function applyPanelEdit(
 ): ScadgenFeatureNode["parameters"] {
   const next = node.parameters.map((p) => {
     if (p.parameterId !== edit.parameterId) return p;
+    if (p.kind === "queryList" && Array.isArray(edit.value)) {
+      return {
+        ...p,
+        queries: edit.value as Extract<
+          ScadgenParameter,
+          { kind: "queryList" }
+        >["queries"],
+      };
+    }
     if (p.kind === "quantity" && typeof edit.value === "number") {
       return {
         ...p,
@@ -263,6 +278,15 @@ export function applyPanelEdit(
         units: spec.units ?? "m",
         value: Number(edit.value),
         expression: edit.expression ?? String(edit.value),
+      } as ScadgenFeatureNode["parameters"][number]);
+    } else if (spec?.kind === "queryList") {
+      next.push({
+        kind: "queryList",
+        parameterId: edit.parameterId,
+        queries: (Array.isArray(edit.value) ? edit.value : []) as Extract<
+          ScadgenParameter,
+          { kind: "queryList" }
+        >["queries"],
       } as ScadgenFeatureNode["parameters"][number]);
     } else if (spec) {
       next.push({
@@ -314,6 +338,17 @@ export function panelEditToParameter(
         kind: row.kind,
         parameterId: row.parameterId,
         value: String(value),
+      } as ScadgenFeatureNode["parameters"][number];
+    case "queryList":
+      // Selections are committed as queries, not scalar values: the end-bound
+      // picker writes a FACE/VERTEX provenance query here.
+      return {
+        kind: "queryList",
+        parameterId: row.parameterId,
+        queries: (Array.isArray(value) ? value : []) as Extract<
+          ScadgenParameter,
+          { kind: "queryList" }
+        >["queries"],
       } as ScadgenFeatureNode["parameters"][number];
     default:
       return null;

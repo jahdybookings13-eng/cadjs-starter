@@ -20,6 +20,13 @@ export interface LoftResult {
 export async function loftBReps(
   profiles: { brep: Brep; position: THREE.Vector3; occBrep?: string }[],
   isRuled: boolean = false,
+  isClosed: boolean = false,
+  options?: {
+    thinWall?: number | undefined;
+    twistRadians?: number | undefined;
+    connectors?: Array<{ x: number; y: number; z: number } | undefined> | undefined;
+    centerlinePoints?: { x: number; y: number; z: number }[] | undefined;
+  },
 ): Promise<Result<LoftResult>> {
   if (profiles.length < 2) {
     return err("need at least 2 profiles");
@@ -36,6 +43,15 @@ export async function loftBReps(
           occBrep: p.occBrep,
         })),
         isRuled,
+        isClosed,
+        ...(options?.thinWall ? { thinWall: options.thinWall } : {}),
+        ...(options?.twistRadians !== undefined
+          ? { twistRadians: options.twistRadians }
+          : {}),
+        ...(options?.connectors ? { connectors: options.connectors } : {}),
+        ...(options?.centerlinePoints
+          ? { centerlinePoints: options.centerlinePoints }
+          : {}),
       },
     });
 

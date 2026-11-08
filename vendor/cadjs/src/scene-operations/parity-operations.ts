@@ -1,7 +1,10 @@
 import type { Brep } from "../geometry";
 import * as THREE from "three";
 import { OccWorkerClient } from "../services/OccWorkerClient";
-import type { WorkerGeometryResult } from "../workers/occ-worker-types";
+import type {
+  WorkerGeometryResult,
+  WorkerSewResult,
+} from "../workers/occ-worker-types";
 import { toVec3, toEulerJSON } from "../vectorHelpers";
 import { Result, ok, err } from "./result";
 import { buildGeometryResult } from "./geometry-result";
@@ -30,8 +33,12 @@ async function run(
     | "moveFace"
     | "split"
     | "deleteFace"
+    | "replaceFace"
+    | "transform"
     | "flange"
     | "thicken"
+    | "sew"
+    | "surfaceExtend"
     | "hole",
   payload: Record<string, unknown>,
 ): Promise<Result<ParityResult>> {
@@ -54,12 +61,18 @@ export async function shellBRep(
   thickness: number,
   occBrep?: string,
   rotation?: THREE.Euler,
+  options?: {
+    keepType?: "KEEP_SHELL" | "KEEP_CORE";
+    thicknesses?: number[];
+    curvedCap?: boolean;
+  },
 ): Promise<Result<ParityResult>> {
   return run("shell", {
     brepJson: brep.toJSON(),
     position: toVec3(position),
     faceIndices,
     thickness,
+    ...options,
     occBrep,
     rotation: rotation ? toEulerJSON(rotation) : undefined,
   });
@@ -74,6 +87,10 @@ export async function draftBRep(
   neutralPoint: Vec3,
   occBrep?: string,
   rotation?: THREE.Euler,
+  options?: {
+    mode?: "NEUTRAL" | "STEP" | "PARTING";
+    partingLine?: { start: Vec3; end: Vec3 };
+  },
 ): Promise<Result<ParityResult>> {
   return run("draft", {
     brepJson: brep.toJSON(),
@@ -82,6 +99,7 @@ export async function draftBRep(
     angleDeg,
     neutralNormal,
     neutralPoint,
+    ...options,
     occBrep,
     rotation: rotation ? toEulerJSON(rotation) : undefined,
   });
@@ -95,14 +113,37 @@ export type PatternSpec =
       axisDir: Vec3;
       angleRad: number;
       separate?: boolean;
+      skip?: number[];
     }
-  | { kind: "linear"; count: number; translation: Vec3; separate?: boolean }
+  | {
+      kind: "linear";
+      count: number;
+      translation: Vec3;
+      separate?: boolean;
+      skip?: number[];
+    }
+  | {
+      kind: "body";
+      count: number;
+      translation: Vec3;
+      separate?: boolean;
+      skip?: number[];
+    }
+  | {
+      kind: "face";
+      count: number;
+      translation: Vec3;
+      faceIndices: number[];
+      separate?: boolean;
+      skip?: number[];
+    }
   | {
       kind: "curve";
       count: number;
       pathPoints: Vec3[];
       align?: boolean;
       separate?: boolean;
+      skip?: number[];
     };
 
 export async function patternBRep(
@@ -192,12 +233,15 @@ export async function moveFaceBRep(
   distance: number,
   occBrep?: string,
   rotation?: THREE.Euler,
+  options?: { faceIndices?: number[]; extendNeighbors?: boolean },
 ): Promise<Result<ParityResult>> {
   return run("moveFace", {
     brepJson: brep.toJSON(),
     position: toVec3(position),
     faceIndex,
+    faceIndices: options?.faceIndices,
     distance,
+    extendNeighbors: options?.extendNeighbors,
     occBrep,
     rotation: rotation ? toEulerJSON(rotation) : undefined,
   });
@@ -216,6 +260,9 @@ export async function threadBRep(
     kind: "external" | "internal";
     crown?: number;
     taperPerLength?: number;
+    helical?: boolean;
+    endChamfer?: number;
+    cosmetic?: boolean;
   },
   occBrep?: string,
   rotation?: THREE.Euler,
@@ -287,6 +334,9 @@ export async function wrapCurvesBRep(
     axisDir: Vec3;
     radius: number;
     polylines: number[][][];
+    operation?: "CURVE" | "CUT" | "EMBOSS";
+    depth?: number;
+    width?: number;
   },
   occBrep?: string,
   rotation?: THREE.Euler,
@@ -326,6 +376,10 @@ export async function splitBRep(
   occBrep?: string,
   rotation?: THREE.Euler,
   keep?: "positive" | "negative" | "both",
+  options?: {
+    splitBy?: "plane" | "surface";
+    tool?: { brep: Brep; position: THREE.Vector3; occBrep?: string };
+  },
 ): Promise<Result<ParityResult | SplitPair>> {
   return runSplit(
     brep,
@@ -335,6 +389,7 @@ export async function splitBRep(
     occBrep,
     rotation,
     keep,
+    options,
   );
 }
 
@@ -351,6 +406,10 @@ async function runSplit(
   occBrep?: string,
   rotation?: THREE.Euler,
   keep?: "positive" | "negative" | "both",
+  options?: {
+    splitBy?: "plane" | "surface";
+    tool?: { brep: Brep; position: THREE.Vector3; occBrep?: string };
+  },
 ): Promise<Result<ParityResult | SplitPair>> {
   try {
     const client = OccWorkerClient.getInstance();
@@ -362,6 +421,14 @@ async function runSplit(
         planeOrigin,
         planeNormal,
         keep,
+        splitBy: options?.splitBy,
+        ...(options?.tool
+          ? {
+              toolBrepJson: options.tool.brep.toJSON(),
+              toolPosition: toVec3(options.tool.position),
+              toolOccBrep: options.tool.occBrep,
+            }
+          : {}),
         occBrep,
         rotation: rotation ? toEulerJSON(rotation) : undefined,
       },
@@ -387,11 +454,59 @@ export async function deleteFaceBRep(
   faceIndices: number[],
   occBrep?: string,
   rotation?: THREE.Euler,
+  options?: { mergeAdjacent?: boolean },
 ): Promise<Result<ParityResult>> {
   return run("deleteFace", {
     brepJson: brep.toJSON(),
     position: toVec3(position),
     faceIndices,
+    mergeAdjacent: options?.mergeAdjacent,
+    occBrep,
+    rotation: rotation ? toEulerJSON(rotation) : undefined,
+  });
+}
+
+export async function replaceFaceBRep(
+  brep: Brep,
+  position: THREE.Vector3,
+  faceIndices: number[],
+  replacementBrep: Brep,
+  replacementPosition: THREE.Vector3,
+  occBrep?: string,
+  replacementOccBrep?: string,
+  options?: {
+    replacementFaceIndex?: number;
+    rotation?: THREE.Euler;
+    replacementRotation?: THREE.Euler;
+  },
+): Promise<Result<ParityResult>> {
+  return run("replaceFace", {
+    brepJson: brep.toJSON(),
+    position: toVec3(position),
+    faceIndices,
+    replacementBrepJson: replacementBrep.toJSON(),
+    replacementPosition: toVec3(replacementPosition),
+    occBrep,
+    replacementOccBrep,
+    replacementFaceIndex: options?.replacementFaceIndex,
+    rotation: options?.rotation ? toEulerJSON(options.rotation) : undefined,
+    replacementRotation: options?.replacementRotation
+      ? toEulerJSON(options.replacementRotation)
+      : undefined,
+  });
+}
+
+export async function transformBRep(
+  brep: Brep,
+  position: THREE.Vector3,
+  matrix: number[],
+  occBrep?: string,
+  rotation?: THREE.Euler,
+): Promise<Result<ParityResult>> {
+  return run("transform", {
+    brepJson: brep.toJSON(),
+    position: toVec3(position),
+    matrix,
     occBrep,
     rotation: rotation ? toEulerJSON(rotation) : undefined,
   });
@@ -415,6 +530,78 @@ export async function thickenBRep(
   });
 }
 
+export interface SewInput {
+  brep: Brep;
+  position: THREE.Vector3;
+  occBrep?: string | undefined;
+  rotation?: THREE.Euler | undefined;
+  faceIndices?: number[] | undefined;
+}
+
+export interface SewResult extends ParityResult {
+  unstitchedEdges: number;
+  shellCount: number;
+}
+
+export async function sewBReps(
+  sources: SewInput[],
+  options?: {
+    tolerance?: number;
+    makeSolid?: boolean;
+    mergeFaces?: boolean;
+    sewFreeEdges?: boolean;
+    sewSharedEdges?: boolean;
+    extractShell?: boolean;
+  },
+): Promise<Result<SewResult>> {
+  try {
+    const client = OccWorkerClient.getInstance();
+    const raw = await client.send<WorkerSewResult>({
+      type: "sew",
+      payload: {
+        sources: sources.map((source) => ({
+          brepJson: source.brep.toJSON(),
+          position: toVec3(source.position),
+          occBrep: source.occBrep,
+          rotation: source.rotation ? toEulerJSON(source.rotation) : undefined,
+          faceIndices: source.faceIndices,
+        })),
+        ...options,
+      },
+    });
+    return ok({
+      ...buildGeometryResult(raw),
+      unstitchedEdges: raw.unstitchedEdges ?? 0,
+      shellCount: raw.shellCount ?? 0,
+    });
+  } catch (error) {
+    return err(error instanceof Error ? error.message : String(error));
+  }
+}
+
+export interface SurfaceExtendResult extends ParityResult {}
+
+export async function extendSurfaceBRep(
+  brep: Brep,
+  position: THREE.Vector3,
+  edgeIndices: number[],
+  distance: number,
+  occBrep?: string,
+  rotation?: THREE.Euler,
+  options?: { mode?: "linear" | "natural"; tolerance?: number },
+): Promise<Result<SurfaceExtendResult>> {
+  if (!edgeIndices.length) return err("extendSurface: no edges selected");
+  return run("surfaceExtend", {
+    brepJson: brep.toJSON(),
+    position: toVec3(position),
+    edgeIndices,
+    distance,
+    occBrep,
+    rotation: rotation ? toEulerJSON(rotation) : undefined,
+    ...options,
+  });
+}
+
 export async function holeBRep(
   brep: Brep,
   position: THREE.Vector3,
@@ -425,6 +612,12 @@ export async function holeBRep(
   overdrive = 2,
   occBrep?: string,
   rotation?: THREE.Euler,
+  options?: {
+    holeType?: "SIMPLE" | "COUNTERBORE" | "COUNTERSINK";
+    countersinkAngleDeg?: number;
+    /** NPT-style radial taper per unit depth. */
+    taperPerLength?: number;
+  },
 ): Promise<Result<ParityResult>> {
   if (!centers.length) throw new Error("holeBRep: no centers");
   return run("hole", {
@@ -435,6 +628,7 @@ export async function holeBRep(
     radius,
     length,
     overdrive,
+    ...options,
     occBrep,
     rotation: rotation ? toEulerJSON(rotation) : undefined,
   });

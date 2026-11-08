@@ -112,6 +112,8 @@ export interface CadCoreContextType {
     occBrep?: string,
     faceGeometry?: THREE.BufferGeometry,
     vertexPositions?: Float32Array,
+    /** Rebuild-driven updates pass false so history edits are one undo entry. */
+    recordUndo?: boolean,
   ) => void;
   loftElements: (
     profileNodeIds: string[],
@@ -180,6 +182,7 @@ export interface CadCoreContextType {
   undoStack: UndoableSnapshot[];
   redoStack: UndoableSnapshot[];
   pushUndo: (actionName: string) => void;
+  dropLastUndo: () => void;
   pushSketchUndo: () => void;
   undoSketch: () => void;
   redoSketch: () => void;
@@ -189,6 +192,8 @@ export interface CadCoreContextType {
   importFile: (file: File) => Promise<void>;
   exportFile: () => Promise<void>;
   exportStepFile: () => Promise<void>;
+  exportIgesFile: () => Promise<void>;
+  export3mfFile: () => Promise<void>;
   importProject: (file: File) => Promise<void>;
   exportProject: () => Promise<void>;
 
@@ -396,6 +401,7 @@ export const CadCoreProvider: React.FC<{ children: ReactNode }> = ({
   sketchSetters.current = { setActiveSketch, setSketches };
   const {
     pushUndo,
+    dropLastUndo,
     undo,
     redo,
     canUndo,
@@ -453,8 +459,13 @@ export const CadCoreProvider: React.FC<{ children: ReactNode }> = ({
   );
 
   const addElement = useCallback(
-    (brep: Brep, position: THREE.Vector3, object?: THREE.Object3D) => {
-      pushUndo("Add Shape");
+    (
+      brep: Brep,
+      position: THREE.Vector3,
+      object?: THREE.Object3D,
+      recordUndo = true,
+    ) => {
+      if (recordUndo) pushUndo("Add Shape");
       return addElementInternal(brep, position, object);
     },
     [addElementInternal, pushUndo],
@@ -556,6 +567,7 @@ export const CadCoreProvider: React.FC<{ children: ReactNode }> = ({
       occBrep?: string,
       faceGeometry?: THREE.BufferGeometry,
       vertexPositions?: Float32Array,
+      recordUndo = true,
     ) => {
       // Read via ref: chained updateElementBrep + removeElement calls would otherwise
       // see a stale `elements` and clobber each other.
@@ -570,7 +582,7 @@ export const CadCoreProvider: React.FC<{ children: ReactNode }> = ({
       const config = featureUpdate
         ? FEATURE_UPDATE_CONFIG[featureUpdate.type]
         : undefined;
-      pushUndo(config?.label ?? "Update Shape");
+      if (recordUndo) pushUndo(config?.label ?? "Update Shape");
 
       const position = newPosition || existingElement.position;
 
@@ -1258,6 +1270,10 @@ export const CadCoreProvider: React.FC<{ children: ReactNode }> = ({
         results = await ieService.import(buffer);
       } else if (ext === "step" || ext === "stp") {
         results = await ieService.importStep(buffer);
+      } else if (ext === "iges" || ext === "igs") {
+        results = await ieService.importIges(buffer);
+      } else if (ext === "3mf") {
+        results = await ieService.import3mf(buffer);
       } else {
         throw new Error(`Unsupported file format: .${ext}`);
       }
@@ -1279,7 +1295,9 @@ export const CadCoreProvider: React.FC<{ children: ReactNode }> = ({
       const importNodes: FeatureNode[] = result.nodeIds.map((nodeId, i) => ({
         id: `import_${nodeId}`,
         type: "body" as const,
-        name: results.length === 1 ? file.name : `${file.name} [${i + 1}]`,
+        name:
+          results[i]?.name ??
+          (results.length === 1 ? file.name : `${file.name} [${i + 1}]`),
         visible: true,
         elementId: nodeId,
       }));
@@ -1314,6 +1332,36 @@ export const CadCoreProvider: React.FC<{ children: ReactNode }> = ({
     const a = document.createElement("a");
     a.href = url;
     a.download = "export.step";
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [elementsRef]);
+
+  const exportIgesFile = useCallback(async () => {
+    const currentElements = elementsRef.current;
+    if (currentElements.length === 0) return;
+
+    const ieService = ImportExportService.getInstance();
+    const blob = await ieService.exportIges(currentElements);
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "export.iges";
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [elementsRef]);
+
+  const export3mfFile = useCallback(async () => {
+    const currentElements = elementsRef.current;
+    if (currentElements.length === 0) return;
+
+    const ieService = ImportExportService.getInstance();
+    const blob = await ieService.export3mf(currentElements);
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "export.3mf";
     a.click();
     URL.revokeObjectURL(url);
   }, [elementsRef]);
@@ -1444,6 +1492,7 @@ export const CadCoreProvider: React.FC<{ children: ReactNode }> = ({
         undoStack: undoStackRef.current,
         redoStack: redoStackRef.current,
         pushUndo,
+        dropLastUndo,
         pushSketchUndo,
         undoSketch,
         redoSketch,
@@ -1452,6 +1501,8 @@ export const CadCoreProvider: React.FC<{ children: ReactNode }> = ({
         importFile,
         exportFile,
         exportStepFile,
+        exportIgesFile,
+        export3mfFile,
         importProject,
         exportProject,
         pinnedMeasurements: measurements.pinnedMeasurements,

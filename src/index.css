@@ -1,2 +1,586 @@
 @import "tailwindcss";
 @config "../tailwind.config.ts";
+
+:root {
+  color-scheme: light;
+  --cad-bg: #f7f8fa;
+  --cad-chrome: #f5f5f5;
+  --cad-chrome-raised: #ffffff;
+  --cad-chrome-hover: #e8eaed;
+  --cad-border: #dadce0;
+  --cad-border-strong: #bdc1c6;
+  --cad-text: #202124;
+  --cad-text-muted: #5f6368;
+  --cad-text-faint: #80868b;
+  --cad-accent: #1a73e8;
+  --cad-accent-strong: #1a73e8;
+  --cad-viewport: #f8f9fa;
+  --cad-tabbar: #eceff1;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background: var(--cad-bg);
+  color: var(--cad-text);
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #bdc1c6 transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+  background-color: #bdc1c6;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+:focus-visible {
+  outline: 2px solid #1a73e8;
+  outline-offset: 1px;
+}
+
+.cad-chrome {
+  background: var(--cad-chrome);
+  border-color: var(--cad-border);
+}
+
+.cad-tool {
+  display: inline-flex;
+  height: 28px;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 0 6px;
+  color: #3c4043;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  transition:
+    background-color 100ms ease,
+    border-color 100ms ease,
+    color 100ms ease;
+}
+
+.cad-tool:hover:not(:disabled) {
+  background: #f1f3f4;
+  border-color: transparent;
+}
+
+.cad-tool[data-active="true"] {
+  background: #e8f0fe;
+  border-color: #d2e3fc;
+  color: #1a73e8;
+}
+
+.cad-tool:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
+.cad-tool-icon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.cad-icon-button {
+  display: inline-flex;
+  height: 28px;
+  min-width: 28px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 0 6px;
+  color: var(--cad-text-muted);
+  font-size: 11px;
+  transition:
+    background-color 100ms ease,
+    border-color 100ms ease,
+    color 100ms ease;
+}
+
+.cad-icon-button:hover:not(:disabled) {
+  background: #f1f3f4;
+  border-color: transparent;
+  color: var(--cad-text);
+}
+
+.cad-icon-button[aria-pressed="true"],
+.cad-icon-button[data-active="true"] {
+  background: #e8f0fe;
+  color: var(--cad-accent);
+}
+
+.cad-icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
+.cad-divider {
+  width: 1px;
+  height: 18px;
+  flex: none;
+  margin: 0 2px;
+  background: var(--cad-border);
+}
+
+/* The toolbar must not establish a scroll container: dropdown menus are
+   positioned below it and would be clipped on the Y axis. */
+.cad-toolbar-scroll {
+  overflow: visible;
+}
+
+.cad-feature-toolbar .cad-tool-label {
+  display: none;
+}
+
+.cad-feature-toolbar .cad-tool-label-visible {
+  display: inline;
+}
+
+.cad-feature-toolbar .cad-undo-redo {
+  order: -1;
+  margin-right: 2px;
+  padding-right: 4px;
+  border-right: 1px solid var(--cad-border);
+}
+
+.cad-toolbar-search-trigger {
+  order: 50;
+  min-width: 184px;
+  margin-left: auto;
+  justify-content: flex-start;
+  border-color: var(--cad-border);
+  background: #fff;
+  color: var(--cad-text-muted);
+}
+
+.cad-toolbar-search-trigger:hover:not(:disabled) {
+  border-color: var(--cad-border-strong);
+  background: #fff;
+  color: var(--cad-text);
+}
+
+.cad-toolbar-search-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 400;
+}
+
+.cad-toolbar-search-kbd {
+  margin-left: auto;
+  color: var(--cad-text-faint);
+}
+
+@media (max-width: 1280px) {
+  .cad-toolbar-search-trigger {
+    min-width: 150px;
+  }
+}
+
+@media (max-width: 960px) {
+  .cad-toolbar-search-trigger {
+    min-width: 28px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .cad-toolbar-search-label,
+  .cad-toolbar-search-kbd {
+    display: none;
+  }
+}
+
+.cad-canvas-bg {
+  background: var(--cad-viewport);
+}
+
+/* The WebGL canvas can composite its first frame with a transparent strip at
+   the top. Matching the viewport beneath the bitmap keeps that frame
+   full-bleed instead of exposing the application shell. */
+.cad-canvas-bg canvas {
+  display: block;
+  background: var(--cad-viewport);
+}
+
+.cad-tabbar {
+  background: var(--cad-tabbar);
+  border-color: #d4d7db;
+}
+
+.cad-tab {
+  border-right: 1px solid #d4d7db;
+  color: #5f6368;
+}
+
+.cad-tab[aria-selected="true"] {
+  background: #fff;
+  color: #202124;
+  box-shadow: inset 0 2px 0 #1a73e8;
+}
+
+.cad-tab:not([aria-selected="true"]):hover {
+  background: #f1f3f4;
+  color: #202124;
+}
+
+/* Workspace chrome on the designer surfaces. Part Studio already uses the
+   light document theme; the specialized studios historically used dark
+   Tailwind utilities. Keep their preview canvases dark where contrast matters
+   (FeatureScript, CAM toolpaths, Render output, PCB copper) but normalize the
+   surrounding panels, toolbars, tables and forms to the Onshape-like light
+   chrome. This is scoped so preview canvases and blue primary actions keep
+   their own colors. */
+.cad-studio-light {
+  color-scheme: light;
+  color: var(--cad-text);
+}
+
+.cad-studio-light[class*="bg-gray-950"],
+.cad-studio-light [class*="bg-gray-950"] {
+  background-color: #ffffff !important;
+}
+
+.cad-studio-light[class*="bg-gray-900"],
+.cad-studio-light [class*="bg-gray-900"] {
+  background-color: #f5f5f5 !important;
+}
+
+.cad-studio-light[class*="bg-gray-800"],
+.cad-studio-light [class*="bg-gray-800"] {
+  background-color: #ffffff !important;
+}
+
+.cad-studio-light[class*="bg-gray-700"],
+.cad-studio-light [class*="bg-gray-700"] {
+  background-color: #e8eaed !important;
+}
+
+.cad-studio-light[class*="bg-gray-600"],
+.cad-studio-light [class*="bg-gray-600"] {
+  background-color: #dadce0 !important;
+}
+
+.cad-studio-light [class*="hover:bg-gray-900"]:hover,
+.cad-studio-light [class*="hover:bg-gray-800"]:hover {
+  background-color: #f1f3f4 !important;
+}
+
+.cad-studio-light [class*="hover:bg-gray-700"]:hover,
+.cad-studio-light [class*="hover:bg-gray-600"]:hover {
+  background-color: #e8eaed !important;
+}
+
+.cad-studio-light [class*="border-gray-800"] {
+  border-color: #e8eaed !important;
+}
+
+.cad-studio-light [class*="border-gray-700"] {
+  border-color: #dadce0 !important;
+}
+
+.cad-studio-light [class*="border-gray-600"] {
+  border-color: #bdc1c6 !important;
+}
+
+.cad-studio-light [class*="border-gray-500"] {
+  border-color: #9aa0a6 !important;
+}
+
+.cad-studio-light [class*="text-gray-100"],
+.cad-studio-light [class*="text-gray-200"] {
+  color: #202124 !important;
+}
+
+.cad-studio-light [class*="text-gray-300"] {
+  color: #3c4043 !important;
+}
+
+.cad-studio-light [class*="text-gray-400"],
+.cad-studio-light [class*="text-gray-500"] {
+  color: #5f6368 !important;
+}
+
+.cad-studio-light [class*="text-gray-600"] {
+  color: #80868b !important;
+}
+
+/* White text belongs to blue/red primary buttons. Only remap it when the
+   element itself is one of the now-light gray surfaces. */
+.cad-studio-light [class*="bg-gray-950"][class*="text-white"],
+.cad-studio-light [class*="bg-gray-900"][class*="text-white"],
+.cad-studio-light [class*="bg-gray-800"][class*="text-white"],
+.cad-studio-light [class*="bg-gray-700"][class*="text-white"] {
+  color: #202124 !important;
+}
+
+.cad-studio-light [class*="hover:text-white"]:hover {
+  color: #202124 !important;
+}
+
+/* Status badges and validation rows: pale backgrounds with accessible text
+   remain semantic, but no longer read as dark-mode chips. */
+.cad-studio-light [class*="bg-red-950"] {
+  background-color: #fef2f2 !important;
+}
+.cad-studio-light [class*="bg-amber-950"],
+.cad-studio-light [class*="bg-amber-900"] {
+  background-color: #fffbeb !important;
+}
+.cad-studio-light [class*="bg-blue-950"] {
+  background-color: #eff6ff !important;
+}
+.cad-studio-light [class*="bg-emerald-950"] {
+  background-color: #ecfdf5 !important;
+}
+.cad-studio-light [class*="bg-violet-950"] {
+  background-color: #f5f3ff !important;
+}
+.cad-studio-light [class*="bg-cyan-950"] {
+  background-color: #ecfeff !important;
+}
+.cad-studio-light [class*="bg-orange-950"] {
+  background-color: #fff7ed !important;
+}
+.cad-studio-light [class*="text-red-200"],
+.cad-studio-light [class*="text-red-300"] {
+  color: #b91c1c !important;
+}
+.cad-studio-light [class*="text-amber-200"],
+.cad-studio-light [class*="text-amber-300"] {
+  color: #b45309 !important;
+}
+.cad-studio-light [class*="text-emerald-300"],
+.cad-studio-light [class*="text-emerald-400"] {
+  color: #047857 !important;
+}
+.cad-studio-light [class*="text-sky-200"],
+.cad-studio-light [class*="text-sky-300"] {
+  color: #0369a1 !important;
+}
+.cad-studio-light [class*="text-violet-200"],
+.cad-studio-light [class*="text-violet-300"] {
+  color: #6d28d9 !important;
+}
+.cad-studio-light [class*="text-cyan-200"],
+.cad-studio-light [class*="text-cyan-300"] {
+  color: #0e7490 !important;
+}
+.cad-studio-light [class*="text-orange-200"],
+.cad-studio-light [class*="text-orange-300"] {
+  color: #c2410c !important;
+}
+.cad-studio-light [class*="text-blue-300"] {
+  color: #1d4ed8 !important;
+}
+
+/* Drawing sheets are authored in millimetres; scale the SVG to the pane
+   instead of letting its intrinsic paper size overflow at desktop widths. */
+.drawing-sheet-frame {
+  display: flex;
+  justify-content: center;
+}
+
+.drawing-sheet-frame svg {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: calc(100vh - 170px);
+}
+
+.cad-kbd {
+  display: inline-flex;
+  min-width: 18px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #dadce0;
+  border-radius: 3px;
+  background: #f8f9fa;
+  padding: 1px 4px;
+  color: #5f6368;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9px;
+  line-height: 1.3;
+}
+
+.cad-feature-list .text-gray-200,
+.cad-feature-list .text-gray-300 {
+  color: #202124;
+}
+
+.cad-feature-list .text-gray-400 {
+  color: #5f6368;
+}
+
+.cad-feature-list .text-gray-500 {
+  color: #80868b;
+}
+
+.cad-feature-list .text-gray-600 {
+  color: #9aa0a6;
+}
+
+/* Browser-side inspectors, menus and dialogs use the same white chrome as the
+   main shell. The overrides are scoped so specialised studios keep their own
+   presentation. */
+.cad-light-panel {
+  color: #202124;
+}
+
+.cad-light-panel[class*="bg-gray-"] {
+  background-color: #fff;
+}
+
+.cad-light-panel [class*="bg-gray-900"] {
+  background-color: #fff;
+}
+
+.cad-light-panel [class*="bg-gray-800"] {
+  background-color: #f8f9fa;
+}
+
+.cad-light-panel [class*="bg-gray-700"] {
+  background-color: #e8eaed;
+}
+
+.cad-light-panel [class*="bg-gray-600"] {
+  background-color: #dadce0;
+}
+
+.cad-light-panel [class*="hover:bg-gray-700"]:hover {
+  background-color: #f1f3f4;
+}
+
+.cad-light-panel [class*="hover:bg-gray-600"]:hover {
+  background-color: #dadce0;
+}
+
+.cad-light-panel [class*="border-gray-"] {
+  border-color: #dadce0;
+}
+
+.cad-light-panel [class*="text-gray-100"],
+.cad-light-panel [class*="text-gray-200"],
+.cad-light-panel [class*="text-gray-300"] {
+  color: #202124;
+}
+
+.cad-light-panel [class*="text-gray-400"] {
+  color: #5f6368;
+}
+
+.cad-light-panel [class*="text-gray-500"] {
+  color: #80868b;
+}
+
+.cad-light-panel [class*="text-gray-600"] {
+  color: #9aa0a6;
+}
+
+.cad-light-panel [class*="text-blue-300"],
+.cad-light-panel [class*="text-blue-400"] {
+  color: #1a73e8;
+}
+
+.cad-light-panel [class*="bg-red-900"] {
+  background-color: #fce8e6;
+}
+
+.cad-light-panel [class*="text-red-100"],
+.cad-light-panel [class*="text-red-200"],
+.cad-light-panel [class*="text-red-300"] {
+  color: #c5221f;
+}
+
+.cad-light-panel [class*="bg-amber-950"],
+.cad-light-panel [class*="bg-amber-900"] {
+  background-color: #fef7e0;
+}
+
+.cad-light-panel [class*="text-amber-200"],
+.cad-light-panel [class*="text-amber-300"] {
+  color: #b06000;
+}
+
+.cad-light-panel input,
+.cad-light-panel select,
+.cad-light-panel textarea {
+  border-color: #dadce0;
+  background-color: #fff;
+  color: #202124;
+}
+
+.cad-light-panel input::placeholder {
+  color: #9aa0a6;
+}
+
+.cad-light-panel input:focus,
+.cad-light-panel select:focus,
+.cad-light-panel textarea:focus {
+  border-color: #1a73e8;
+  outline: none;
+}
+
+@media (max-width: 1023px) {
+  .cad-chrome-detail {
+    display: none;
+  }
+}
+
+.skip-link {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 200;
+  transform: translateY(-200%);
+  border-radius: 0.375rem;
+  background: #f9fafb;
+  color: #111827;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.35);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+#main-content:focus {
+  outline: none;
+}

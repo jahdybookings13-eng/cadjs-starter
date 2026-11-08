@@ -57,6 +57,7 @@ export function installEcad(opts: InstallEcadOpts): Ecad {
         if (layer.group.parent !== scene) scene.add(layer.group);
       },
     };
+    registerEcadActions(opts.bus, installed);
   }
   if (installed.bus !== opts.bus) {
     registerEcadActions(opts.bus, installed);

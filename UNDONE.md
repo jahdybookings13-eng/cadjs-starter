@@ -2,6 +2,145 @@
 
 Tracked work that is intentionally left partial. Each item is scoped, not a wish list.
 
+## Phase 3 kernel gaps — 2026-11-07
+
+These are the items that remain after the B-depth pass. **No test suite was run
+for this pass** — the external verification pass owns that.
+
+### Landed in this B pass (2026-11-07)
+
+- **Hole / NPT** — NPT drill paths now use a cone cutter with the 1/16-in-per-in
+  taper instead of a straight cylinder. `TAPPED` as a hole type now selects the
+  tap drill (not the clearance drill) and threads it; the tapped/clearance fit
+  path is shared.
+- **Hole placement** — a planar face selection now supplies the drill axis
+  (inward face normal) as well as the centroid; sketch-point placement and
+  legacy JSON centers still work.
+- **Chamfer** — distance-angle/angle-distance use the real `AddDA` path, and
+  tangent-chain propagation now applies to chamfers as well as fillets.
+- **Thread** — ISO/unified/NPT external and internal paths share one end-chamfer
+  builder (a revolved 45-degree corner cutter at both ends); runout trimming and
+  the optional true-helix sweep remain.
+- **Wrap** — `CUT`/`EMBOSS` now handle closed polylines as filled cylinder
+  regions: a pcurve face is built on the cylinder and thickened with
+  `MakeThickSolidBySimple`, then unioned/cut. Open polylines still sweep a bead;
+  `CURVE` still returns on-surface edges.
+- **Draft** — `PARTING` uses one neutral plane for every face, accepts a
+  `partingLine` point array, and flips only the angle by side. A neutral-face
+  multi-select and an invalid angle are named errors.
+- **Shell** — curved caps now try the fast open-shell + `MakeThickSolidBySimple`
+  path first, then fall back to `MakeThickSolidByJoin`. Curved caps reject
+  `KEEP_CORE` and per-face thicknesses explicitly; planar thickness arrays must
+  match the removed-face count.
+- **Fillet** — corner treatment is exposed as `cornerRadius`, applied at contour
+  vertices with `SetRadius_6`; face selections blend every boundary edge.
+- **Thread** — `cosmetic` switches to a shallow visual thread depth; the fast
+  torus-stack path remains the default and true helix stays opt-in.
+- **Fillet / chamfer diagnostics** — out-of-range edge indices and zero/negative
+  radius/width are named errors; variable-radius arrays must be positive and
+  one per selected edge.
+- **Verification** — `npx tsc --noEmit` is clean. Per instruction, the end pass
+  owns the unit/browser suites.
+
+### B closure status
+
+All B1-B7 paths are implemented. The only non-default choice is performance:
+`helical` stays opt-in because the wasm boolean is slow, while the default
+torus-stack and `cosmetic` shallow path stay fast. Curved shell uses the fast
+simple offset first and falls back to the join algorithm.
+
+### C status (completed 2026-11-07)
+
+C1 patterns are complete: linear, circular, curve, face, body and feature
+patterns; spacing/extent/equal modes; flip/second direction; suppression;
+join/separate; `${featureId}#k` ownership; and per-result provenance. Feature
+pattern join fuses clones back into the source body.
+
+C2 boolean now exposes `makeSolid` (surface compound when false), keeps tool
+bodies when requested, consumes them otherwise, and names empty/non-manifold
+results. C3 split supports plane and surface tools, positive/negative/both
+scopes, owned halves and miss diagnostics.
+
+C4 move/delete face now carries the multi-face selection and `mergeAdjacent`
+unification flag; delete-face still uses planar sewing plus the MakeFilling
+fallback for curved boundaries. C5 adds the `transform` feature (move, rotate,
+copy) through the OCC worker, with copy-vs-move ownership in scene sync.
+
+Focused evidence run after closing C (2026-11-07):
+
+- `npx tsc -p tsconfig.json --noEmit` — clean.
+- `npx vitest run src/model/__tests__/featureDialog.test.ts src/model/__tests__/featureEngine.test.ts src/model/__tests__/paramSupport.test.ts src/model/__tests__/primitives.test.ts src/model/__tests__/executor.test.ts src/model/__tests__/sceneSync.test.ts`
+  — 54 passed.
+- `npx playwright test e2e/parity-ops.spec.ts --grep "pattern|delete-face and split|move-face"`
+  — 8 passed against the real OCC kernel in Chromium, including
+  `face pattern and split-by-surface run on the real kernel`.
+- `npx playwright test e2e/feature-dialog.spec.ts` — 4 passed, including
+  `pattern and split dialogs edit the C parameters` (face pattern seed and
+  separate-body option, split plane/surface and both-sides scope).
+
+There is no remaining C evidence gap: face pattern, split-by-surface and the
+new pattern/split dialog parameters each have their own real-kernel browser
+case, not just shared model coverage. The face-pattern worker lifetime bug
+found by that coverage (`TopoDS_Shape instance already deleted`) is fixed.
+
+### D status (first slice, 2026-11-07)
+
+Landed D work (D is **closed** as of 2026-11-07):
+
+- `uniqueName` / `rename` make duplicate names unique (`Box`, `Box (2)`, …),
+  and the UI no longer skips collision handling after a cadjs rename.
+- `reorderPlan` / `moveSafely` stop a feature before its first dependent. The
+  repair path, `moveWithDependents` / `stepWithDependents` (“Move with
+  Dependents Up/Down”), moves the feature and every transitive dependent as one
+  block. Feature ids never change, so this is repair by block move rather than
+  literal repointing.
+- `setSuppressedCascade` suppresses/restores the selected feature and every
+  transitive dependent in one undo step, using `extensions.suppressedBy`.
+- Non-contiguous folder members group into one folder at the first member's
+  position, with history order inside.
+- Rollback supports editing at an earlier feature (dialog preview/apply/cancel),
+  a forward step, a draggable rollback bar onto any row, insert-before/after
+  drops, and `rollbackIndex` persisted in the document blob for save/reload and
+  tab switches.
+- Failure handling: a failed feature yields no body and unrelated features still
+  evaluate. Downstream errors report `origin` and “depends on failed ‘…’”, and
+  “Retry Feature” clears a stale error and rebuilds.
+- Delete, reorder, suppress and parameter edits all explain affected
+  dependents; the dialog shows “Used by N”.
+- Multi-body extras map back to their owner feature row; history rows keep their
+  own feature id instead of being retargeted by a shared body element; failed
+  features stay visible for retry. Context menus are at parity for cadjs,
+  history-only and extra-body rows.
+- Proof: 15 `featureEngine` tests, 8 `executor` tests, 9 `featureDialog` tests,
+  documentStore rollback round-trip, folder-group tests, 3 Chromium
+  `feature-tree` tests, 4 `feature-dialog` tests and 1 `multi-body` test.
+
+### E status (closed, 2026-11-07)
+
+Landed E work (E is **closed** as of 2026-11-07):
+
+- `src/model/parts.ts` is a persisted part/body registry: named parts with
+  number/description, body membership, composite parts derived from membership,
+  independent body names, material catalog with densities, merged
+  material/custom appearance, keep/remove, hide/show, isolate and transparent.
+- The registry serializes into `documentStore` (`ProjectDoc.parts`), restores on
+  load and resets on tab switch, so names, membership, material, appearance and
+  visibility survive save/reload.
+- `bodyProperties.ts` integrates mass, centre of mass and the centroidal inertia
+  tensor from the mesh (kg·mm²); the inspector shows them per body and
+  aggregates volume/mass for multi-select.
+- The inspector adds part assignment/creation and part metadata, body naming,
+  material/colour, hide/isolate/transparent/remove, per-body and per-part STL
+  export, move +10 mm X and copy; every action self-registers extras (`F#k`).
+- The Browser groups body rows by part (`groupBrowserByPart`) and shows body
+  names, material, removed/transparent state and consumed-by provenance.
+- Body-level errors stay with the owning feature: selecting a body shows its
+  feature status/detail and consumed-by feature.
+- Proof: 12 `parts` tests, 8 `bodyProperties` tests (including cube mass and
+  inertia), 4 folder/part grouping tests, documentStore parts round-trip,
+  `e2e/parts.spec.ts`, and the existing `multi-body`/tree/dialog Chromium suites.
+  The full acceptance plan is `PHASE3_E_TEST_PLAN.md`.
+
 ## Current truth — 2026-11-06 (physical ECAD, test bible, measured speed)
 
 This is the top of the file for a reason. Everything below it is history; this

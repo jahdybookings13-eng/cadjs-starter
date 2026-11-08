@@ -244,7 +244,24 @@ export function buildTorusNodes(
   return [
     sketchNode(skFid, `${name} profile`, XZ, [
       P("pc", ringR, 0),
-      { id: "c1", type: "circle", centerId: "pc", radius: tubeR },
+      P("p1", ringR + tubeR, 0),
+      P("p2", ringR - tubeR, 0),
+      {
+        id: "a1",
+        type: "arc",
+        centerId: "pc",
+        startId: "p1",
+        endId: "p2",
+        radius: tubeR,
+      },
+      {
+        id: "a2",
+        type: "arc",
+        centerId: "pc",
+        startId: "p2",
+        endId: "p1",
+        radius: tubeR,
+      },
       P("pa", 0, 0),
       P("pb", 0, Math.max(ringR, 1e-3)),
       L("l1", "pa", "pb"),
@@ -252,7 +269,7 @@ export function buildTorusNodes(
     buildRevolveNode(
       baseId,
       name,
-      [provenanceForFeature(skFid, "SKETCH_ENTITY", "c1")],
+      [provenanceForFeature(skFid, "SKETCH_ENTITY", "a1")],
       [provenanceForFeature(skFid, "SKETCH_ENTITY", "l1")],
       q(Math.PI * 2, "360 deg"),
     ),
@@ -266,6 +283,16 @@ export function buildLinearPatternNodes(
   count: number,
   dir: [number, number, number],
   spacing: number,
+  opts?: {
+    spacingMode?: "SPACING" | "EXTENT" | "EQUAL";
+    separate?: boolean;
+    join?: boolean;
+    flip?: boolean;
+    suppressedInstances?: number[];
+    patternType?: "linear" | "body" | "face";
+    sourceFeatureId?: string;
+    faceTags?: string[];
+  },
 ): ScadgenFeatureNode {
   return {
     featureId: baseId,
@@ -293,6 +320,47 @@ export function buildLinearPatternNodes(
         expression: `${(spacing * 1000).toFixed(0)} mm`,
       },
       { kind: "matrix", parameterId: "direction", elements: [...dir] },
+      {
+        kind: "enum",
+        parameterId: "spacingMode",
+        value: opts?.spacingMode ?? "SPACING",
+      },
+      {
+        kind: "boolean",
+        parameterId: "separate",
+        value: !!opts?.separate,
+      },
+      {
+        kind: "boolean",
+        parameterId: "join",
+        value: opts?.join ?? true,
+      },
+      {
+        kind: "boolean",
+        parameterId: "flipDirection",
+        value: !!opts?.flip,
+      },
+      {
+        kind: "enum",
+        parameterId: "patternType",
+        value: opts?.patternType ?? "linear",
+      },
+      ...(opts?.faceTags?.length
+        ? [
+            {
+              kind: "queryList" as const,
+              parameterId: "faces",
+              queries: opts.faceTags.map((t) =>
+                faceQ(opts.sourceFeatureId ?? sourceFeatureId, t),
+              ),
+            },
+          ]
+        : []),
+      {
+        kind: "string",
+        parameterId: "suppressedInstances",
+        value: JSON.stringify(opts?.suppressedInstances ?? []),
+      },
     ],
     subFeatures: [],
     suppressed: false,
@@ -410,7 +478,14 @@ export function buildHoleNode(
   depth: number,
   axisDir: [number, number, number] = [0, 0, -1],
   throughAll = true,
+  opts: {
+    holeType?: "SIMPLE" | "COUNTERBORE" | "COUNTERSINK" | "TAPPED";
+    counterboreRadius?: number;
+    counterboreDepth?: number;
+  } = {},
 ): ScadgenFeatureNode {
+  const counterboreRadius = opts.counterboreRadius ?? 0.008;
+  const counterboreDepth = opts.counterboreDepth ?? 0.005;
   return {
     featureId,
     featureType: "hole",
@@ -423,6 +498,11 @@ export function buildHoleNode(
         queries: [faceQ(bodyFeatureId, "*")],
       },
       {
+        kind: "enum",
+        parameterId: "holeType",
+        value: opts.holeType ?? "SIMPLE",
+      },
+      {
         kind: "string",
         parameterId: "centerPoints",
         value: JSON.stringify(centers.map(([x, y, z]) => ({ x, y, z }))),
@@ -433,9 +513,9 @@ export function buildHoleNode(
         value: axisDir.join(","),
       },
       {
-        kind: "string",
+        kind: "boolean",
         parameterId: "throughAll",
-        value: String(throughAll),
+        value: throughAll,
       },
       {
         kind: "quantity",
@@ -450,6 +530,20 @@ export function buildHoleNode(
         value: depth,
         units: "m",
         expression: formatQuantityExpression(depth, "m"),
+      },
+      {
+        kind: "quantity",
+        parameterId: "counterboreRadius",
+        value: counterboreRadius,
+        units: "m",
+        expression: formatQuantityExpression(counterboreRadius, "m"),
+      },
+      {
+        kind: "quantity",
+        parameterId: "counterboreDepth",
+        value: counterboreDepth,
+        units: "m",
+        expression: formatQuantityExpression(counterboreDepth, "m"),
       },
     ],
     subFeatures: [],
@@ -701,6 +795,7 @@ export function buildScaleNode(
   sourceFeatureId: string,
   factor: number,
   origin: [number, number, number],
+  factors?: [number, number, number],
 ): ScadgenFeatureNode {
   return {
     featureId,
@@ -721,6 +816,15 @@ export function buildScaleNode(
         expression: String(factor),
       },
       { kind: "string", parameterId: "origin", value: origin.join(",") },
+      ...(factors
+        ? [
+            {
+              kind: "matrix" as const,
+              parameterId: "factors",
+              elements: [...factors],
+            },
+          ]
+        : []),
     ],
     subFeatures: [],
     suppressed: false,
@@ -818,6 +922,11 @@ export function buildFeaturePatternNode(
   axis: [number, number, number],
   spacing: number,
   count: number,
+  opts?: {
+    spacingMode?: "SPACING" | "EXTENT" | "EQUAL";
+    suppressedInstances?: number[];
+    join?: boolean;
+  },
 ): ScadgenFeatureNode {
   return {
     featureId,
@@ -845,6 +954,17 @@ export function buildFeaturePatternNode(
         units: "",
         expression: String(count),
       },
+      {
+        kind: "enum",
+        parameterId: "spacingMode",
+        value: opts?.spacingMode ?? "SPACING",
+      },
+      {
+        kind: "string",
+        parameterId: "suppressedInstances",
+        value: JSON.stringify(opts?.suppressedInstances ?? []),
+      },
+      { kind: "boolean", parameterId: "join", value: !!opts?.join },
     ],
     subFeatures: [],
     suppressed: false,
@@ -1007,6 +1127,21 @@ export function buildWrapNode(
         parameterId: "polylines",
         value: JSON.stringify(polylines),
       },
+      { kind: "enum", parameterId: "operation", value: "CURVE" },
+      {
+        kind: "quantity",
+        parameterId: "depth",
+        value: 0.0005,
+        units: "m",
+        expression: formatQuantityExpression(0.0005, "m"),
+      },
+      {
+        kind: "quantity",
+        parameterId: "width",
+        value: 0.001,
+        units: "m",
+        expression: formatQuantityExpression(0.001, "m"),
+      },
     ],
     subFeatures: [],
     suppressed: false,
@@ -1019,7 +1154,10 @@ export function buildMoveFaceNode(
   bodyFeatureId: string,
   faceTag: string,
   distance: number,
+  faceTags?: string[],
+  extendNeighbors = true,
 ): ScadgenFeatureNode {
+  const tags = faceTags?.length ? faceTags : [faceTag];
   return {
     featureId,
     featureType: "moveFace",
@@ -1033,11 +1171,21 @@ export function buildMoveFaceNode(
       },
       { kind: "string", parameterId: "faceTag", value: faceTag },
       {
+        kind: "queryList",
+        parameterId: "faces",
+        queries: tags.map((t) => faceQ(bodyFeatureId, t)),
+      },
+      {
         kind: "quantity",
         parameterId: "distance",
         value: distance,
         units: "m",
         expression: formatQuantityExpression(distance, "m"),
+      },
+      {
+        kind: "boolean",
+        parameterId: "extendNeighbors",
+        value: extendNeighbors,
       },
     ],
     subFeatures: [],
@@ -1086,6 +1234,11 @@ export function buildSplitNode(
   planeOrigin: [number, number, number],
   planeNormal: [number, number, number],
   keep: "positive" | "negative" | "both" = "positive",
+  opts?: {
+    splitBy?: "plane" | "surface";
+    toolFeatureId?: string;
+    allBodies?: boolean;
+  },
 ): ScadgenFeatureNode {
   return {
     featureId,
@@ -1109,6 +1262,21 @@ export function buildSplitNode(
         value: planeNormal.join(","),
       },
       { kind: "string", parameterId: "keep", value: keep },
+      { kind: "enum", parameterId: "splitBy", value: opts?.splitBy ?? "plane" },
+      ...(opts?.toolFeatureId
+        ? [
+            {
+              kind: "queryList" as const,
+              parameterId: "tools",
+              queries: [faceQ(opts.toolFeatureId, "*")],
+            },
+          ]
+        : []),
+      {
+        kind: "boolean",
+        parameterId: "allBodies",
+        value: !!opts?.allBodies,
+      },
     ],
     subFeatures: [],
     suppressed: false,
@@ -1178,6 +1346,7 @@ export function buildDeleteFaceNode(
   name: string,
   bodyFeatureId: string,
   faceTags: string[],
+  mergeAdjacent = true,
 ): ScadgenFeatureNode {
   return {
     featureId,
@@ -1194,6 +1363,11 @@ export function buildDeleteFaceNode(
         kind: "queryList",
         parameterId: "faces",
         queries: faceTags.map((t) => faceQ(bodyFeatureId, t)),
+      },
+      {
+        kind: "boolean",
+        parameterId: "mergeAdjacent",
+        value: mergeAdjacent,
       },
     ],
     subFeatures: [],
@@ -1255,6 +1429,7 @@ export function buildCircularPatternNode(
   angleDeg = 360,
   extraSourceFeatureIds: string[] = [],
   separate = false,
+  suppressedInstances: number[] = [],
 ): ScadgenFeatureNode {
   return {
     featureId,
@@ -1292,6 +1467,57 @@ export function buildCircularPatternNode(
         value: axisDir.join(","),
       },
       { kind: "string", parameterId: "axisOrigin", value: "0,0,0" },
+      {
+        kind: "string",
+        parameterId: "suppressedInstances",
+        value: JSON.stringify(suppressedInstances),
+      },
+    ],
+    subFeatures: [],
+    suppressed: false,
+  };
+}
+
+export function buildTransformNode(
+  featureId: string,
+  name: string,
+  bodyFeatureId: string,
+  transformType: "MOVE" | "ROTATE" | "COPY" = "MOVE",
+  translation: [number, number, number] = [0, 0, 0],
+  rotationAxis: [number, number, number] = [0, 0, 1],
+  rotationAngle = 0,
+  copy = false,
+): ScadgenFeatureNode {
+  return {
+    featureId,
+    featureType: "transform",
+    name,
+    namespace: "",
+    parameters: [
+      {
+        kind: "queryList",
+        parameterId: "entities",
+        queries: [faceQ(bodyFeatureId, "*")],
+      },
+      { kind: "enum", parameterId: "transformType", value: transformType },
+      {
+        kind: "string",
+        parameterId: "translation",
+        value: translation.join(","),
+      },
+      {
+        kind: "string",
+        parameterId: "rotationAxis",
+        value: rotationAxis.join(","),
+      },
+      {
+        kind: "quantity",
+        parameterId: "rotationAngle",
+        value: rotationAngle,
+        units: "rad",
+        expression: `${((rotationAngle * 180) / Math.PI).toFixed(2)} deg`,
+      },
+      { kind: "boolean", parameterId: "copy", value: copy },
     ],
     subFeatures: [],
     suppressed: false,

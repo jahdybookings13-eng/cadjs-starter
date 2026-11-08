@@ -1,0 +1,38 @@
+[
+  {
+    "format": "step",
+    "fixtureBytes": 15896,
+    "importMs": 204.13195899999937,
+    "faces": 6,
+    "edited": true,
+    "reloaded": true,
+    "exported": true
+  },
+  {
+    "format": "iges",
+    "fixtureBytes": 13365,
+    "importMs": 99.19029200000023,
+    "faces": 6,
+    "edited": true,
+    "reloaded": true,
+    "exported": true
+  },
+  {
+    "format": "stl",
+    "fixtureBytes": 3052,
+    "importMs": 52.629917000000205,
+    "faces": 12,
+    "edited": true,
+    "reloaded": true,
+    "exported": true
+  },
+  {
+    "format": "3mf",
+    "fixtureBytes": 1067,
+    "importMs": 3.3259589999997843,
+    "faces": 1,
+    "edited": true,
+    "reloaded": true,
+    "exported": true
+  }
+]

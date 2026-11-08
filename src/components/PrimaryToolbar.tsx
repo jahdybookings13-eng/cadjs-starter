@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { SceneMode, type UndoableSnapshot } from "@vitekk02/cadjs";
-import FileMenu from "./FileMenu";
 import { UndoRedoMenus } from "./UndoRedoMenus";
 import {
   FASTENER_FAMILIES,
@@ -10,6 +9,23 @@ import {
 } from "../model/fastenerPresets";
 import { type HeadShapeId, type TipStyle } from "../model/headShapes";
 import { type ThreadStandard, THREAD_SIZES } from "../model/threadStandards";
+import {
+  PRIMITIVE_SHAPES,
+  defaultPrimitiveOptions,
+  type ShapeKind,
+} from "../model/primitiveLibrary";
+import {
+  defaultToolbarCustomization,
+  isToolbarToolVisible,
+  loadToolbarCustomization,
+  resetToolbarCustomization,
+  saveToolbarCustomization,
+  toggleToolbarTool,
+  type ToolbarCustomization,
+} from "../model/toolbarCustomization";
+import { ToolbarCustomizer } from "./ToolbarCustomizer";
+import { OperationsMenu } from "./OperationsMenu";
+import { TOOL_SEARCH_OPEN_EVENT } from "../model/toolSearch";
 
 interface PrimaryToolbarProps {
   mode: SceneMode;
@@ -23,9 +39,11 @@ interface PrimaryToolbarProps {
   toggleGroundPlane: () => void;
   onFitAll: () => void;
   onSelectFastener?: (spec: FastenerSpec) => void;
-  /** Open the people/share panel. */
-  onShare?: () => void;
-
+  onSelectPrimitive?: (kind: ShapeKind, opts: Record<string, unknown>) => void;
+  availableOps?: ReadonlySet<string>;
+  onRunOperation?: (id: string) => void;
+  appearancePanelOpen?: boolean;
+  onToggleAppearance?: () => void;
   // Undo/redo — forwarded to <UndoRedoMenus />.
   inSketch: boolean;
   canUndoSketch: boolean;
@@ -73,6 +91,180 @@ export function getModeLabel(
       return "Measure";
     default:
       return mode.charAt(0).toUpperCase() + mode.slice(1);
+  }
+}
+
+type ToolGlyphName =
+  | "sketch"
+  | "extrude"
+  | "move"
+  | "fasteners"
+  | "primitives"
+  | "boolean"
+  | "fillet"
+  | "sweep"
+  | "loft"
+  | "revolve"
+  | "measure"
+  | "appearance"
+  | "people";
+
+function ToolGlyph({ name }: { name: ToolGlyphName }) {
+  const common = {
+    className: "cad-tool-icon",
+    fill: "none",
+    stroke: "currentColor",
+    viewBox: "0 0 24 24",
+    "aria-hidden": true,
+  } as const;
+
+  switch (name) {
+    case "sketch":
+      return (
+        <svg {...common}>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.7}
+            d="m4 20 4.2-1 10-10-3.2-3.2-10 10L4 20Zm9.8-12.4 3.2 3.2M14 4l1.5-1.5a1.4 1.4 0 0 1 2 0l4 4a1.4 1.4 0 0 1 0 2L20 10"
+          />
+        </svg>
+      );
+    case "extrude":
+      return (
+        <svg {...common}>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.7}
+            d="M5 9h14v10H5V9Zm0 0 3-3h14v10l-3 3M8 6v10M8 16h14"
+          />
+        </svg>
+      );
+    case "move":
+      return (
+        <svg {...common}>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.7}
+            d="M12 3v18M3 12h18M12 3l-3 3m3-3 3 3m-3 15-3-3m3 3 3-3M3 12l3-3m-3 3 3 3m15-3-3-3m3 3-3 3"
+          />
+        </svg>
+      );
+    case "fasteners":
+      return (
+        <svg {...common}>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.7}
+            d="M14.5 3.5 20.5 9.5M13 5l6 6M11 7l6 6-7.5 7.5H4.5v-5L11 7Zm-2 8 3 3"
+          />
+        </svg>
+      );
+    case "primitives":
+      return (
+        <svg {...common}>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.7}
+            d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Zm0 0v9m8-4.5-8 4.5m-8-4.5 8 4.5m0 9v-9"
+          />
+        </svg>
+      );
+    case "boolean":
+      return (
+        <svg {...common}>
+          <circle cx="9" cy="12" r="5.5" strokeWidth={1.7} />
+          <circle cx="15" cy="12" r="5.5" strokeWidth={1.7} />
+        </svg>
+      );
+    case "fillet":
+      return (
+        <svg {...common}>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.7}
+            d="M4 20V9a5 5 0 0 1 5-5h11M4 20h16"
+          />
+          <path strokeWidth={1.4} d="M9 4v5H4" strokeDasharray="2 2" />
+        </svg>
+      );
+    case "sweep":
+      return (
+        <svg {...common}>
+          <rect x="4" y="8" width="6" height="8" rx="1" strokeWidth={1.7} />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.7}
+            d="M10 12c3-5 7-5 10 0m-2-3 2 3-3 2"
+          />
+        </svg>
+      );
+    case "loft":
+      return (
+        <svg {...common}>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.7}
+            d="M5 5h7v3H5V5Zm7 11h7v3h-7v-3ZM6 8c0 4 1 5 5 8m6-8c0 4-1 5-5 8"
+          />
+        </svg>
+      );
+    case "revolve":
+      return (
+        <svg {...common}>
+          <path strokeLinecap="round" strokeWidth={1.7} d="M12 3v18" />
+          <ellipse cx="12" cy="12" rx="6" ry="3.2" strokeWidth={1.7} />
+          <path
+            strokeLinecap="round"
+            strokeWidth={1.7}
+            d="M6 9c0 1.6 2.7 2.8 6 2.8s6-1.2 6-2.8"
+          />
+        </svg>
+      );
+    case "measure":
+      return (
+        <svg {...common}>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.7}
+            d="m4 16 12-12 4 4L8 20l-4-4Zm3-1 1.5 1.5M9.5 12.5 11 14m1.5-4.5L14 11m1.5-4.5L17 8"
+          />
+        </svg>
+      );
+    case "appearance":
+      return (
+        <svg {...common}>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.7}
+            d="M12 3c-4.4 0-8 3.6-8 8s3.6 8 8 8h1.5a2 2 0 0 0 0-4H13a2 2 0 0 1 0-4h3a5 5 0 0 0 0-10h-4Z"
+          />
+          <circle cx="7.5" cy="9" r="1" fill="currentColor" stroke="none" />
+          <circle cx="10" cy="6.5" r="1" fill="currentColor" stroke="none" />
+          <circle cx="14" cy="6.5" r="1" fill="currentColor" stroke="none" />
+        </svg>
+      );
+    case "people":
+      return (
+        <svg {...common}>
+          <circle cx="9" cy="8" r="3" strokeWidth={1.7} />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.7}
+            d="M3.5 20a5.5 5.5 0 0 1 11 0M16 5.5a3 3 0 0 1 0 5.8M17 14.5a5 5 0 0 1 3.5 5.5"
+          />
+        </svg>
+      );
   }
 }
 
@@ -144,7 +336,8 @@ function headsAllowedFor(family: FastenerFamily): HeadShapeId[] {
 const FastenerDropdown: React.FC<{
   onSelect: (spec: FastenerSpec) => void;
   isLocked: boolean;
-}> = ({ onSelect, isLocked }) => {
+  hidden?: boolean;
+}> = ({ onSelect, isLocked, hidden = false }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -232,26 +425,24 @@ const FastenerDropdown: React.FC<{
   };
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative" ref={ref} hidden={hidden}>
       <button
-        className={`flex-none px-3 py-1.5 text-sm rounded ${
-          isLocked
-            ? "bg-gray-800 text-gray-500 cursor-not-allowed"
-            : "bg-gray-700 hover:bg-gray-600 text-gray-200"
-        }`}
+        className="cad-tool"
         disabled={isLocked}
         data-testid="tool-fasteners"
         onClick={() => setOpen((v) => !v)}
         title="Fasteners"
+        aria-label="Fasteners"
       >
-        Fasteners
+        <ToolGlyph name="fasteners" />
+        <span className="cad-tool-label">Fasteners</span>
       </button>
       {open && (
-        <div className="absolute top-full left-0 mt-1 w-72 bg-gray-800 border border-gray-600 rounded-md shadow-lg z-50 p-3 flex flex-col gap-2">
+        <div className="absolute left-0 top-full z-50 mt-1 flex w-72 flex-col gap-2 rounded-md border border-[var(--cad-border-strong)] bg-[var(--cad-chrome-raised)] p-3 shadow-xl">
           <label className="text-xs text-gray-400">Family</label>
           <select
             aria-label="Fastener family"
-            className="w-full bg-gray-900 text-sm rounded px-2 py-1 text-gray-200"
+            className="w-full rounded border border-[var(--cad-border)] bg-white px-2 py-1 text-sm text-[var(--cad-text)]"
             value={famIdx}
             onChange={(e) => pickFamily(Number(e.target.value))}
           >
@@ -264,7 +455,7 @@ const FastenerDropdown: React.FC<{
           <label className="text-xs text-gray-400">Standard</label>
           <select
             aria-label="Fastener standard"
-            className="w-full bg-gray-900 text-sm rounded px-2 py-1 text-gray-200"
+            className="w-full rounded border border-[var(--cad-border)] bg-white px-2 py-1 text-sm text-[var(--cad-text)]"
             value={std}
             onChange={(e) => pickStd(e.target.value as ThreadStandard)}
           >
@@ -277,7 +468,7 @@ const FastenerDropdown: React.FC<{
           <label className="text-xs text-gray-400">Size</label>
           <select
             aria-label="Fastener size"
-            className="w-full bg-gray-900 text-sm rounded px-2 py-1 text-gray-200"
+            className="w-full rounded border border-[var(--cad-border)] bg-white px-2 py-1 text-sm text-[var(--cad-text)]"
             value={size}
             onChange={(e) => {
               setSize(e.target.value);
@@ -292,10 +483,12 @@ const FastenerDropdown: React.FC<{
           </select>
           <div className="flex gap-2">
             <div className="flex-1">
-              <label className="text-xs text-gray-400">Head</label>
+              <label className="text-xs text-[var(--cad-text-muted)]">
+                Head
+              </label>
               <select
                 aria-label="Fastener head"
-                className="w-full bg-gray-900 text-sm rounded px-2 py-1 text-gray-200"
+                className="w-full rounded border border-[var(--cad-border)] bg-white px-2 py-1 text-sm text-[var(--cad-text)]"
                 value={head}
                 onChange={(e) => {
                   setHead(e.target.value as HeadShapeId);
@@ -310,10 +503,12 @@ const FastenerDropdown: React.FC<{
               </select>
             </div>
             <div className="flex-1">
-              <label className="text-xs text-gray-400">Tip</label>
+              <label className="text-xs text-[var(--cad-text-muted)]">
+                Tip
+              </label>
               <select
                 aria-label="Fastener tip"
-                className="w-full bg-gray-900 text-sm rounded px-2 py-1 text-gray-200"
+                className="w-full rounded border border-[var(--cad-border)] bg-white px-2 py-1 text-sm text-[var(--cad-text)]"
                 value={tip}
                 onChange={(e) => {
                   setTip(e.target.value as TipStyle);
@@ -328,7 +523,7 @@ const FastenerDropdown: React.FC<{
               </select>
             </div>
           </div>
-          {err && <div className="text-xs text-red-400">{err}</div>}
+          {err && <div className="text-xs text-red-600">{err}</div>}
           <button
             className="mt-1 px-3 py-1.5 text-sm rounded bg-blue-600 hover:bg-blue-500 text-white"
             data-testid="fastener-confirm"
@@ -336,6 +531,65 @@ const FastenerDropdown: React.FC<{
           >
             Insert
           </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const PrimitiveDropdown: React.FC<{
+  onSelect: (kind: ShapeKind) => void;
+  isLocked: boolean;
+  hidden?: boolean;
+}> = ({ onSelect, isLocked, hidden = false }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref} hidden={hidden}>
+      <button
+        className="cad-tool"
+        disabled={isLocked}
+        data-testid="tool-primitives"
+        aria-label="Primitives"
+        aria-expanded={open}
+        aria-haspopup="menu"
+        onClick={() => setOpen((value) => !value)}
+        title="Primitives"
+      >
+        <ToolGlyph name="primitives" />
+        <span className="cad-tool-label">Primitives</span>
+      </button>
+      {open && (
+        <div
+          role="menu"
+          aria-label="Primitives"
+          className="absolute left-0 top-full z-50 mt-1 w-44 rounded-md border border-[var(--cad-border-strong)] bg-[var(--cad-chrome-raised)] py-1 shadow-xl"
+        >
+          {PRIMITIVE_SHAPES.map(({ kind, label }) => (
+            <button
+              key={kind}
+              role="menuitem"
+              aria-label={label}
+              className="w-full px-3 py-1.5 text-left text-xs text-[var(--cad-text)] hover:bg-[var(--cad-chrome-hover)]"
+              onClick={() => {
+                onSelect(kind);
+                setOpen(false);
+              }}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       )}
     </div>
@@ -351,14 +605,32 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = (props) => {
     isBooleanMode,
     sketchIsSelectingPlane,
     onSketchClick,
-    onShare,
     showGroundPlane,
     toggleGroundPlane,
     onFitAll,
   } = props;
 
   const [overflowMenuOpen, setOverflowMenuOpen] = useState(false);
+  const [customization, setCustomization] = useState<ToolbarCustomization>(
+    () =>
+      typeof window === "undefined"
+        ? defaultToolbarCustomization()
+        : loadToolbarCustomization(window.localStorage),
+  );
+  const [customizerAt, setCustomizerAt] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
   const overflowMenuRef = useRef<HTMLDivElement>(null);
+
+  const updateCustomization = (next: ToolbarCustomization) => {
+    setCustomization(next);
+    saveToolbarCustomization(
+      typeof window === "undefined" ? null : window.localStorage,
+      next,
+    );
+  };
+  const hiddenFor = (id: string) => !isToolbarToolVisible(customization, id);
 
   useEffect(() => {
     if (!overflowMenuOpen) return;
@@ -374,176 +646,218 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = (props) => {
     return () => document.removeEventListener("mousedown", handler);
   }, [overflowMenuOpen]);
 
-  const overflowItems: { label: string; mode: SceneMode }[] = [
-    { label: "Combine", mode: "combine" },
-    { label: "Fillet", mode: "fillet" },
-    { label: "Sweep", mode: "sweep" },
-    { label: "Loft", mode: "loft" },
-    { label: "Revolve", mode: "revolve" },
-    { label: "Measure", mode: "measure" },
-  ];
+  const overflowItems: { label: string; mode: SceneMode; id: string }[] = [
+    { label: "Combine", mode: "combine", id: "boolean" },
+    { label: "Fillet", mode: "fillet", id: "fillet" },
+    { label: "Sweep", mode: "sweep", id: "sweep" },
+    { label: "Loft", mode: "loft", id: "loft" },
+    { label: "Revolve", mode: "revolve", id: "revolve" },
+    { label: "Measure", mode: "measure", id: "measure" },
+  ].filter((item) => !hiddenFor(item.id));
 
   return (
-    <div className="flex-none h-12 bg-gray-900 border-b border-gray-700 flex items-center z-30">
-      <div className="flex items-center px-3 gap-1 min-w-0 flex-1">
-        <FileMenu />
-
+    <div
+      className="cad-chrome cad-feature-toolbar z-30 flex h-10 flex-none items-center border-b"
+      onContextMenu={(event) => {
+        event.preventDefault();
+        setCustomizerAt({ x: event.clientX, y: event.clientY });
+      }}
+    >
+      <div className="cad-toolbar-scroll flex min-w-0 flex-1 items-center gap-0.5 px-2">
         <button
-          className="flex-none px-3 py-1.5 text-sm rounded bg-blue-600 hover:bg-blue-500 text-white"
-          data-testid="tool-share"
-          onClick={onShare}
+          type="button"
+          className="cad-icon-button cad-toolbar-search-trigger"
+          data-testid="tool-search-trigger"
+          aria-label="Search tools and commands"
+          title="Search tools and commands (Ctrl/Cmd+K)"
+          onClick={() =>
+            window.dispatchEvent(new Event(TOOL_SEARCH_OPEN_EVENT))
+          }
         >
-          People
+          <svg
+            aria-hidden="true"
+            className="h-4 w-4 flex-none"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.8}
+              d="m21 21-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z"
+            />
+          </svg>
+          <span className="cad-toolbar-search-label">Search tools</span>
+          <span className="cad-kbd cad-toolbar-search-kbd">⌘K</span>
         </button>
-
-        <div className="flex-none w-px h-6 bg-gray-600 mx-1" />
 
         {/* Core buttons — always visible */}
         <button
-          className={`flex-none px-3 py-1.5 text-sm rounded ${
-            isOperationPending
-              ? "bg-gray-800 text-gray-500 cursor-not-allowed"
-              : mode === "sketch"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-700 hover:bg-gray-600 text-gray-200"
-          }`}
+          className="cad-tool"
+          data-active={mode === "sketch"}
           disabled={isOperationPending}
           data-testid="tool-sketch"
+          hidden={hiddenFor("sketch")}
           onClick={onSketchClick}
+          title="Sketch"
+          aria-label="Sketch"
         >
-          Sketch
+          <ToolGlyph name="sketch" />
+          <span className="cad-tool-label cad-tool-label-visible">Sketch</span>
         </button>
         <button
-          className={`flex-none px-3 py-1.5 text-sm rounded ${
-            isLocked
-              ? "bg-gray-800 text-gray-500 cursor-not-allowed"
-              : mode === "extrude"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-700 hover:bg-gray-600 text-gray-200"
-          }`}
+          className="cad-tool"
+          data-active={mode === "extrude"}
           disabled={isLocked}
           data-testid="tool-extrude"
+          hidden={hiddenFor("extrude")}
           onClick={() => setMode("extrude")}
+          title="Extrude"
+          aria-label="Extrude"
         >
-          Extrude
+          <ToolGlyph name="extrude" />
+          <span className="cad-tool-label">Extrude</span>
         </button>
         <button
-          className={`flex-none px-3 py-1.5 text-sm rounded ${
-            isLocked
-              ? "bg-gray-800 text-gray-500 cursor-not-allowed"
-              : mode === "move"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-700 hover:bg-gray-600 text-gray-200"
-          }`}
+          className="cad-tool"
+          data-active={false}
           disabled={isLocked}
+          hidden={hiddenFor("move")}
           onClick={() => setMode("move")}
+          title="Move"
+          aria-label="Move"
         >
-          Move
+          <ToolGlyph name="move" />
+          <span className="cad-tool-label">Move</span>
         </button>
 
         <FastenerDropdown
           isLocked={isLocked}
+          hidden={hiddenFor("fasteners")}
           onSelect={(spec) => props.onSelectFastener?.(spec)}
         />
 
+        <PrimitiveDropdown
+          isLocked={isLocked}
+          hidden={hiddenFor("primitives")}
+          onSelect={(kind) =>
+            props.onSelectPrimitive?.(kind, defaultPrimitiveOptions(kind))
+          }
+        />
+
+        <OperationsMenu
+          isLocked={isLocked}
+          hidden={hiddenFor("operations")}
+          availableOps={props.availableOps}
+          onRunOperation={(id) => props.onRunOperation?.(id)}
+        />
+
+        <button
+          className="cad-tool"
+          data-active={props.appearancePanelOpen}
+          disabled={isLocked}
+          data-testid="tool-appearance"
+          hidden={hiddenFor("appearance")}
+          onClick={props.onToggleAppearance}
+          title="Appearance"
+          aria-label="Appearance"
+        >
+          <ToolGlyph name="appearance" />
+          <span className="cad-tool-label">Appearance</span>
+        </button>
+
         {/* Secondary buttons — desktop only inline */}
         <div className="hidden lg:contents">
-          <div className="flex-none w-px h-6 bg-gray-600 mx-1" />
+          <div className="cad-divider" />
 
           <button
-            className={`flex-none px-3 py-1.5 text-sm rounded ${
-              isLocked
-                ? "bg-gray-800 text-gray-500 cursor-not-allowed"
-                : isBooleanMode
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-700 hover:bg-gray-600 text-gray-200"
-            }`}
+            className="cad-tool"
+            data-active={isBooleanMode}
             disabled={isLocked}
             data-testid="tool-combine"
+            hidden={hiddenFor("boolean")}
             onClick={() => setMode("combine")}
+            title="Boolean"
+            aria-label="Boolean"
           >
-            Boolean
+            <ToolGlyph name="boolean" />
+            <span className="cad-tool-label">Boolean</span>
           </button>
 
           <button
-            className={`flex-none px-3 py-1.5 text-sm rounded ${
-              isLocked
-                ? "bg-gray-800 text-gray-500 cursor-not-allowed"
-                : mode === "fillet"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-700 hover:bg-gray-600 text-gray-200"
-            }`}
+            className="cad-tool"
+            data-active={mode === "fillet"}
             disabled={isLocked}
+            hidden={hiddenFor("fillet")}
             onClick={() => setMode("fillet")}
+            title="Fillet / Chamfer"
+            aria-label="Fillet / Chamfer"
           >
-            Fillet
+            <ToolGlyph name="fillet" />
+            <span className="cad-tool-label">Fillet</span>
           </button>
           <button
-            className={`flex-none px-3 py-1.5 text-sm rounded ${
-              isLocked
-                ? "bg-gray-800 text-gray-500 cursor-not-allowed"
-                : mode === "sweep"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-700 hover:bg-gray-600 text-gray-200"
-            }`}
+            className="cad-tool"
+            data-active={mode === "sweep"}
             disabled={isLocked}
+            hidden={hiddenFor("sweep")}
             onClick={() => setMode("sweep")}
+            title="Sweep"
+            aria-label="Sweep"
           >
-            Sweep
+            <ToolGlyph name="sweep" />
+            <span className="cad-tool-label">Sweep</span>
           </button>
           <button
-            className={`flex-none px-3 py-1.5 text-sm rounded ${
-              isLocked
-                ? "bg-gray-800 text-gray-500 cursor-not-allowed"
-                : mode === "loft"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-700 hover:bg-gray-600 text-gray-200"
-            }`}
+            className="cad-tool"
+            data-active={mode === "loft"}
             disabled={isLocked}
+            hidden={hiddenFor("loft")}
             onClick={() => setMode("loft")}
+            title="Loft"
+            aria-label="Loft"
           >
-            Loft
+            <ToolGlyph name="loft" />
+            <span className="cad-tool-label">Loft</span>
           </button>
           <button
-            className={`flex-none px-3 py-1.5 text-sm rounded ${
-              isLocked
-                ? "bg-gray-800 text-gray-500 cursor-not-allowed"
-                : mode === "revolve"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-700 hover:bg-gray-600 text-gray-200"
-            }`}
+            className="cad-tool"
+            data-active={mode === "revolve"}
             disabled={isLocked}
+            hidden={hiddenFor("revolve")}
             onClick={() => setMode("revolve")}
+            title="Revolve"
+            aria-label="Revolve"
           >
-            Revolve
+            <ToolGlyph name="revolve" />
+            <span className="cad-tool-label">Revolve</span>
           </button>
 
-          <div className="flex-none w-px h-6 bg-gray-600 mx-1" />
+          <div className="cad-divider" />
 
           <button
-            className={`flex-none px-3 py-1.5 text-sm rounded ${
-              isLocked
-                ? "bg-gray-800 text-gray-500 cursor-not-allowed"
-                : mode === "measure"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-700 hover:bg-gray-600 text-gray-200"
-            }`}
+            className="cad-tool"
+            data-active={mode === "measure"}
             disabled={isLocked}
+            hidden={hiddenFor("measure")}
             onClick={() => setMode("measure")}
+            title="Measure"
+            aria-label="Measure"
           >
-            Measure
+            <ToolGlyph name="measure" />
+            <span className="cad-tool-label">Measure</span>
           </button>
 
-          <div className="flex-none w-px h-6 bg-gray-600 mx-1" />
+          <div className="cad-divider" />
 
           <button
-            className={`flex-none px-2 py-1.5 text-sm rounded ${
-              showGroundPlane
-                ? "bg-blue-600 text-white"
-                : "bg-gray-700 hover:bg-gray-600 text-gray-200"
-            }`}
+            className="cad-icon-button"
+            data-active={showGroundPlane}
             onClick={toggleGroundPlane}
-            title={showGroundPlane ? "Hide Grid" : "Show Grid"}
+            hidden={hiddenFor("grid")}
+            title={showGroundPlane ? "Hide grid" : "Show grid"}
+            aria-label={showGroundPlane ? "Hide grid" : "Show grid"}
           >
             <svg
               className="w-4 h-4"
@@ -561,9 +875,11 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = (props) => {
           </button>
 
           <button
-            className="flex-none px-2 py-1.5 text-sm rounded bg-gray-700 hover:bg-gray-600 text-gray-200"
+            className="cad-icon-button"
             onClick={onFitAll}
-            title="Fit All (F)"
+            hidden={hiddenFor("fit")}
+            title="Fit all (F)"
+            aria-label="Fit all"
           >
             <svg
               className="w-4 h-4"
@@ -584,9 +900,10 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = (props) => {
         {/* Overflow "More" dropdown — mobile only */}
         <div className="lg:hidden relative" ref={overflowMenuRef}>
           <button
-            className="flex-none px-2 py-1.5 text-sm rounded bg-gray-700 hover:bg-gray-600 text-gray-200"
+            className="cad-icon-button"
             onClick={() => setOverflowMenuOpen(!overflowMenuOpen)}
             title="More tools"
+            aria-label="More tools"
           >
             <svg
               className="w-4 h-4"
@@ -603,17 +920,17 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = (props) => {
             </svg>
           </button>
           {overflowMenuOpen && (
-            <div className="absolute top-full left-0 mt-1 w-44 bg-gray-800 border border-gray-600 rounded-md shadow-lg z-50">
+            <div className="absolute left-0 top-full z-50 mt-1 w-44 rounded-md border border-[var(--cad-border-strong)] bg-[var(--cad-chrome-raised)] shadow-xl">
               {overflowItems.map((item) => (
                 <button
                   key={item.mode}
                   aria-label={item.label}
-                  className={`w-full px-3 py-2 text-sm text-left ${
+                  className={`w-full px-3 py-2 text-left text-xs ${
                     isLocked
-                      ? "text-gray-500 cursor-not-allowed"
+                      ? "cursor-not-allowed text-[var(--cad-text-faint)]"
                       : mode === item.mode
-                        ? "bg-blue-600 text-white"
-                        : "text-gray-200 hover:bg-gray-700"
+                        ? "bg-[var(--cad-accent-strong)] text-white"
+                        : "text-[var(--cad-text)] hover:bg-[var(--cad-chrome-hover)]"
                   }`}
                   disabled={isLocked}
                   onClick={() => {
@@ -624,12 +941,15 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = (props) => {
                   {item.label}
                 </button>
               ))}
-              <div className="border-t border-gray-600 my-1" />
+              <div className="my-1 border-t border-[var(--cad-border)]" />
               <button
                 aria-label={showGroundPlane ? "Hide grid" : "Show grid"}
-                className={`w-full px-3 py-2 text-sm text-left ${
-                  showGroundPlane ? "text-blue-400" : "text-gray-200"
-                } hover:bg-gray-700`}
+                hidden={hiddenFor("grid")}
+                className={`w-full px-3 py-2 text-left text-xs ${
+                  showGroundPlane
+                    ? "text-[var(--cad-accent)]"
+                    : "text-[var(--cad-text)]"
+                } hover:bg-[var(--cad-chrome-hover)]`}
                 onClick={() => {
                   toggleGroundPlane();
                   setOverflowMenuOpen(false);
@@ -638,7 +958,8 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = (props) => {
                 {showGroundPlane ? "Hide Grid" : "Show Grid"}
               </button>
               <button
-                className="w-full px-3 py-2 text-sm text-left text-gray-200 hover:bg-gray-700"
+                className="w-full px-3 py-2 text-left text-xs text-[var(--cad-text)] hover:bg-[var(--cad-chrome-hover)]"
+                hidden={hiddenFor("fit")}
                 onClick={() => {
                   onFitAll();
                   setOverflowMenuOpen(false);
@@ -650,34 +971,44 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = (props) => {
           )}
         </div>
 
-        <div className="flex-none w-px h-6 bg-gray-600 mx-1" />
+        <div className="cad-divider" />
 
-        <UndoRedoMenus
-          inSketch={props.inSketch}
-          canUndoSketch={props.canUndoSketch}
-          canRedoSketch={props.canRedoSketch}
-          undoSketch={props.undoSketch}
-          redoSketch={props.redoSketch}
-          canUndo={props.canUndo}
-          canRedo={props.canRedo}
-          undo={props.undo}
-          redo={props.redo}
-          undoActionName={props.undoActionName}
-          redoActionName={props.redoActionName}
-          undoStack={props.undoStack}
-          redoStack={props.redoStack}
-          undoDropdownOpen={props.undoDropdownOpen}
-          redoDropdownOpen={props.redoDropdownOpen}
-          setUndoDropdownOpen={props.setUndoDropdownOpen}
-          setRedoDropdownOpen={props.setRedoDropdownOpen}
-          undoDropdownRef={props.undoDropdownRef}
-          redoDropdownRef={props.redoDropdownRef}
-        />
-
-        <div className="ml-auto flex-none text-sm text-gray-400">
-          {getModeLabel(mode, sketchIsSelectingPlane)}
+        <div className="cad-undo-redo flex flex-none items-center">
+          <UndoRedoMenus
+            inSketch={props.inSketch}
+            canUndoSketch={props.canUndoSketch}
+            canRedoSketch={props.canRedoSketch}
+            undoSketch={props.undoSketch}
+            redoSketch={props.redoSketch}
+            canUndo={props.canUndo}
+            canRedo={props.canRedo}
+            undo={props.undo}
+            redo={props.redo}
+            undoActionName={props.undoActionName}
+            redoActionName={props.redoActionName}
+            undoStack={props.undoStack}
+            redoStack={props.redoStack}
+            undoDropdownOpen={props.undoDropdownOpen}
+            redoDropdownOpen={props.redoDropdownOpen}
+            setUndoDropdownOpen={props.setUndoDropdownOpen}
+            setRedoDropdownOpen={props.setRedoDropdownOpen}
+            undoDropdownRef={props.undoDropdownRef}
+            redoDropdownRef={props.redoDropdownRef}
+          />
         </div>
       </div>
+      {customizerAt && (
+        <ToolbarCustomizer
+          customization={customization}
+          x={customizerAt.x}
+          y={customizerAt.y}
+          onToggle={(id) =>
+            updateCustomization(toggleToolbarTool(customization, id))
+          }
+          onReset={() => updateCustomization(resetToolbarCustomization())}
+          onClose={() => setCustomizerAt(null)}
+        />
+      )}
     </div>
   );
 };

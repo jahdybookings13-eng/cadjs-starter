@@ -28,6 +28,10 @@ export async function revolveBRep(
   sourceOccBrep?: string,
   direction: RevolveDirection = "one",
   angleRadians2?: number,
+  options?: {
+    thinWall?: number | undefined;
+    cornerType?: "ROUNDED" | "CONICAL" | "TRANSITIONAL" | undefined;
+  },
 ): Promise<Result<RevolveResult>> {
   if (!profileBrep.faces.length) {
     return err("profile brep has no faces");
@@ -46,6 +50,8 @@ export async function revolveBRep(
         sourceOccBrep,
         direction,
         angleRadians2,
+        ...(options?.thinWall ? { thinWall: options.thinWall } : {}),
+        ...(options?.cornerType ? { cornerType: options.cornerType } : {}),
       },
     });
 

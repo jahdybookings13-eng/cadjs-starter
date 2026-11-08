@@ -35,7 +35,13 @@
   },
   "4.6": {
     "owner": "Specialized studios",
-    "evidence": ["src/ecad/__tests__/"]
+    "evidence": [
+      "src/sim/__tests__/",
+      "src/cam/__tests__/",
+      "src/render/__tests__/",
+      "src/pcb/__tests__/",
+      "src/ecad/__tests__/"
+    ]
   },
   "4.7": {
     "owner": "Interoperability",

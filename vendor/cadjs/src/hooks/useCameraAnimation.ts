@@ -176,7 +176,9 @@ export function useCameraAnimation(
       const size = new THREE.Vector3();
       box.getSize(size);
 
-      const maxDim = Math.max(size.x, size.y, size.z, 1);
+      // Model units are metres here; a 1 m floor made every millimetre-scale
+      // part appear as a dot because the camera was pushed ~1 m away.
+      const maxDim = Math.max(size.x, size.y, size.z, 1e-4);
 
       let distance: number;
       if (camera instanceof THREE.PerspectiveCamera) {

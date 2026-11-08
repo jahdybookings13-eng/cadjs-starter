@@ -176,6 +176,7 @@ headset, it stays unchecked.
 - [ ] **K16** The ECAD panel and the bus report the same verdict.
 - [ ] **K17** The BOM groups identical parts and lists their designators.
 - [ ] **K18** Passive consolidation finds the same value with multiple MPNs.
+- [x] **K19** PCB Studio's Virtual MCU tab places a real board, runs firmware, shows serial, keeps the runtime alive across PCB tab switches, projects a linked PCB netlist into ECAD wires so firmware drives PCB-connected hardware, and restores the saved part and firmware after reload.
 
 ## L — Electrical simulation
 
@@ -303,9 +304,17 @@ headset, it stays unchecked.
 - [ ] **R6** The divider solve stays under 250 µs/tick, transistor+LED+cap under 400 µs/tick, AC sweep under 4 ms.
 - [ ] **R7** Chromium browser gates pass; Firefox and WebKit pass the boot/sketch/undo smoke set; flaky VR specs pass twice.
 - [ ] **R8** A cold load on the target headset reaches the viewport without a console crash.
-- [ ] **R9** `npm run check:controls` reports 255 visible controls, zero dead and zero unlabeled; adding a handler-less button makes it fail.
+- [x] **R9** `npm run check:controls` reports 878 visible controls, zero dead and zero unlabeled; adding a handler-less button, or changing the control set without regenerating `parity/controls.json` / `CONTROL_AUDIT.md`, makes it fail.
 - [ ] **R10** `npm run check:parity` reports 97 capability rows, all with an owner and acceptance evidence; an invalid status makes it fail.
 - [ ] **R11** `npx playwright test e2e/perf-budget.spec.ts --project=chromium` passes boot ≤12 s, document reload ≤15 s, box regeneration ≤5 s and orbit ≥30 fps.
+
+## S — Control audit
+
+- [x] **S1** `npm run check:controls` scans every `.tsx` file and records each visible control's label, handler, enabled rule and evidence level. It fails on dead or unlabeled controls, and on a stale registry or audit ledger.
+- [x] **S2** Every control is accounted for one row at a time in `CONTROL_AUDIT.md`: 878 controls in 87 files, 0 dead, 0 unlabeled. The ledger is generated from source, so it cannot hide a control.
+- [x] **S3** Evidence levels are explicit: `direct` (exact `data-testid` in a test), `aria` (exact `aria-label`), `label` (stable label/testid segment used by a regex or prefixed selector), and `static-only` (handler/label/enabled verified, no test names it).
+- [ ] **S4** Full behavioral coverage is **not** complete and is not claimed: 252/878 controls have a test reference (92 direct, 73 label-level, 87 aria); 626 are static-only gaps. They are listed per control in `CONTROL_AUDIT.md`; largest gaps are Drawing 87, PCB 45, Simulation 38, Sketch toolbar 38, Configuration 34 and CAM 31. Assembly is now 118/118 referenced (44 direct, 27 label, 47 aria; 0 static-only) via `e2e/assembly-controls.spec.ts`.
+- [x] **S5** The PCB virtual-MCU bridge controls have real browser coverage: element/instance selection, link, unlink, apply-nets and link persistence across save/reload (`e2e/pcb-studio.spec.ts`), plus firmware driving a PCB-net LED in `src/pcb/__tests__/mcuBridge.test.ts`.
 
 ---
 

@@ -1,15 +1,22 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useCadCore } from "@vitekk02/cadjs/react";
 import { useToast } from "../contexts/ToastContext";
-type ImportKind = "stl" | "step" | "project";
+import { translationDisabledReason } from "../translation/capabilities";
+type ImportKind = "stl" | "step" | "iges" | "3mf" | "project";
 
-const FileMenu: React.FC = () => {
+interface FileMenuProps {
+  compact?: boolean;
+}
+
+const FileMenu: React.FC<FileMenuProps> = ({ compact = false }) => {
   const {
     elements,
     sketches,
     importFile,
     exportFile,
     exportStepFile,
+    exportIgesFile,
+    export3mfFile,
     importProject,
     exportProject,
     mode,
@@ -45,6 +52,8 @@ const FileMenu: React.FC = () => {
       const acceptByKind: Record<ImportKind, string> = {
         stl: ".stl",
         step: ".step,.stp",
+        iges: ".iges,.igs",
+        "3mf": ".3mf",
         project: ".cadjs.json,.json",
       };
       fileInputRef.current.accept = acceptByKind[kind];
@@ -110,6 +119,38 @@ const FileMenu: React.FC = () => {
     }
   };
 
+  const handleExportIges = async () => {
+    setMenuOpen(false);
+    setLoading(true);
+    try {
+      await exportIgesFile();
+    } catch (err) {
+      console.error("IGES export failed:", err);
+      showToast(
+        `IGES export failed: ${err instanceof Error ? err.message : String(err)}`,
+        "error",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExport3mf = async () => {
+    setMenuOpen(false);
+    setLoading(true);
+    try {
+      await export3mfFile();
+    } catch (err) {
+      console.error("3MF export failed:", err);
+      showToast(
+        `3MF export failed: ${err instanceof Error ? err.message : String(err)}`,
+        "error",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSaveProject = async () => {
     setMenuOpen(false);
     setLoading(true);
@@ -131,63 +172,95 @@ const FileMenu: React.FC = () => {
       <div className="relative flex-none" ref={menuRef}>
         <button
           aria-label="File menu"
-          className={`px-3 py-1.5 text-sm rounded flex items-center gap-1 ${
-            loading
-              ? "bg-gray-600 text-gray-400 cursor-wait"
-              : isLocked
-                ? "bg-gray-800 text-gray-500 cursor-not-allowed"
-                : "bg-gray-700 hover:bg-gray-600 text-gray-200"
-          }`}
+          className={compact ? "cad-icon-button" : "cad-tool"}
+          aria-expanded={menuOpen}
+          aria-haspopup="menu"
           onClick={() => !loading && !isLocked && setMenuOpen(!menuOpen)}
           disabled={loading || isLocked}
+          title={compact ? "Document menu" : undefined}
         >
-          {loading ? "Working..." : "File"}
-          <svg
-            className="w-3 h-3"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
+          {compact ? (
+            <svg
+              aria-hidden="true"
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeWidth={1.8}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          ) : (
+            <>
+              <svg
+                aria-hidden="true"
+                className="cad-tool-icon"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.7}
+                  d="M6 3h8l4 4v14H6V3Zm8 0v5h4M9 12h6M9 16h6"
+                />
+              </svg>
+              <span className="cad-tool-label">
+                {loading ? "Working…" : "File"}
+              </span>
+              <svg
+                aria-hidden="true"
+                className="h-3 w-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </>
+          )}
         </button>
         {menuOpen && (
-          <div className="absolute top-full left-0 mt-1 bg-gray-800 border border-gray-600 rounded-md shadow-lg py-1 z-50 min-w-[220px]">
+          <div className="absolute left-0 top-full z-50 mt-1 min-w-[220px] rounded-md border border-[var(--cad-border-strong)] bg-[var(--cad-chrome-raised)] py-1 shadow-xl">
             <button
-              className="w-full px-4 py-2 text-sm text-left hover:bg-gray-700 text-gray-200"
+              className="w-full px-4 py-2 text-sm text-left hover:bg-[var(--cad-chrome-hover)] text-[var(--cad-text)]"
               onClick={() => handleImportClick("project")}
             >
               Open Project (.cadjs.json)...
             </button>
             <button
-              className={`w-full px-4 py-2 text-sm text-left text-gray-200 ${
+              className={`w-full px-4 py-2 text-sm text-left text-[var(--cad-text)] ${
                 hasProjectContent
-                  ? "hover:bg-gray-700"
-                  : "text-gray-500 cursor-not-allowed"
+                  ? "hover:bg-[var(--cad-chrome-hover)]"
+                  : "text-[var(--cad-text-faint)] cursor-not-allowed"
               }`}
               disabled={!hasProjectContent}
               onClick={handleSaveProject}
             >
               Save Project (.cadjs.json)
             </button>
-            <div className="border-t border-gray-600 my-1" />
+            <div className="my-1 border-t border-[var(--cad-border)]" />
             <button
-              className="w-full px-4 py-2 text-sm text-left hover:bg-gray-700 text-gray-200"
+              className="w-full px-4 py-2 text-sm text-left hover:bg-[var(--cad-chrome-hover)] text-[var(--cad-text)]"
               onClick={() => handleImportClick("step")}
               title="STEP geometry only — colors and assembly tree are not preserved"
             >
               Import STEP...
             </button>
             <button
-              className={`w-full px-4 py-2 text-sm text-left text-gray-200 ${
+              className={`w-full px-4 py-2 text-sm text-left text-[var(--cad-text)] ${
                 hasElements
-                  ? "hover:bg-gray-700"
-                  : "text-gray-500 cursor-not-allowed"
+                  ? "hover:bg-[var(--cad-chrome-hover)]"
+                  : "text-[var(--cad-text-faint)] cursor-not-allowed"
               }`}
               disabled={!hasElements}
               onClick={handleExportStep}
@@ -195,24 +268,80 @@ const FileMenu: React.FC = () => {
             >
               Export STEP (.step)
             </button>
-            <div className="border-t border-gray-600 my-1" />
             <button
-              className="w-full px-4 py-2 text-sm text-left hover:bg-gray-700 text-gray-200"
+              className="w-full px-4 py-2 text-sm text-left hover:bg-[var(--cad-chrome-hover)] text-[var(--cad-text)]"
+              onClick={() => handleImportClick("iges")}
+              title="IGES geometry only — colors and assembly tree are not preserved"
+            >
+              Import IGES...
+            </button>
+            <button
+              className={`w-full px-4 py-2 text-sm text-left text-[var(--cad-text)] ${
+                hasElements
+                  ? "hover:bg-[var(--cad-chrome-hover)]"
+                  : "text-[var(--cad-text-faint)] cursor-not-allowed"
+              }`}
+              disabled={!hasElements}
+              onClick={handleExportIges}
+              title="IGES geometry only — colors and assembly tree are not preserved"
+            >
+              Export IGES (.iges)
+            </button>
+            <div className="my-1 border-t border-[var(--cad-border)]" />
+            <button
+              className="w-full px-4 py-2 text-sm text-left hover:bg-[var(--cad-chrome-hover)] text-[var(--cad-text)]"
+              onClick={() => handleImportClick("3mf")}
+              title="3MF mesh exchange — preserves object names and colours"
+            >
+              Import 3MF...
+            </button>
+            <button
+              className={`w-full px-4 py-2 text-sm text-left text-[var(--cad-text)] ${
+                hasElements
+                  ? "hover:bg-[var(--cad-chrome-hover)]"
+                  : "text-[var(--cad-text-faint)] cursor-not-allowed"
+              }`}
+              disabled={!hasElements}
+              onClick={handleExport3mf}
+              title="3MF mesh exchange — preserves object names and colours"
+            >
+              Export 3MF (.3mf)
+            </button>
+            <div className="my-1 border-t border-[var(--cad-border)]" />
+            <button
+              className="w-full px-4 py-2 text-sm text-left hover:bg-[var(--cad-chrome-hover)] text-[var(--cad-text)]"
               onClick={() => handleImportClick("stl")}
             >
               Import STL...
             </button>
             <button
-              className={`w-full px-4 py-2 text-sm text-left text-gray-200 ${
+              className={`w-full px-4 py-2 text-sm text-left text-[var(--cad-text)] ${
                 hasElements
-                  ? "hover:bg-gray-700"
-                  : "text-gray-500 cursor-not-allowed"
+                  ? "hover:bg-[var(--cad-chrome-hover)]"
+                  : "text-[var(--cad-text-faint)] cursor-not-allowed"
               }`}
               disabled={!hasElements}
               onClick={handleExport}
             >
               Export STL (.stl)
             </button>
+            <div className="my-1 border-t border-[var(--cad-border)]" />
+            {(
+              [
+                ["parasolid", "Parasolid (.x_t/.x_b)"],
+                ["acis", "ACIS (.sat/.sab)"],
+                ["jt", "JT (.jt)"],
+              ] as const
+            ).map(([format, label]) => (
+              <button
+                key={format}
+                className="w-full px-4 py-2 text-sm text-left text-[var(--cad-text-faint)] cursor-not-allowed"
+                disabled
+                title={translationDisabledReason(format, "import") ?? undefined}
+              >
+                Import {label} — unavailable
+              </button>
+            ))}
           </div>
         )}
       </div>

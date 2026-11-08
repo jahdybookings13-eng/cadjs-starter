@@ -1,19 +1,68 @@
 import { Page, expect } from "@playwright/test";
 
+type MeasureDebugEntry = {
+  id: string;
+  type: string;
+  pinned: boolean;
+  value: number;
+};
+
 declare global {
   interface Window {
+    __cadMeasureDebug?: {
+      state: () => {
+        subMode: string;
+        statusText: string;
+        measurements: MeasureDebugEntry[];
+        pinned: MeasureDebugEntry[];
+      };
+      pin: (id?: string) => boolean;
+      unpin: (id?: string) => boolean;
+      clear: () => void;
+    };
     __cadDebug?: {
       getElements: () => Array<{
         nodeId: string;
         position: [number, number, number];
+        visible?: boolean;
       }>;
       getMode: () => string;
       getFeatureTree: () => unknown;
       getCameraQuat: () => [number, number, number, number] | null;
+      selectElement: (id: string) => void;
+      deselectElement: (id: string) => void;
       scadgen?: {
         nextId: () => string;
         configureSync: () => void;
+        history: () => {
+          features: Array<{ featureId: string; name: string }>;
+          rollbackIndex: number | null;
+        };
         box: (w: number, h: number, d: number) => string;
+        hole: (
+          fid: string,
+          centers: [number, number, number][],
+          r: number,
+          d: number,
+          opts?: {
+            holeType?: "SIMPLE" | "COUNTERBORE" | "COUNTERSINK" | "TAPPED";
+            counterboreRadius?: number;
+            counterboreDepth?: number;
+          },
+        ) => string;
+        etags: (fid: string) => string[] | null;
+        fillet: (
+          fid: string,
+          tags: string[],
+          r: number,
+          radii?: number[],
+        ) => string;
+        chamfer: (
+          fid: string,
+          tags: string[],
+          d: number,
+          distances?: number[],
+        ) => string;
         cylinder: (r: number, h: number) => string;
         sphere: (r: number) => string;
         torus: (ringR: number, tubeR: number) => string;
@@ -26,10 +75,21 @@ declare global {
             | "cylinder"
             | "cone"
             | "torus"
-            | "pipe",
+            | "sphere"
+            | "pipe"
+            | "ellipsoid"
+            | "capsule"
+            | "dome",
           opts?: Record<string, unknown>,
         ) => { featureId: string; profileFeatureId: string };
         mirror: (src: string, axis: "X" | "Y" | "Z") => string;
+        split: (
+          fid: string,
+          origin: [number, number, number],
+          normal: [number, number, number],
+          keep?: "positive" | "negative" | "both",
+        ) => string;
+        bodiesOf: (fid: string) => string[];
         authoredIds: () => string[];
         exportSceneStl: () => Promise<Uint8Array>;
         exportSceneStep: () => Promise<Uint8Array>;
@@ -127,10 +187,16 @@ export async function loadAppReady(page: Page): Promise<void> {
   await page.goto("/");
   await expect(page.getByText("Loading...")).toBeHidden({ timeout: 30_000 });
   await expect(page.getByTestId("cad-canvas")).toBeVisible();
-  // Wait for the debug hook to attach so subsequent page.evaluate() calls work
+  // Wait for the debug hook to attach so subsequent page.evaluate() calls work.
   await page.waitForFunction(() => !!window.__cadDebug, undefined, {
     timeout: 10_000,
   });
+  // ECAD is a lazy chunk now; ECAD specs read __ecad immediately after boot.
+  await page.waitForFunction(
+    () => !!(window as unknown as { __ecad?: unknown }).__ecad,
+    undefined,
+    { timeout: 20_000 },
+  );
 }
 
 export async function readCameraQuat(

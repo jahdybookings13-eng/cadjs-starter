@@ -1,4 +1,4 @@
-import React, { FC, useEffect } from "react";
+import React, { FC, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
   useCadCore,
@@ -26,6 +26,66 @@ const MeasureModeContent: FC<ModeContentProps> = ({ panelSlot }) => {
     unpinMeasurement,
     deleteMeasurement,
   } = useMeasureMode();
+
+  // Temp measurements are reassigned on Clear/pin, so a debug closure must read
+  // the latest render instead of capturing whichever array existed at mount.
+  const debugStateRef = useRef({
+    subMode,
+    statusText,
+    measurements,
+    pinnedMeasurements,
+  });
+  debugStateRef.current = {
+    subMode,
+    statusText,
+    measurements,
+    pinnedMeasurements,
+  };
+
+  // E2E hook: exposes the real measure state (and the same pin/unpin actions
+  // the UI calls) so browser tests can cover pin persistence without
+  // duplicating the measurement math.
+  useEffect(() => {
+    if (!import.meta.env.DEV && import.meta.env.MODE !== "test") return;
+    const host = window as unknown as { __cadMeasureDebug?: unknown };
+    const describe = (m: (typeof measurements)[number]) => ({
+      id: m.id,
+      type: m.type,
+      pinned: m.pinned,
+      value:
+        m.type === "distance"
+          ? m.distance
+          : m.type === "edge-length"
+            ? m.length
+            : m.angleDegrees,
+    });
+    const api = {
+      state: () => {
+        const current = debugStateRef.current;
+        return {
+          subMode: current.subMode,
+          statusText: current.statusText,
+          measurements: current.measurements.map(describe),
+          pinned: current.pinnedMeasurements.map(describe),
+        };
+      },
+      pin: (id?: string) => pinMeasurement(id),
+      unpin: (id?: string) => unpinMeasurement(id),
+      clear: () => clearTemporaryMeasurements(),
+    };
+    host.__cadMeasureDebug = api;
+    return () => {
+      if (host.__cadMeasureDebug === api) delete host.__cadMeasureDebug;
+    };
+  }, [
+    subMode,
+    statusText,
+    measurements,
+    pinnedMeasurements,
+    pinMeasurement,
+    unpinMeasurement,
+    clearTemporaryMeasurements,
+  ]);
 
   // Canvas mouse listeners
   useEffect(() => {

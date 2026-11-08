@@ -343,7 +343,14 @@ export function useVRSession() {
         },
         createElement: makeElementAuthor(
           (b, p) =>
-            (addElement as unknown as (b: unknown, p: unknown) => void)(b, p),
+            (
+              addElement as unknown as (
+                b: unknown,
+                p: unknown,
+                object?: unknown,
+                recordUndo?: boolean,
+              ) => void
+            )(b, p, undefined, false),
           () => idCounter,
         ),
         setElementHidden: (nodeId, hidden) => {

@@ -39,6 +39,12 @@ describe("action bus (desk/hand/voice single entry)", () => {
     expect(bus.log.at(-1)?.ok).toBe(false);
     expect(() => bus.run("undo")).toThrow(/not wired/);
   });
+  it("distinguishes implemented operations from catalog placeholders", () => {
+    const bus = createSceneBus(bag());
+    expect(bus.isRunnable("fillet")).toBe(true);
+    expect(bus.isRunnable("chamfer")).toBe(false);
+    expect(() => bus.run("chamfer")).toThrow(/not wired/);
+  });
   it("subscribe fires per dispatch and unsubscribes", () => {
     const bus = createSceneBus(bag());
     let n = 0;

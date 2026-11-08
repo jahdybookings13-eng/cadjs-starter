@@ -150,8 +150,11 @@ const ModeInfoCard: React.FC<ModeInfoCardProps> = ({
     setDismissed(false);
   }, [mode]);
 
-  // Hide during sketch plane selection, or sketch mode without active sketch
+  // Hide during sketch plane selection, or sketch mode without active sketch.
+  // Move is the default navigation state; a persistent help card there is
+  // visual noise rather than guidance, so only tool modes show it.
   if (dismissed) return null;
+  if (mode === "move") return null;
   if (mode === "sketch" && isSelectingPlane) return null;
   if (mode === "sketch" && !activeSketch) return null;
 
@@ -159,7 +162,7 @@ const ModeInfoCard: React.FC<ModeInfoCardProps> = ({
   if (!info) return null;
 
   return (
-    <div className="absolute bottom-12 right-4 z-20 w-52 bg-gray-800/90 border border-gray-700 rounded shadow-lg pointer-events-auto select-none">
+    <div className="cad-light-panel pointer-events-auto absolute bottom-10 right-3 z-20 w-52 select-none rounded border border-[var(--cad-border-strong)] bg-white/95 shadow-xl backdrop-blur-sm">
       {/* Header */}
       <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-gray-700">
         <span className="text-xs font-medium text-gray-200">{info.name}</span>

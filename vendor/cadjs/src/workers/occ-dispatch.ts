@@ -14,6 +14,7 @@ import {
   handleFillet,
   handleChamfer,
   handleBoolean,
+  handleInterference,
   handleEdgeAnalysis,
   handlePreviewGeometry,
   handleSketchToBrep,
@@ -36,8 +37,12 @@ import {
   handleMoveFace,
   handleSection,
   handleThicken,
+  handleSew,
+  handleSurfaceExtend,
   handleSplit,
   handleDeleteFace,
+  handleReplaceFace,
+  handleTransform,
   handleFlange,
   handleHole,
 } from "./occ-worker-handlers";
@@ -57,6 +62,7 @@ const REQUIRED_KEYS: { [K in WorkerRequest["type"]]?: readonly string[] } = {
   fillet: ["brepJson", "position", "edgeIndices", "radius"],
   chamfer: ["brepJson", "position", "edgeIndices", "distance"],
   boolean: ["operation", "operands"],
+  interference: ["a", "b"],
   edgeAnalysis: ["brepJson", "position"],
   previewGeometry: ["brepJson"],
   sketchToBrep: ["primitives", "plane"],
@@ -66,21 +72,35 @@ const REQUIRED_KEYS: { [K in WorkerRequest["type"]]?: readonly string[] } = {
   shell: ["brepJson", "faceIndices", "thickness"],
   draft: ["brepJson", "faceIndices", "angleDeg", "neutralNormal"],
   pattern: ["brepJson", "kind", "count"],
-  projectCurves: [
-    "brepJson",
-    "targetBrepJson",
-    "edgeIndices",
-    "direction",
-  ],
+  projectCurves: ["brepJson", "targetBrepJson", "edgeIndices", "direction"],
   surfaceOp: ["kind", "brepJson"],
   section: ["brepJson", "planeOrigin", "planeNormal"],
-  thread: ["brepJson", "origin", "axisDir", "radius", "pitch", "height", "depth", "kind"],
+  thread: [
+    "brepJson",
+    "origin",
+    "axisDir",
+    "radius",
+    "pitch",
+    "height",
+    "depth",
+    "kind",
+  ],
   hem: ["brepJson", "origin", "bendDir", "bendLineDir", "thickness"],
   wrapCurves: ["brepJson", "axisOrigin", "axisDir", "radius", "polylines"],
   moveFace: ["brepJson", "faceIndex", "distance"],
   thicken: ["brepJson", "faceIndices", "thickness"],
+  sew: ["sources"],
+  surfaceExtend: ["brepJson", "position", "edgeIndices", "distance"],
   split: ["brepJson", "planeOrigin", "planeNormal"],
   deleteFace: ["brepJson", "faceIndices"],
+  replaceFace: [
+    "brepJson",
+    "position",
+    "faceIndices",
+    "replacementBrepJson",
+    "replacementPosition",
+  ],
+  transform: ["brepJson", "matrix"],
   flange: [
     "brepJson",
     "position",
@@ -134,6 +154,8 @@ export function dispatchOccRequest(
       return handleChamfer(oc, request.payload);
     case "boolean":
       return handleBoolean(oc, request.payload);
+    case "interference":
+      return handleInterference(oc, request.payload);
     case "edgeAnalysis":
       return handleEdgeAnalysis(oc, request.payload);
     case "previewGeometry":
@@ -178,10 +200,18 @@ export function dispatchOccRequest(
       return handleMoveFace(oc, request.payload);
     case "thicken":
       return handleThicken(oc, request.payload);
+    case "sew":
+      return handleSew(oc, request.payload);
+    case "surfaceExtend":
+      return handleSurfaceExtend(oc, request.payload);
     case "split":
       return handleSplit(oc, request.payload);
     case "deleteFace":
       return handleDeleteFace(oc, request.payload);
+    case "replaceFace":
+      return handleReplaceFace(oc, request.payload);
+    case "transform":
+      return handleTransform(oc, request.payload);
     case "flange":
       return handleFlange(oc, request.payload);
     case "hole":

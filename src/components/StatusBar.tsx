@@ -22,47 +22,47 @@ export const StatusBar: React.FC<StatusBarProps> = ({
     : null;
 
   return (
-    <div className="hidden sm:flex absolute bottom-0 left-0 right-0 h-8 bg-gray-900 bg-opacity-90 border-t border-gray-700 items-center px-3 text-xs text-gray-400 font-mono z-10 overflow-hidden whitespace-nowrap">
-      <span className="flex-none">
-        X: {cursorPosition ? cursorPosition.x.toFixed(2) : "--"} Y:{" "}
-        {cursorPosition ? cursorPosition.y.toFixed(2) : "--"} Z:{" "}
-        {cursorPosition ? cursorPosition.z.toFixed(2) : "--"}
+    <div className="absolute bottom-0 left-0 right-0 z-10 hidden h-6 items-center overflow-hidden whitespace-nowrap border-t border-[var(--cad-border)] bg-[var(--cad-chrome)] px-3 font-mono text-[10px] text-[var(--cad-text-muted)] sm:flex">
+      <span className="flex-none tabular-nums">
+        X {cursorPosition ? cursorPosition.x.toFixed(2) : "—"} &nbsp; Y{" "}
+        {cursorPosition ? cursorPosition.y.toFixed(2) : "—"} &nbsp; Z{" "}
+        {cursorPosition ? cursorPosition.z.toFixed(2) : "—"}
       </span>
 
       {mode === "sketch" && activeSketch && (
         <span className="hidden md:contents">
-          <div className="flex-none w-px h-4 bg-gray-600 mx-2" />
-          <span className="flex-none text-blue-400">
+          <div className="mx-2 h-3.5 w-px flex-none bg-[var(--cad-border)]" />
+          <span className="flex-none text-[var(--cad-accent)]">
             {activeSketch.plane.type}
           </span>
-          <div className="flex-none w-px h-4 bg-gray-600 mx-2" />
+          <div className="mx-2 h-3.5 w-px flex-none bg-[var(--cad-border)]" />
           <span className="flex-none">
-            DOF:{" "}
+            DOF{" "}
             <span
               className={
-                activeSketch.dof === 0 ? "text-green-400" : "text-yellow-400"
+                activeSketch.dof === 0 ? "text-emerald-400" : "text-amber-300"
               }
             >
               {activeSketch.dof}
             </span>
           </span>
-          <div className="flex-none w-px h-4 bg-gray-600 mx-2" />
+          <div className="mx-2 h-3.5 w-px flex-none bg-[var(--cad-border)]" />
           <span
             className={`flex-none ${
               activeSketch.status === "fully_constrained"
-                ? "text-green-400"
+                ? "text-emerald-400"
                 : activeSketch.status === "overconstrained"
                   ? "text-red-400"
-                  : "text-yellow-400"
+                  : "text-amber-300"
             }`}
           >
             {activeSketch.status === "fully_constrained"
               ? "Constrained"
               : activeSketch.status === "overconstrained"
-                ? "Over"
-                : "Under"}
+                ? "Over-constrained"
+                : "Under-constrained"}
           </span>
-          <div className="flex-none w-px h-4 bg-gray-600 mx-2" />
+          <div className="mx-2 h-3.5 w-px flex-none bg-[var(--cad-border)]" />
           <span className="flex-none">
             {activeSketch.primitives.length}P {activeSketch.constraints.length}C
           </span>
@@ -76,6 +76,13 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           {selectedElement.position.z.toFixed(1)})
         </span>
       )}
+
+      <span className="ml-auto flex flex-none items-center gap-3 pl-4">
+        <span className="text-[var(--cad-text-faint)]">Units: mm</span>
+        <span className="rounded border border-[var(--cad-border)] px-1 text-[9px] uppercase tracking-wide text-[var(--cad-text-faint)]">
+          {mode}
+        </span>
+      </span>
     </div>
   );
 };

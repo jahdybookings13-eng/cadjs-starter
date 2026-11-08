@@ -55,6 +55,16 @@ export const FLUX_BUS_ACTIONS = [
   "flux.assignFunctionalGroups",
   "flux.writeProjectDescription",
   "flux.changeProperty",
+  "flux.buildPcb",
+  "flux.autoPlaceBoard",
+  "flux.autorouteBoard",
+  "flux.runPcbDrc",
+  "flux.exportPcbFabrication",
+  "flux.addSchematicSheet",
+  "flux.addPcbPart",
+  "flux.addPcbVia",
+  "flux.checkPcbAssembly",
+  "flux.createPcbDemo",
 ] as const;
 
 export type FluxBusAction = (typeof FLUX_BUS_ACTIONS)[number];

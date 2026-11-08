@@ -6,6 +6,74 @@ import {
   type DocumentTab,
   type DocumentTabKind,
 } from "../document";
+import { tabKindDisabledReason } from "../document/studios";
+
+function TabGlyph({ kind }: { kind: DocumentTabKind }) {
+  const common = {
+    className: "h-3.5 w-3.5 flex-none",
+    fill: "none",
+    stroke: "currentColor",
+    viewBox: "0 0 24 24",
+    "aria-hidden": true,
+  } as const;
+
+  switch (kind) {
+    case "assembly":
+      return (
+        <svg {...common}>
+          <rect x="3" y="4" width="8" height="7" rx="1" strokeWidth={1.6} />
+          <rect x="13" y="13" width="8" height="7" rx="1" strokeWidth={1.6} />
+          <path strokeWidth={1.6} d="M11 7.5h4v9h-2" />
+        </svg>
+      );
+    case "drawing":
+      return (
+        <svg {...common}>
+          <rect x="4" y="3" width="16" height="18" rx="1.5" strokeWidth={1.6} />
+          <path strokeWidth={1.6} d="M8 8h8M8 12h8M8 16h5" />
+        </svg>
+      );
+    case "featurestudio":
+      return (
+        <svg {...common}>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.7}
+            d="m8 7-4 5 4 5M16 7l4 5-4 5M13.5 5l-3 14"
+          />
+        </svg>
+      );
+    case "variablestudio":
+      return (
+        <svg {...common}>
+          <path
+            strokeLinecap="round"
+            strokeWidth={1.7}
+            d="m7 8 10 8M17 8 7 16"
+          />
+        </svg>
+      );
+    case "partstudio":
+      return (
+        <svg {...common}>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.6}
+            d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Zm0 0v9m8-4.5-8 4.5m-8-4.5 8 4.5m0 9v-9"
+          />
+        </svg>
+      );
+    default:
+      return (
+        <svg {...common}>
+          <rect x="4" y="3" width="16" height="18" rx="1.5" strokeWidth={1.6} />
+          <path strokeWidth={1.6} d="M8 9h8M8 13h8M8 17h5" />
+        </svg>
+      );
+  }
+}
 
 export interface DocumentTabBarProps {
   doc: CadDocument;
@@ -19,12 +87,13 @@ export interface DocumentTabBarProps {
   onDuplicate: (tabId: string) => void;
   onMove: (tabId: string, toIndex: number) => void;
   onDelete: (tabId: string) => void;
+  onOpenTabManager?: (() => void) | undefined;
 }
 
 /**
  * The document tab manager. Every control maps to a real document operation in
- * src/document/model.ts; kinds this build cannot author yet are listed but
- * disabled with a stated reason, never rendered as a working-looking button.
+ * src/document/model.ts. Part Studio, Assembly, Drawing, Variable Studio and
+ * Feature Studio all have authorable workspaces.
  */
 export const DocumentTabBar: React.FC<DocumentTabBarProps> = ({
   doc,
@@ -36,6 +105,7 @@ export const DocumentTabBar: React.FC<DocumentTabBarProps> = ({
   onDuplicate,
   onMove,
   onDelete,
+  onOpenTabManager,
 }) => {
   const [createOpen, setCreateOpen] = useState(false);
   const [menuFor, setMenuFor] = useState<string | null>(null);
@@ -80,7 +150,7 @@ export const DocumentTabBar: React.FC<DocumentTabBarProps> = ({
   };
 
   const create = (kind: DocumentTabKind) => {
-    if (locked) return;
+    if (locked || tabKindDisabledReason(kind)) return;
     setCreateOpen(false);
     onCreate(kind);
   };
@@ -88,46 +158,13 @@ export const DocumentTabBar: React.FC<DocumentTabBarProps> = ({
   return (
     <div
       ref={rootRef}
-      className="relative flex-none flex items-stretch bg-gray-900 border-b border-gray-700 h-9 text-xs z-40"
+      className="cad-tabbar relative z-40 flex h-9 flex-none items-stretch border-t text-xs"
       data-testid="document-tabs"
     >
-      <div className="flex items-center gap-2 px-3 border-r border-gray-700 min-w-0">
-        <span className="text-gray-500 hidden sm:inline">Document</span>
-        <span
-          className="text-gray-200 font-medium truncate max-w-[120px] sm:max-w-[180px]"
-          title={doc.name}
-        >
-          {doc.name}
-        </span>
-        <span className="text-gray-500 hidden md:inline">
-          {doc.tabs.length} {doc.tabs.length === 1 ? "tab" : "tabs"}
-        </span>
-        <div className="relative flex items-center">
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Find tab"
-            aria-label="Search tabs"
-            data-testid="document-tab-search"
-            className="w-20 rounded border border-gray-700 bg-gray-800 px-1.5 py-0.5 text-[11px] text-gray-200 outline-none focus:border-blue-500 lg:w-24"
-          />
-          {query && (
-            <button
-              type="button"
-              onClick={() => setQuery("")}
-              aria-label="Clear tab search"
-              className="absolute right-0.5 rounded px-1 text-[10px] text-gray-500 hover:text-gray-200"
-            >
-              ×
-            </button>
-          )}
-        </div>
-      </div>
-
       <div
         role="tablist"
         aria-label="Document tabs"
-        className="flex items-stretch overflow-x-auto min-w-0"
+        className="order-2 flex min-w-0 flex-1 items-stretch overflow-x-auto"
       >
         {visibleTabs.map((tab) => {
           const isActive = tab.id === doc.activeTabId;
@@ -136,7 +173,7 @@ export const DocumentTabBar: React.FC<DocumentTabBarProps> = ({
           return (
             <div
               key={tab.id}
-              className={`relative flex items-stretch border-r border-gray-800 ${
+              className={`group relative flex items-stretch border-r border-[var(--cad-border)] ${
                 dragId === tab.id ? "opacity-50" : ""
               }`}
             >
@@ -154,7 +191,7 @@ export const DocumentTabBar: React.FC<DocumentTabBarProps> = ({
                       setDraft("");
                     }
                   }}
-                  className="w-32 px-3 bg-gray-800 text-gray-100 outline-none border-t-2 border-blue-500"
+                  className="w-32 border-t-2 border-[var(--cad-accent)] bg-white px-3 text-[var(--cad-text)] outline-none"
                 />
               ) : (
                 <button
@@ -191,21 +228,14 @@ export const DocumentTabBar: React.FC<DocumentTabBarProps> = ({
                     onSelect(tab.id);
                   }}
                   onDoubleClick={() => beginRename(tab)}
-                  className={`px-3 flex items-center gap-2 border-t-2 whitespace-nowrap ${
+                  className={`cad-tab flex items-center gap-2 whitespace-nowrap px-3 text-[12px] ${
                     isActive
-                      ? "bg-gray-800 text-gray-100 border-blue-500"
-                      : "text-gray-400 border-transparent hover:bg-gray-800/60 hover:text-gray-200 disabled:opacity-40 disabled:hover:bg-transparent"
+                      ? ""
+                      : "disabled:opacity-40 disabled:hover:bg-transparent"
                   }`}
                 >
+                  <TabGlyph kind={tab.kind} />
                   <span>{tab.name}</span>
-                  <span className="text-[10px] uppercase tracking-wide text-gray-500">
-                    {tab.kind === "partstudio"
-                      ? "PS"
-                      : TAB_KIND_LABEL[tab.kind]
-                          .split(" ")
-                          .map((w) => w[0])
-                          .join("")}
-                  </span>
                 </button>
               )}
 
@@ -220,7 +250,7 @@ export const DocumentTabBar: React.FC<DocumentTabBarProps> = ({
                       current === tab.id ? null : tab.id,
                     )
                   }
-                  className="px-1.5 text-gray-500 hover:text-gray-200 bg-gray-800"
+                  className="bg-[var(--cad-chrome-raised)] px-1.5 text-[var(--cad-text-faint)] opacity-0 transition-opacity hover:text-[var(--cad-text)] group-hover:opacity-100 focus-visible:opacity-100"
                 >
                   ⋯
                 </button>
@@ -229,7 +259,7 @@ export const DocumentTabBar: React.FC<DocumentTabBarProps> = ({
           );
         })}
         {visibleTabs.length === 0 && (
-          <span className="flex items-center px-3 text-[11px] text-gray-500">
+          <span className="flex items-center px-3 text-[11px] text-[var(--cad-text-faint)]">
             No tabs match
           </span>
         )}
@@ -240,7 +270,7 @@ export const DocumentTabBar: React.FC<DocumentTabBarProps> = ({
       {menuTab && (
         <div
           role="menu"
-          className="absolute top-full right-14 mt-1 bg-gray-800 border border-gray-600 rounded-md shadow-lg py-1 z-50 min-w-[190px]"
+          className="absolute bottom-full right-28 z-50 mb-1 min-w-[190px] rounded-md border border-[var(--cad-border-strong)] bg-[var(--cad-chrome-raised)] py-1 shadow-xl"
         >
           <MenuItem
             label="Rename"
@@ -271,7 +301,7 @@ export const DocumentTabBar: React.FC<DocumentTabBarProps> = ({
               onMove(menuTab.id, menuIndex + 1);
             }}
           />
-          <div className="border-t border-gray-600 my-1" />
+          <div className="my-1 border-t border-[var(--cad-border)]" />
           <MenuItem
             label="Delete"
             disabled={locked || doc.tabs.length <= 1}
@@ -283,7 +313,35 @@ export const DocumentTabBar: React.FC<DocumentTabBarProps> = ({
         </div>
       )}
 
-      <div className="relative flex items-center px-2">
+      <div className="order-first relative flex items-center pl-1.5 pr-1">
+        {onOpenTabManager && (
+          <button
+            type="button"
+            aria-label="Tab manager"
+            title="Tab manager"
+            data-testid="document-tab-manager"
+            onClick={onOpenTabManager}
+            className="cad-icon-button !h-6 !min-w-6 !px-0"
+          >
+            <svg
+              aria-hidden="true"
+              className="h-3.5 w-3.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <rect
+                x="4"
+                y="4"
+                width="16"
+                height="16"
+                rx="1.5"
+                strokeWidth={1.7}
+              />
+              <path strokeWidth={1.7} d="M9 4v16M9 9h11M9 15h11" />
+            </svg>
+          </button>
+        )}
         <button
           aria-label="Create tab"
           aria-haspopup="menu"
@@ -298,39 +356,37 @@ export const DocumentTabBar: React.FC<DocumentTabBarProps> = ({
           disabled={locked}
           data-testid="document-tab-add"
           onClick={() => setCreateOpen((v) => !v)}
-          className="w-6 h-6 rounded text-gray-300 hover:bg-gray-700 hover:text-white disabled:opacity-40 disabled:hover:bg-transparent"
+          className="cad-icon-button !h-6 !min-w-6 !px-0 text-base leading-none"
         >
           +
         </button>
         {createOpen && (
           <div
             role="menu"
-            className="absolute top-full left-0 mt-1 bg-gray-800 border border-gray-600 rounded-md shadow-lg py-1 z-50 min-w-[240px]"
+            className="absolute bottom-full left-0 z-50 mb-1 min-w-[240px] rounded-md border border-[var(--cad-border-strong)] bg-[var(--cad-chrome-raised)] py-1 shadow-xl"
           >
             {DOCUMENT_TAB_KINDS.map((kind) => {
-              const enabled = kind === "partstudio";
+              const disabledReason = tabKindDisabledReason(kind);
               return (
                 <button
                   key={kind}
                   role="menuitem"
-                  disabled={!enabled}
                   data-testid={`document-tab-create-${kind}`}
-                  onClick={() => enabled && create(kind)}
+                  disabled={Boolean(disabledReason)}
+                  onClick={() => create(kind)}
                   title={
-                    enabled
-                      ? "Create a Part Studio tab"
-                      : `${TAB_KIND_LABEL[kind]} tabs are not implemented yet — see ONSHAPE_PARITY.md`
+                    disabledReason ?? `Create a ${TAB_KIND_LABEL[kind]} tab`
                   }
-                  className={`w-full px-3 py-1.5 text-left flex items-center justify-between gap-3 ${
-                    enabled
-                      ? "text-gray-200 hover:bg-gray-700"
-                      : "text-gray-500 cursor-not-allowed"
+                  className={`w-full px-3 py-1.5 text-left ${
+                    disabledReason
+                      ? "cursor-not-allowed text-[var(--cad-text-faint)]"
+                      : "text-[var(--cad-text)] hover:bg-[var(--cad-chrome-hover)]"
                   }`}
                 >
                   <span>{TAB_KIND_LABEL[kind]}</span>
-                  {!enabled && (
-                    <span className="text-[10px] uppercase tracking-wide">
-                      Planned
+                  {disabledReason && (
+                    <span className="mt-0.5 block text-[10px] text-[var(--cad-text-faint)]">
+                      {disabledReason}
                     </span>
                   )}
                 </button>
@@ -339,6 +395,41 @@ export const DocumentTabBar: React.FC<DocumentTabBarProps> = ({
           </div>
         )}
       </div>
+
+      <label className="order-3 relative flex flex-none items-center border-l border-[var(--cad-border)] px-2">
+        <svg
+          aria-hidden="true"
+          className="pointer-events-none absolute left-3.5 h-3.5 w-3.5 text-[var(--cad-text-faint)]"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="m21 21-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z"
+          />
+        </svg>
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Find tab"
+          aria-label="Search tabs"
+          data-testid="document-tab-search"
+          className="h-6 w-24 rounded border border-[var(--cad-border)] bg-white pl-7 pr-5 text-[11px] text-[var(--cad-text)] outline-none placeholder:text-[var(--cad-text-faint)] focus:border-[var(--cad-accent)]"
+        />
+        {query && (
+          <button
+            type="button"
+            onClick={() => setQuery("")}
+            aria-label="Clear tab search"
+            className="absolute right-2 rounded px-1 text-[10px] text-[var(--cad-text-faint)] hover:text-[var(--cad-text)]"
+          >
+            ×
+          </button>
+        )}
+      </label>
     </div>
   );
 };
@@ -355,8 +446,8 @@ const MenuItem: React.FC<{
     onClick={onClick}
     className={`w-full px-3 py-1.5 text-left ${
       disabled
-        ? "text-gray-500 cursor-not-allowed"
-        : "text-gray-200 hover:bg-gray-700"
+        ? "cursor-not-allowed text-[var(--cad-text-faint)]"
+        : "text-[var(--cad-text)] hover:bg-[var(--cad-chrome-hover)]"
     }`}
   >
     {label}

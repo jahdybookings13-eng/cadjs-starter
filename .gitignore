@@ -43,5 +43,8 @@ vr-shots/
 # staged STM32F4 core assets (scripts/stm32f4-assets.mjs)
 public/stm32f4/
 
+# Gmsh ESM/WASM staged from node_modules by scripts/gmsh-assets.mjs
+/public/gmsh/
+
 # esp32sim source checkout used to build public/esp32/esp32sim.wasm
 /vendor/esp32sim/

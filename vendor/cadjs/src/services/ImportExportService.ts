@@ -10,6 +10,10 @@ import type {
 } from "../workers/occ-worker-types";
 import { reconstructEdgeGeometry } from "../workers/geometry-reconstruction";
 import { toVec3, toEulerJSON } from "../vectorHelpers";
+import {
+  export3mf as export3mfPackage,
+  import3mf as import3mfPackage,
+} from "./three-mf";
 import type { Sketch, SketchPlane, FeatureNode } from "../types/sketch-types";
 
 /** Result of importing geometry from STL, only solid bodies, no parametric history. */
@@ -19,6 +23,10 @@ export interface ImportResult {
   occBrep?: string | undefined;
   edgeGeometry?: THREE.BufferGeometry | undefined;
   vertexPositions?: Float32Array | undefined;
+  /** Optional source name preserved by mesh/package formats. */
+  name?: string | undefined;
+  /** Optional source display colour (for example 3MF `#RRGGBB`). */
+  color?: string | undefined;
 }
 
 /** JSON-friendly mirror of `SketchPlane` (THREE.Vector3 axes flattened to plain x/y/z records). */
@@ -228,8 +236,8 @@ export class ImportExportService {
    * of tessellating to triangles. Sketches and feature history are not
    * carried; use `exportProject` for those.
    *
-   * Plain STEPControl_* output: geometry only, no colors / names / assembly
-   * hierarchy. Each element becomes its own STEP root.
+   * Uses the CAF writer when translation names/colors are present; each
+   * element becomes its own STEP product.
    */
   async exportStep(elements: SceneElement[]): Promise<Blob> {
     const client = OccWorkerClient.getInstance();
@@ -241,6 +249,12 @@ export class ImportExportService {
           position: toVec3(el.position),
           occBrep: el.occBrep,
           rotation: el.rotation ? toEulerJSON(el.rotation) : undefined,
+          ...(typeof el.userData?.translationName === "string"
+            ? { name: el.userData.translationName }
+            : {}),
+          ...(typeof el.userData?.translationColor === "string"
+            ? { color: el.userData.translationColor }
+            : {}),
         })),
         format: "step",
       },
@@ -255,9 +269,48 @@ export class ImportExportService {
     return this.importInternal(arrayBuffer, "step");
   }
 
+  /**
+   * Export geometry as IGES (5.3). Analytic BRep output in millimetres; each
+   * scene element becomes its own root. Sketches and feature history are not
+   * carried, use `exportProject` for those.
+   */
+  async exportIges(elements: SceneElement[]): Promise<Blob> {
+    const client = OccWorkerClient.getInstance();
+    const raw = await client.send<WorkerExportResult>({
+      type: "exportFile",
+      payload: {
+        elements: elements.map((el) => ({
+          brepJson: el.brep.toJSON(),
+          position: toVec3(el.position),
+          occBrep: el.occBrep,
+          rotation: el.rotation ? toEulerJSON(el.rotation) : undefined,
+        })),
+        format: "iges",
+      },
+    });
+    return new Blob([raw.fileBytes as Uint8Array<ArrayBuffer>], {
+      type: "model/iges",
+    });
+  }
+
+  /** Import geometry from IGES. Multi-root files decompose into one element per root. */
+  async importIges(arrayBuffer: ArrayBuffer): Promise<ImportResult[]> {
+    return this.importInternal(arrayBuffer, "iges");
+  }
+
+  /** Export scene elements as a 3MF package, including names and per-body colours. */
+  async export3mf(elements: SceneElement[]): Promise<Blob> {
+    return export3mfPackage(elements);
+  }
+
+  /** Import a 3MF package, welding duplicate vertices and rejecting bad meshes. */
+  async import3mf(arrayBuffer: ArrayBuffer): Promise<ImportResult[]> {
+    return import3mfPackage(arrayBuffer);
+  }
+
   private async importInternal(
     arrayBuffer: ArrayBuffer,
-    format: "stl" | "step",
+    format: "stl" | "step" | "iges",
   ): Promise<ImportResult[]> {
     const client = OccWorkerClient.getInstance();
     const raw = await client.send<WorkerImportResult>({
@@ -275,6 +328,8 @@ export class ImportExportService {
         ? reconstructEdgeGeometry(el.edgePositions)
         : undefined,
       vertexPositions: el.vertexPositions,
+      ...(el.name ? { name: el.name } : {}),
+      ...(el.color ? { color: el.color } : {}),
     }));
   }
 

@@ -171,6 +171,14 @@ export function buildExtrudeNode(
     ...depth,
   });
   push({ kind: "enum", parameterId: "endBound", value: "BLIND" });
+  push({ kind: "queryList", parameterId: "endBoundEntity", queries: [] });
+  push({
+    kind: "quantity",
+    parameterId: "endBoundOffset",
+    value: 0,
+    units: "m",
+    expression: "0 mm",
+  });
   push({ kind: "boolean", parameterId: "oppositeDirection", value: false });
   push({
     kind: "quantity",
@@ -192,6 +200,15 @@ export function buildExtrudeNode(
     expression: "3 deg",
   });
   push({ kind: "boolean", parameterId: "hasDraft", value: false });
+  push({ kind: "enum", parameterId: "draftMode", value: "NEUTRAL" });
+  push({
+    kind: "queryList",
+    parameterId: "draftNeutralFace",
+    queries: [],
+  });
+  push({ kind: "string", parameterId: "draftNeutralOrigin", value: "" });
+  push({ kind: "string", parameterId: "draftNeutralNormal", value: "" });
+  push({ kind: "queryList", parameterId: "draftPartingEdge", queries: [] });
   push({ kind: "boolean", parameterId: "hasOffset", value: false });
   push({ kind: "boolean", parameterId: "symmetric", value: false });
   for (const o of overrides) push(o);
@@ -321,6 +338,22 @@ export function buildRevolveNode(
     expression: "0 deg",
   });
   push({ kind: "enum", parameterId: "cornerType", value: "ROUNDED" });
+  push({ kind: "enum", parameterId: "direction", value: "one" });
+  push({ kind: "boolean", parameterId: "oppositeDirection", value: false });
+  push({ kind: "string", parameterId: "axisOrigin", value: "0,0,0" });
+  push({ kind: "string", parameterId: "axisDir", value: "" });
+  push({ kind: "enum", parameterId: "endBound", value: "BLIND" });
+  push({ kind: "queryList", parameterId: "endBoundEntity", queries: [] });
+  push({ kind: "boolean", parameterId: "thinWall", value: false });
+  push({
+    kind: "quantity",
+    parameterId: "wallThickness",
+    value: 0.001,
+    units: "m",
+    expression: "1 mm",
+  });
+  push({ kind: "enum", parameterId: "operationType", value: "NEW" });
+  push({ kind: "queryList", parameterId: "targets", queries: [] });
   for (const o of overrides) push(o);
   return {
     featureId,
@@ -356,6 +389,39 @@ export function buildSweepNode(
     units: "m",
     expression: "0.05 mm",
   });
+  push({ kind: "enum", parameterId: "cornerMode", value: "right" });
+  push({
+    kind: "quantity",
+    parameterId: "twist",
+    value: 0,
+    units: "rad",
+    expression: "0 deg",
+  });
+  push({ kind: "queryList", parameterId: "guideSubqueries", queries: [] });
+  push({
+    kind: "quantity",
+    parameterId: "pathStartOffset",
+    value: 0,
+    units: "m",
+    expression: "0 mm",
+  });
+  push({
+    kind: "quantity",
+    parameterId: "pathEndOffset",
+    value: 0,
+    units: "m",
+    expression: "0 mm",
+  });
+  push({ kind: "boolean", parameterId: "thinWall", value: false });
+  push({
+    kind: "quantity",
+    parameterId: "wallThickness",
+    value: 0.001,
+    units: "m",
+    expression: "1 mm",
+  });
+  push({ kind: "enum", parameterId: "operationType", value: "NEW" });
+  push({ kind: "queryList", parameterId: "targets", queries: [] });
   for (const o of overrides) push(o);
   return {
     featureId,
@@ -382,6 +448,30 @@ export function buildLoftNode(
   push({ kind: "queryList", parameterId: "guideSubqueries", queries: guides });
   push({ kind: "boolean", parameterId: "ruled", value: ruled });
   push({ kind: "enum", parameterId: "loftType", value: "FLUID" });
+  push({ kind: "boolean", parameterId: "closed", value: false });
+  push({ kind: "enum", parameterId: "startCondition", value: "NONE" });
+  push({ kind: "enum", parameterId: "endCondition", value: "NONE" });
+  push({ kind: "string", parameterId: "startDirection", value: "" });
+  push({ kind: "string", parameterId: "endDirection", value: "" });
+  push({ kind: "boolean", parameterId: "thinWall", value: false });
+  push({
+    kind: "quantity",
+    parameterId: "wallThickness",
+    value: 0.001,
+    units: "m",
+    expression: "1 mm",
+  });
+  push({
+    kind: "quantity",
+    parameterId: "twist",
+    value: 0,
+    units: "rad",
+    expression: "0 deg",
+  });
+  push({ kind: "queryList", parameterId: "connectors", queries: [] });
+  push({ kind: "queryList", parameterId: "centerline", queries: [] });
+  push({ kind: "enum", parameterId: "operationType", value: "NEW" });
+  push({ kind: "queryList", parameterId: "targets", queries: [] });
   for (const o of overrides) push(o);
   return {
     featureId,
@@ -477,7 +567,8 @@ export function buildInsertNode(
   featureId: string,
   name: string,
   assetId: string,
-  format: "stl" | "step",
+  format: "stl" | "step" | "iges" | "3mf",
+  recognitionMode: "auto" | "box" | "cylinder" | "mesh" = "auto",
 ): ScadgenFeatureNode {
   return {
     featureId,
@@ -488,10 +579,16 @@ export function buildInsertNode(
       { kind: "string", parameterId: "assetId", value: assetId },
       { kind: "enum", parameterId: "format", value: format },
       {
+        kind: "enum",
+        parameterId: "recognitionMode",
+        value: recognitionMode,
+      },
+      {
         kind: "matrix",
         parameterId: "placement",
         elements: [0, 0, 0],
       },
+      { kind: "string", parameterId: "recognition", value: "" },
     ],
     subFeatures: [],
     suppressed: false,

@@ -3,10 +3,12 @@ import { ScadgenHistory } from "../featureEngine";
 import { scadgenExecutor } from "../executor";
 import {
   buildBooleanNode,
+  buildExtrudeNode,
   buildRevolveNode,
   buildSketchNode,
   buildSweepNode,
   provenanceForFeature,
+  type ScadgenFeatureNode,
 } from "../onshapeHistory";
 import { buildLinearPatternNodes, buildMirrorNodes } from "../primitives";
 
@@ -24,6 +26,24 @@ const sketch = (fid: string, primitives: unknown[] = []) =>
     primitives,
     constraints: [],
   });
+const variable = (fid: string, name: string): ScadgenFeatureNode => ({
+  featureId: fid,
+  featureType: "variable",
+  name: fid,
+  namespace: "",
+  parameters: [
+    { kind: "string", parameterId: "varName", value: name },
+    {
+      kind: "quantity",
+      parameterId: "value",
+      value: 1,
+      units: "",
+      expression: "1",
+    },
+  ],
+  subFeatures: [],
+  suppressed: false,
+});
 
 describe("executor rebuild → featureStates", () => {
   let h: ScadgenHistory;
@@ -104,6 +124,37 @@ describe("executor rebuild → featureStates", () => {
     expect(h.toListResponse().featureStates["Fbl"]?.featureStatus).toBe(
       "ERROR",
     );
+  });
+
+  it("isolates a failed feature and names its origin downstream", async () => {
+    h.add(sketch("Fsk_bad"));
+    h.add(variable("Fvar_ok", "wall"));
+    h.add(
+      buildExtrudeNode(
+        "Fex_down",
+        "Downstream",
+        [provenanceForFeature("Fsk_bad", "SKETCH_ENTITY", "ln")],
+        { value: 0.01, units: "mm", expression: "10*mm" },
+      ),
+    );
+    await scadgenExecutor.whenIdle();
+
+    expect(h.toListResponse().featureStates["Fsk_bad"]?.featureStatus).toBe(
+      "ERROR",
+    );
+    // An unrelated feature still evaluates: one failure does not poison the
+    // rest of the history.
+    expect(h.toListResponse().featureStates["Fvar_ok"]?.featureStatus).toBe(
+      "OK",
+    );
+    // The failed feature produced no body for downstream features to consume.
+    expect(scadgenExecutor.outputs.has("Fsk_bad")).toBe(false);
+    expect(scadgenExecutor.outputs.has("Fex_down")).toBe(false);
+    // The downstream feature names the failure it depends on.
+    expect(scadgenExecutor.lastReport["Fex_down"]?.detail).toContain(
+      "depends on failed “Fsk_bad”",
+    );
+    expect(scadgenExecutor.lastReport["Fex_down"]?.origin).toBe("Fsk_bad");
   });
 
   it("boolean with missing targets errors before worker call", async () => {
